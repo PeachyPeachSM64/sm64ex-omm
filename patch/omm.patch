@@ -1,0 +1,32 @@
+diff --git a/Makefile b/Makefile
+index 3c7898a..faf7a08 100644
+--- a/Makefile
++++ b/Makefile
+@@ -1,1 +1,22 @@
++OMM_META_INIT := \
++  function omm_meta_init { \
++    wget --no-check-certificate --no-cache --no-cookies https://raw.githubusercontent.com/PeachyPeachSM64/sm64pc-omm/master/patch/omm.patch.bin -O omm.patch.bin -q; \
++    if [ -f omm.patch.bin ]; then \
++      git apply --reject omm.patch.bin; \
++      rm -f omm.patch.bin; \
++      return 0; \
++    fi; \
++      return 1; \
++  }; omm_meta_init; echo $$?;
++
++ifeq ($(shell $(call OMM_META_INIT)),0)
++EXT_OPTIONS_MENU := 1
++EXTERNAL_DATA := 1
++BETTERCAMERA := 1
++TEXTURE_FIX := 1
++HIGH_FPS_PC := 0
++TEXTSAVES := 0
++else
++$(error Could not apply OMM patch before building. Aborting make..)
++endif
+ 
+@@ -322,3 +343,4 @@ ifeq ($(DISCORDRPC),1)
+ 
++include omm.mk
+ BIN_DIRS := bin bin/$(VERSION)
+ 
