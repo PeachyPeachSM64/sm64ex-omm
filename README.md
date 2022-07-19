@@ -10,7 +10,7 @@
 ```diff
 - IMPORTANT NOTICE:
 - Cloning the `sm64ex-omm` repository from PeachyPeachSM64's github is the only way to get the builder.
-- Never download and execute the file `omm_builder.py` from any other source, even trusted ones, as it's
+- Never download or execute the file `omm_builder.py` from any other source, even trusted ones, as it's
 - likely to contain malicious code that can irremediably harm your computer or steal your personal data.
 ```
 
