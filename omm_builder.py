@@ -336,7 +336,7 @@ if __name__ == "__main__":
         if OMM_PATCH_DIR == "":
             raise_error("Cannot find any OMM patch.", False)
     else:
-        os.system("wget --no-check-certificate --no-cache --no-cookies https://raw.githubusercontent.com/PeachyPeachSM64/sm64pc-omm/nightly/omm.mk -O omm.version -q || rm -f omm.version")
+        os.system("wget --no-check-certificate --no-cache --no-cookies https://raw.githubusercontent.com/PeachyPeachSM64/sm64ex-omm/nightly/omm.mk -O omm.version -q || rm -f omm.version")
         if os.path.isfile("omm.version"):
             versionRemote = get_omm_version("omm.version")
             if versionRemote["OMM_VERSION_NUMBER"] == "":
