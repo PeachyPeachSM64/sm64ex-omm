@@ -201,8 +201,8 @@ if __name__ == "__main__":
         "smex": { "name": "Super Mario 64 ex-nightly", "repo": "https://github.com/sm64pc/sm64ex.git -b nightly",                "dependency": "",          "args": [] },
         "smms": { "name": "Super Mario 64 Moonshine",  "repo": "https://github.com/sm64pc/sm64ex.git -b nightly",                "dependency": "moonshine", "args": [] },
         "xalo": { "name": "Super Mario 64 ex-alo",     "repo": "https://github.com/AloXado320/sm64ex-alo.git -b master",         "dependency": "",          "args": [] },
-        "sm74": { "name": "Super Mario 74",            "repo": "https://github.com/PeachyPeachSM64/sm64pc-omm.git -b sm74",      "dependency": "",          "args": [] },
-        "smsr": { "name": "Super Mario Star Road",     "repo": "https://github.com/PeachyPeachSM64/sm64pc-omm.git -b smsr",      "dependency": "",          "args": [] },
+        "sm74": { "name": "Super Mario 74",            "repo": "https://github.com/PeachyPeachSM64/sm64ex-omm.git -b sm74",      "dependency": "",          "args": [] },
+        "smsr": { "name": "Super Mario Star Road",     "repo": "https://github.com/PeachyPeachSM64/sm64ex-omm.git -b smsr",      "dependency": "",          "args": [] },
         "r96a": { "name": "Render96 ex-alpha",         "repo": "https://github.com/Render96/Render96ex.git -b tester_rt64alpha", "dependency": "",          "args": ["DYNOS"] },
       # "rt64": { "name": "Render96 RT64",             "repo": "https://github.com/Render96/Render96ex.git -b tester_rt64alpha", "dependency": "",          "args": ["DYNOS"] },
       # "saex": { "name": "Saturn (sm64ex-nightly)",   "repo": "https://github.com/Llennpie/Saturn -b legacy",                   "dependency": "",          "args": ["DYNOS"] },
@@ -236,7 +236,7 @@ if __name__ == "__main__":
     }
 
     # Check builder
-    os.system("wget --no-check-certificate --no-cache --no-cookies https://raw.githubusercontent.com/PeachyPeachSM64/sm64pc-omm/master/omm_builder.py -O omm_builder.version -q || rm -f omm_builder.version")
+    os.system("wget --no-check-certificate --no-cache --no-cookies https://raw.githubusercontent.com/PeachyPeachSM64/sm64ex-omm/master/omm_builder.py -O omm_builder.version -q || rm -f omm_builder.version")
     if os.path.isfile("omm_builder.version"):
         filecmp.clear_cache()
         isUpToDate = filecmp.cmp("omm_builder.py", "omm_builder.version", shallow=False)
@@ -336,7 +336,7 @@ if __name__ == "__main__":
         if OMM_PATCH_DIR == "":
             raise_error("Cannot find any OMM patch.", False)
     else:
-        os.system("wget --no-check-certificate --no-cache --no-cookies https://raw.githubusercontent.com/PeachyPeachSM64/sm64pc-omm/nightly/omm.mk -O omm.version -q || rm -f omm.version")
+        os.system("wget --no-check-certificate --no-cache --no-cookies https://raw.githubusercontent.com/PeachyPeachSM64/sm64ex-omm/nightly/omm.mk -O omm.version -q || rm -f omm.version")
         if os.path.isfile("omm.version"):
             versionRemote = get_omm_version("omm.version")
             if versionRemote["OMM_VERSION_NUMBER"] == "":
@@ -391,7 +391,7 @@ if __name__ == "__main__":
         # Clone the OMM repository
         OMM_PATCH_DIR = OMM_PATCH_NAME
         print("Creating " + OMM_PATCH_DIR + " from the latest version...")
-        ommRepository = "https://github.com/PeachyPeachSM64/sm64pc-omm.git -b nightly"
+        ommRepository = "https://github.com/PeachyPeachSM64/sm64ex-omm.git -b nightly"
         os.system("git clone " + ommRepository + " " + OMM_PATCH_DIR)
         if not os.path.isdir(OMM_PATCH_DIR):
             raise_error("Cannot clone the git repository: " + ommRepository, False)

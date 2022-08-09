@@ -9,7 +9,7 @@
 
 ```diff
 - IMPORTANT NOTICE:
-- Cloning the `sm64pc-omm` repository from PeachyPeachSM64's github is the only way to get the builder.
+- Cloning the `sm64ex-omm` repository from PeachyPeachSM64's github is the only way to get the builder.
 - Never download or execute the file `omm_builder.py` from any other source, even trusted ones, as it's
 - likely to contain malicious code that can irremediably harm your computer or steal your personal data.
 ```
@@ -22,9 +22,9 @@
 
   - Open an MSYS2 terminal. To do so, open the **Windows Start** menu, type `mingw` and select `MSYS2 MinGW 64-bit` or `MSYS2 MinGW 32-bit`, depending of your operating system and processor type. To see it, open the **Windows Settings**, go to **System**, and select **About**.
 
-  - The first time, install the builder by cloning the *master* branch with this command:<br>`git clone https://github.com/PeachyPeachSM64/sm64pc-omm.git -b master`
+  - The first time, install the builder by cloning the *master* branch with this command:<br>`git clone https://github.com/PeachyPeachSM64/sm64ex-omm.git -b master`
 
-  - Move to the created directory and open it in Windows Explorer by executing the following command:<br>`cd sm64pc-omm; explorer .`
+  - Move to the created directory and open it in Windows Explorer by executing the following command:<br>`cd sm64ex-omm; explorer .`
 
   - If it's not already done, in Windows Explorer, click on the **View** tab, then check **File name extensions**. This option will allow you to rename files properly.
 
@@ -34,9 +34,9 @@
 
   - Open a terminal.
 
-  - The first time, install the builder by cloning the *master* branch with this command:<br>`git clone https://github.com/PeachyPeachSM64/sm64pc-omm.git -b master`
+  - The first time, install the builder by cloning the *master* branch with this command:<br>`git clone https://github.com/PeachyPeachSM64/sm64ex-omm.git -b master`
 
-  - Move to the created directory by executing the following command:<br>`cd sm64pc-omm`
+  - Move to the created directory by executing the following command:<br>`cd sm64ex-omm`
 
   - Place your copy of the **Super Mario 64 US ROM** inside it, next to the Python script `omm_builder.py`, and rename it `baserom.us.z64`.
 
@@ -278,9 +278,9 @@ To install it and make it work, follow these steps:
 
 ## Odyssey Mario's Moveset content
 
-- [Patch file](https://raw.githubusercontent.com/PeachyPeachSM64/sm64pc-omm/master/patch/omm.patch)
-- [Coop LUA mod: OMM Moves](https://github.com/PeachyPeachSM64/sm64pc-omm/raw/master/coop/omm-moves.zip)
-- [Coop LUA mod: OMM Cappy](https://github.com/PeachyPeachSM64/sm64pc-omm/raw/master/coop/omm-cappy.zip)
+- [Patch file](https://raw.githubusercontent.com/PeachyPeachSM64/sm64ex-omm/master/patch/omm.patch)
+- [Coop LUA mod: OMM Moves](https://github.com/PeachyPeachSM64/sm64ex-omm/raw/master/coop/omm-moves.zip)
+- [Coop LUA mod: OMM Cappy](https://github.com/PeachyPeachSM64/sm64ex-omm/raw/master/coop/omm-cappy.zip)
 - [In-depth guide](https://docs.google.com/document/d/1IlhCxYGulxrnbvqbSuBMC1JgtBIEwoCcK3l-urVUADk/edit) (by **Cancel the Eat**)
 - [Sparkly Stars guide](https://www.youtube.com/watch?v=xWHKPV-cbqI&list=PLFZ-DGZKGuUo3KuXfGoaP55RYiDXgxE8N) (by **Cancel the Eat**)
 - [Pink Gold Stars guide](https://www.youtube.com/watch?v=sPhx7hDPLKs) (by **FastMario**)
@@ -573,7 +573,7 @@ These animations can be toggled on/off with the option `Super Mario Odyssey Anim
   - Go to the Fourth floor and enter a pipe: red pipe for Mario, green for Luigi and yellow for Wario.<br>To select Peach, enter your character's pipe (red if you play as Mario, green if Luigi or yellow if Wario).
 - Each character has different properties and moves:
   - **Mario**: the most balanced character.
-  - **Peach**: same properties as Mario, plus extra moves from *Super Princess Peach*. See [Version 6.0.0](https://github.com/PeachyPeachSM64/sm64pc-omm/tree/master#peach).
+  - **Peach**: same properties as Mario, plus extra moves from *Super Princess Peach*. See [Version 6.0.0](https://github.com/PeachyPeachSM64/sm64ex-omm/tree/master#peach).
   - **Luigi**: runs faster, jumps higher and twirl after a back-flip, but slides on ground and moves slower in the air.
   - **Wario**: runs slower and jumps lower, but has some powerful moves from *Wario World* and gains speed faster in the air.
 - Interactions with custom objects:
@@ -598,7 +598,7 @@ These animations can be toggled on/off with the option `Super Mario Odyssey Anim
 ### LiveSplit auto-splitter:
 - The player no longer needs to enter their splits manually in a text file.
 - To make the game read splits, save them from LiveSplit as a `splits.lss` file next to the `sm64.us.f3dex2e.exe` executable.
-- See [Speedrunning](https://github.com/PeachyPeachSM64/sm64pc-omm/tree/master#speedrunning) for more details.
+- See [Speedrunning](https://github.com/PeachyPeachSM64/sm64ex-omm/tree/master#speedrunning) for more details.
 
 ### Other changes:
 - New Cappy cheats:
