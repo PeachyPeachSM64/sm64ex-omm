@@ -439,7 +439,7 @@ def fix_typo(filepath: str, str_from: str, str_to: str):
 def create_omm_patch():
     dir = get_omm_patch_dir()
     if len(dir) > 0:
-        os.system("git clone https://github.com/sm64pc/sm64ex.git -b nightly temp -q")
+        os.system("git clone --single-branch https://github.com/sm64pc/sm64ex.git -b nightly temp -q")
         if os.path.isdir("temp"):
             os.chdir("temp")
             os.system("cp -rf \"../" + dir + "/.\" .")
@@ -938,7 +938,7 @@ def omm_builder_process_command(state: dict):
                 # Clone the OMM repository
                 OMM_PATCH_DIRNAME = OMM_PATCH_TRUENAME
                 print("Creating '" + OMM_PATCH_DIRNAME + "' from the latest version...")
-                os.system("git clone " + OMM_REPOSITORY_URL + " " + OMM_PATCH_DIRNAME)
+                os.system("git clone --single-branch " + OMM_REPOSITORY_URL + " " + OMM_PATCH_DIRNAME)
                 if not os.path.isdir(OMM_PATCH_DIRNAME):
                     raise_error("Cannot clone the git repository: " + OMM_REPOSITORY_URL)
 
@@ -955,7 +955,7 @@ def omm_builder_process_command(state: dict):
             if not os.path.isdir(game_dir):
                 print("--- Cloning " + game + " repository...")
                 os.makedirs(game_dir)
-                os.system("git clone " + game_repo + " " + game_dir)
+                os.system("git clone --single-branch " + game_repo + " " + game_dir)
                 if not os.path.isdir(game_dir):
                     raise_error("Cannot clone the git repository: " + game_repo)
                 os.chdir(game_dir)
