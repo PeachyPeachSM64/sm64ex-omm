@@ -18,7 +18,7 @@ static bool omm_cappy_is_obj_targetable(struct Object *o, struct MarioState *m) 
            omm_obj_is_mushroom_1up(o) ||
            omm_obj_is_exclamation_box(o) ||
           (omm_obj_is_star_or_key(o) && OMM_CHEAT_CAPPY_CAN_COLLECT_STARS) ||
-          (omm_capture_get_data(o) && OMM_CAP_CAPPY_CAPTURE)));
+          (omm_behavior_data_get_capture(o->behavior) && OMM_CAP_CAPPY_CAPTURE)));
 }
 
 struct Object *omm_cappy_find_target(struct Object *cappy, struct MarioState *m, f32 distanceMax) {
@@ -50,8 +50,7 @@ struct Object *omm_cappy_find_target(struct Object *cappy, struct MarioState *m,
 bool omm_cappy_is_mario_available(struct MarioState *m, bool isCapture) {
 
     // Not holding/riding
-    if ((m->heldObj   != NULL) ||
-        (m->riddenObj != NULL)) {
+    if (m->heldObj || m->riddenObj) {
         return false;
     }
 
@@ -68,7 +67,7 @@ bool omm_cappy_is_mario_available(struct MarioState *m, bool isCapture) {
         return true;
     }
 
-#if OMM_GAME_IS_R96A
+#if OMM_GAME_IS_R96X
     // Wario's shoulder bash
     if (m->action == ACT_WARIO_CHARGE) {
         return true;
@@ -89,17 +88,17 @@ bool omm_cappy_is_mario_available(struct MarioState *m, bool isCapture) {
 }
 
 void omm_cappy_try_to_target_next_coin(struct Object *cappy) {
-    if (cappy->oCappyFlags & CAPPY_FLAG_HOMING_ATTACK) {
-        struct Object *target = omm_cappy_find_target(cappy, gMarioState, CAPPY_HOMING_ATTACK_VEL * CAPPY_HOMING_ATTACK_DURATION);
+    if (cappy->oCappyFlags & OMM_CAPPY_FLAG_HOMING_ATTACK) {
+        struct Object *target = omm_cappy_find_target(cappy, gMarioState, OMM_CAPPY_HOMING_ATTACK_VEL * OMM_CAPPY_HOMING_ATTACK_DURATION);
         if (target) {
             f32 dx = target->oPosX - cappy->oPosX;
             f32 dy = target->oPosY - cappy->oPosY;
             f32 dz = target->oPosZ - cappy->oPosZ;
             f32 dv = max_f(0.1f, sqrtf(sqr_f(dx) + sqr_f(dy) + sqr_f(dz)));
-            cappy->oVelX = CAPPY_HOMING_ATTACK_VEL * (dx / dv);
-            cappy->oVelY = CAPPY_HOMING_ATTACK_VEL * (dy / dv);
-            cappy->oVelZ = CAPPY_HOMING_ATTACK_VEL * (dz / dv);
-            cappy->oCappyLifeTimer = CAPPY_LIFETIME - CAPPY_HOMING_ATTACK_DURATION - 1;
+            cappy->oVelX = OMM_CAPPY_HOMING_ATTACK_VEL * (dx / dv);
+            cappy->oVelY = OMM_CAPPY_HOMING_ATTACK_VEL * (dy / dv);
+            cappy->oVelZ = OMM_CAPPY_HOMING_ATTACK_VEL * (dz / dv);
+            cappy->oCappyLifeTimer = OMM_CAPPY_LIFETIME - OMM_CAPPY_HOMING_ATTACK_DURATION - 1;
         } else {
             omm_cappy_return_to_mario(cappy);
         }
@@ -107,7 +106,7 @@ void omm_cappy_try_to_target_next_coin(struct Object *cappy) {
 }
 
 void omm_cappy_bounce_back(struct Object *cappy) {
-    if (cappy->oCappyBehavior < OMM_CAPPY_BHV_SPIN_GROUND && !(cappy->oCappyFlags & CAPPY_FLAG_PLAY_AS)) {
+    if (cappy->oCappyBehavior < OMM_CAPPY_BHV_SPIN_GROUND && !(cappy->oCappyFlags & OMM_CAPPY_FLAG_PLAY_AS)) {
         spawn_object(cappy, MODEL_NONE, bhvHorStarParticleSpawner);
         play_sound(SOUND_OBJ_DEFAULT_DEATH, cappy->oCameraToObject);
         omm_cappy_return_to_mario(cappy);
@@ -117,7 +116,7 @@ void omm_cappy_bounce_back(struct Object *cappy) {
 void omm_cappy_process_interactions(struct Object *cappy, struct MarioState *m) {
 
     // Is Cappy tangible for Mario?
-    if ((cappy->oCappyFlags & CAPPY_FLAG_INTERACT_MARIO) && !gOmmData->mario->cappy.bounced) {
+    if ((cappy->oCappyFlags & OMM_CAPPY_FLAG_INTERACT_MARIO) && !gOmmMario->cappy.bounced) {
 
         // Mario must be available and not swimming
         if (omm_cappy_is_mario_available(m, false) && !(m->action & ACT_FLAG_SWIMMING)) {
@@ -132,17 +131,15 @@ void omm_cappy_process_interactions(struct Object *cappy, struct MarioState *m) 
                 .hitboxDownOffset = 0.f
             };
             if (obj_detect_hitbox_overlap(cappy, &sMarioHitbox, OBJ_OVERLAP_FLAG_HITBOX, OBJ_OVERLAP_FLAG_HITBOX)) {
-                if ((m->action & ACT_FLAG_AIR) || (!OMM_CHEAT_WALK_ON_LAVA && (m->floor->type == SURFACE_BURNING) && !omm_mario_has_metal_cap(m))) {
-                    gOmmData->mario->cappy.bounced = !OMM_CHEAT_UNLIMITED_CAPPY_BOUNCES;
-                    if (m->controller->buttonPressed & A_BUTTON) {
-                        omm_mario_set_action(m, (m->action & ACT_FLAG_METAL_WATER) ? ACT_OMM_METAL_WATER_TRIPLE_JUMP : ACT_OMM_GROUND_CAPPY_BOUNCE, 1, 0);
-                        m->particleFlags |= PARTICLE_SPARKLES; // Frame perfect boys get sparkles
-                    } else {
-                        omm_mario_set_action(m, (m->action & ACT_FLAG_METAL_WATER) ? ACT_OMM_METAL_WATER_CAPPY_BOUNCE : ACT_OMM_CAPPY_BOUNCE, 0, 0);
-                    }
-                } else {
-                    omm_mario_set_action(m, (m->action & ACT_FLAG_METAL_WATER) ? ACT_OMM_METAL_WATER_TRIPLE_JUMP : ACT_OMM_GROUND_CAPPY_BOUNCE, 1, 0);
-                }
+                bool bounce = (m->action & ACT_FLAG_AIR) || (!OMM_CHEAT_WALK_ON_LAVA && m->floor->type == SURFACE_BURNING);
+                bool vault = !bounce || m->framesSinceA < OMM_CAPPY_SUPER_BOUNCE_FRAMES;
+                bool water = (m->action & ACT_FLAG_METAL_WATER);
+                gOmmMario->cappy.bounced |= bounce && !OMM_CHEAT_UNLIMITED_CAPPY_BOUNCES;
+                omm_mario_set_action(m, vault ?
+                    (water ? ACT_OMM_METAL_WATER_TRIPLE_JUMP  : ACT_OMM_CAPPY_VAULT ) :
+                    (water ? ACT_OMM_METAL_WATER_CAPPY_BOUNCE : ACT_OMM_CAPPY_BOUNCE),
+                    vault, 0
+                );
                 omm_mario_init_next_action(m);
                 omm_cappy_return_to_mario(cappy);
                 spawn_object(m->marioObj, MODEL_NONE, bhvHorStarParticleSpawner);
@@ -158,7 +155,7 @@ void omm_cappy_process_interactions(struct Object *cappy, struct MarioState *m) 
     for_each_object_with_behavior(obj, bhvTreasureChestBottom) {
         if (vec3f_is_inside_cylinder(&cappy->oPosX, &obj->oPosX, 150.f * obj->oScaleX, 160.f * obj->oScaleY, 0.f)) {
             if (obj->oAction == 0 || (obj->oAction == 2 && obj->oTimer > 30)) {
-                if (obj->parentObj->oTreasureChestUnkF4 == obj->oBehParams2ndByte) {
+                if (obj->parentObj->oTreasureChestUnkF4 == obj->oBhvArgs2ndByte) {
                     play_sound(SOUND_GENERAL2_RIGHT_ANSWER, gGlobalSoundArgs);
                     obj->parentObj->oTreasureChestUnkF4++;
                     obj->parentObj->oTreasureChestUnkF8 = 0;

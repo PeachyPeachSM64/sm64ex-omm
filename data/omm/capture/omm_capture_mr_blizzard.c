@@ -6,7 +6,7 @@
 // Init
 //
 
-bool cappy_mr_blizzard_init(struct Object *o) {
+bool omm_cappy_mr_blizzard_init(struct Object *o) {
     if (o->oAction != MR_BLIZZARD_ACT_SPAWN_SNOWBALL &&
         o->oAction != MR_BLIZZARD_ACT_THROW_SNOWBALL &&
         o->oAction != MR_BLIZZARD_ACT_ROTATE &&
@@ -24,15 +24,15 @@ bool cappy_mr_blizzard_init(struct Object *o) {
     o->oFaceAngleRoll = 0;
     o->oGraphYOffset = o->oMrBlizzardGraphYOffset - 40.f * (1.f - o->oMrBlizzardScale);
     obj_scale(o, o->oMrBlizzardScale);
-    gOmmData->object->state.actionState = 0;
-    gOmmData->object->state.actionTimer = 0;
+    gOmmObject->state.actionState = 0;
+    gOmmObject->state.actionTimer = 0;
     return true;
 }
 
-void cappy_mr_blizzard_end(struct Object *o) {
+void omm_cappy_mr_blizzard_end(struct Object *o) {
 
     // Turns the Mr. Blizzard into a snowball thrower one
-    o->oBehParams2ndByte = MR_BLIZZARD_STYPE_NO_CAP;
+    o->oBhvArgs2ndByte = MR_BLIZZARD_STYPE_NO_CAP;
     o->oAction = 0;
     obj_anim_play(o, 0, 1.f);
 
@@ -46,7 +46,7 @@ void cappy_mr_blizzard_end(struct Object *o) {
     o->prevObj = o->oMrBlizzardHeldObj;
 }
 
-f32 cappy_mr_blizzard_get_top(struct Object *o) {
+f32 omm_cappy_mr_blizzard_get_top(struct Object *o) {
     return 200.f * o->oScaleY;
 }
 
@@ -54,7 +54,7 @@ f32 cappy_mr_blizzard_get_top(struct Object *o) {
 // Update
 //
 
-s32 cappy_mr_blizzard_update(struct Object *o) {
+s32 omm_cappy_mr_blizzard_update(struct Object *o) {
 
     // Hitbox
     o->hitboxRadius = omm_capture_get_hitbox_radius(o);
@@ -67,15 +67,15 @@ s32 cappy_mr_blizzard_update(struct Object *o) {
 
     // Inputs
     if (!omm_mario_is_locked(gMarioState)) {
-        gOmmData->object->state.actionState = 0;
-        pobj_move(o, false, false, gOmmData->object->state.actionTimer != 0);
+        gOmmObject->state.actionState = 0;
+        pobj_move(o, false, false, gOmmObject->state.actionTimer != 0);
         switch (pobj_jump(o, 2.f, 1)) {
             case POBJ_RESULT_HOP_SMALL: {
                 obj_play_sound(o, SOUND_OBJ_SNOW_SAND1);
                 obj_spawn_particles(o, 8, MODEL_WHITE_PARTICLE, 0, 8, 4, 15, 8, -3, 0.4f, 0.3f);
             } break;
             case POBJ_RESULT_HOP_LARGE: {
-                o->oVelY = omm_capture_get_jump_velocity(o) * POBJ_JUMP_MULTIPLIER * (OMM_SSM_IS_NORMAL && gCurrLevelNum == LEVEL_SL ? 1.25f : 1.f);
+                o->oVelY = omm_capture_get_jump_velocity(o) * POBJ_PHYSICS_JUMP;
                 obj_play_sound(o, SOUND_OBJ_SNOW_SAND1);
                 obj_play_sound(o, SOUND_OBJ_MR_BLIZZARD_ALERT);
                 obj_spawn_particles(o, 8, MODEL_WHITE_PARTICLE, 0, 8, 4, 15, 8, -3, 0.4f, 0.3f);
@@ -87,19 +87,19 @@ s32 cappy_mr_blizzard_update(struct Object *o) {
             if (!o->oMrBlizzardHeldObj) {
                 o->oMrBlizzardHeldObj = omm_spawn_snowball(o);
             }
-            f32 scale = 1.f + min_f(gOmmData->object->state.actionTimer, 30) * 0.05f;
+            f32 scale = 1.f + min_f(gOmmObject->state.actionTimer, 30) * 0.05f;
             o->oMrBlizzardHeldObj->oScaleX = scale;
             o->oMrBlizzardHeldObj->oScaleY = scale;
             o->oMrBlizzardHeldObj->oScaleZ = scale;
-            gOmmData->object->state.actionTimer++;
+            gOmmObject->state.actionTimer++;
         }
 
         // Throw snowball
-        else if (gOmmData->object->state.actionTimer != 0) {
+        else if (gOmmObject->state.actionTimer != 0) {
             cur_obj_play_sound_2(SOUND_OBJ2_SCUTTLEBUG_ALERT);
             o->oMrBlizzardHeldObj = NULL;
-            gOmmData->object->state.actionState = 1;
-            gOmmData->object->state.actionTimer = 0;
+            gOmmObject->state.actionState = 1;
+            gOmmObject->state.actionTimer = 0;
             omm_mario_lock(gMarioState, 15);
         }
     }
@@ -117,12 +117,12 @@ s32 cappy_mr_blizzard_update(struct Object *o) {
 
     // Gfx
     obj_update_gfx(o);
-    obj_anim_play(o, gOmmData->object->state.actionState, 1.f);
-    obj_anim_clamp_frame(o, 5 + 10 * (1 - gOmmData->object->state.actionState), 127);
+    obj_anim_play(o, gOmmObject->state.actionState, 1.f);
+    obj_anim_clamp_frame(o, 5 + 10 * (1 - gOmmObject->state.actionState), 127);
 
     // Cappy values
-    gOmmData->object->cappy.offset[1] = 200.f;
-    gOmmData->object->cappy.scale     = 1.2f;
+    gOmmObject->cappy.offset[1] = 200.f;
+    gOmmObject->cappy.scale     = 1.2f;
 
     // OK
     POBJ_RETURN_OK;

@@ -1,6 +1,8 @@
 #define OMM_ALL_HEADERS
 #include "data/omm/omm_includes.h"
 #undef OMM_ALL_HEADERS
+extern const Gfx omm_peach_tiara_gfx_enable[];
+extern const Gfx omm_peach_tiara_gfx_disable[];
 
 #if defined(DEBUG)
 // VSCode + GDB being shit

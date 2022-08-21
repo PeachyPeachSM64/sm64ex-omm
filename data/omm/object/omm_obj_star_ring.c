@@ -235,7 +235,7 @@ const GeoLayout omm_geo_star_ring[] = {
 // Behavior
 //
 
-static void omm_bhv_star_ring_update() {
+static void bhv_omm_star_ring_update() {
     struct MarioState *m = gMarioState;
     struct Object *o = gCurrentObject;
     switch (o->oAction) {
@@ -243,7 +243,7 @@ static void omm_bhv_star_ring_update() {
         // Init
         case 0: {
             o->oWaterRingMarioDistInFront = 0.f;
-            o->oBehParams2ndByte = obj_get_count_with_behavior(omm_bhv_star_ring);
+            o->oBhvArgs2ndByte = obj_get_count_with_behavior(bhvOmmStarRing);
             o->oRingDot0 = 0.f;
             o->oRingDot1 = 0.f;
             o->oAction = 1;
@@ -297,9 +297,9 @@ static void omm_bhv_star_ring_update() {
 
             // Collected?
             if (collected) {
-                s32 number = 1 + o->oBehParams2ndByte - obj_get_count_with_behavior_and_field_s32(omm_bhv_star_ring, 0x31, 1);
+                s32 number = 1 + o->oBhvArgs2ndByte - obj_get_count_with_behavior_and_field_s32(bhvOmmStarRing, 0x31, 1);
                 omm_spawn_number(o, number);
-                play_sound(SOUND_MENU_COLLECT_SECRET + (max_s(0, 4 + number - o->oBehParams2ndByte) << 16), gGlobalSoundArgs);
+                play_sound(SOUND_MENU_COLLECT_SECRET + (max_s(0, 4 + number - o->oBhvArgs2ndByte) << 16), gGlobalSoundArgs);
                 o->oAction = 2;
             }
         } break;
@@ -316,11 +316,11 @@ static void omm_bhv_star_ring_update() {
     }
 }
 
-const BehaviorScript omm_bhv_star_ring[] = {
+const BehaviorScript bhvOmmStarRing[] = {
     OBJ_TYPE_LEVEL,
     0x11010001,
     0x08000000,
-    0x0C000000, (uintptr_t) omm_bhv_star_ring_update,
+    0x0C000000, (uintptr_t) bhv_omm_star_ring_update,
     0x09000000,
 };
 
@@ -329,7 +329,7 @@ const BehaviorScript omm_bhv_star_ring[] = {
 //
 
 struct Object *omm_spawn_star_ring(struct Object *o, f32 x, f32 y, f32 z, bool vertical, s32 yaw) {
-    struct Object *ring = obj_spawn_from_geo(o, omm_geo_star_ring, omm_bhv_star_ring);
+    struct Object *ring = obj_spawn_from_geo(o, omm_geo_star_ring, bhvOmmStarRing);
     obj_set_pos(ring, x, y, z);
     obj_set_angle(ring, vertical ? 0 : 0x4000, vertical ? yaw : 0, 0);
     obj_scale(ring, 0);

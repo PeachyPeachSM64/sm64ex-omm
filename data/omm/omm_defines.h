@@ -5,43 +5,17 @@
 // Utilities
 //
 
-#define OMM_EXE_FOLDER                                  omm_exe_path()
-#define OMM_USER_FOLDER                                 omm_user_path()
-#define OMM_RES_FOLDER                                  FS_BASEDIR
-#define OMM_GFX_FOLDER                                  OMM_RES_FOLDER "/gfx"
-#define OMM_SOUND_FOLDER                                OMM_RES_FOLDER "/sound"
-#define OMM_CAPPY_FOLDER                                OMM_GFX_FOLDER "/cappy"
 #define OMM_AT_STARTUP                                  __attribute__((constructor))
 #define OMM_AT_EXIT                                     __attribute__((destructor))
 #define OMM_LIKELY(expr)                                (__builtin_expect(!!(expr), 1))
 #define OMM_UNLIKELY(expr)                              (__builtin_expect(!!(expr), 0))
 #define OMM_INLINE                                      static inline
 #define OMM_UNUSED(x)                                   (void) x
+#define OMM_RETURN_IF_TRUE(cond, ret, ...)              { if (cond) { __VA_ARGS__; return ret; } }
 #define OMM_LEVEL_NO_WARP(level)                        (omm_level_get_course(level) == COURSE_NONE)
 #define OMM_BOWSER_IN_THE_LEVEL(level)                  (level == LEVEL_BOWSER_1 ? LEVEL_BITDW : (level == LEVEL_BOWSER_2 ? LEVEL_BITFS : (level == LEVEL_BOWSER_3 ? LEVEL_BITS : level)))
-#define OMM_STRING(str, size, fmt, ...)                 char str[size]; snprintf(str, size, fmt, __VA_ARGS__);
-#define OMM_PRINT_TEXT(x, y, fmt, ...)                  { char _str_[256]; snprintf(_str_, 256, fmt, __VA_ARGS__); print_text(x, y, _str_); }
-#define OMM_ARRAY_OF(type)                              (type *) (type[])
-#define OMM_ARRAY_SIZE(a)                               (sizeof(a) / sizeof(a[0]))
-#define OMM_GET_FLAG(x, f)                              (((x) & (f)) != 0)
-#define OMM_SET_FLAG(x, f, v)                           { if (v) { x |= (f); } else { x &= ~(f); } }
-#define OMM_RETURN_IF_TRUE(cond, ret, ...)              { if (cond) { __VA_ARGS__; return ret; } }
 #define LEVEL_GROUNDS                                   LEVEL_CASTLE_GROUNDS
 #define LEVEL_COURT                                     LEVEL_CASTLE_COURTYARD
-
-//
-// Memory wrappers
-//
-
-#define OMM_MEMNEW(typ, cnt)                            calloc(sizeof(typ), cnt)
-#define OMM_MEMDEL(dst)                                 { if (dst) { free((void *) dst); dst = NULL; } }
-#define OMM_MEMSET(dst, val, siz)                       memset(dst, val, siz)
-#define OMM_MEMCPY(dst, src, siz)                       memcpy(dst, src, siz)
-#define OMM_MEMMOV(dst, src, siz)                       memmove(dst, src, siz)
-#define OMM_MEMDUP(src, siz)                            memcpy(calloc(1, siz), src, siz)
-#define OMM_MEMCMP(pt1, pt2, siz)                       (memcmp(pt1, pt2, siz) == 0)
-#define OMM_MEMSWP(pt1, pt2, siz)                       { unsigned char _temp_[siz]; memcpy(&_temp_, &(pt1), siz); memcpy(&(pt1), &(pt2), siz); memcpy(&(pt2), &_temp_, siz); }
-#define OMM_MEMREL(dst, src, from, to, typ)             { dst = (typ) (((uintptr_t) (src)) + (((uintptr_t) (to)) - ((uintptr_t) (from)))); }
 
 //
 // Physics
@@ -87,7 +61,9 @@
 #define OMM_MOVESET_ODYSSEY_6H                          (gOmmMovesetType == 2)
 #define OMM_CAP_CLASSIC                                 (gOmmCapType == 0)
 #define OMM_CAP_CAPPY_NO_CAPTURE                        (gOmmCapType == 1)
-#define OMM_CAP_CAPPY_CAPTURE                           (gOmmCapType == 2)
+#define OMM_CAP_CAPPY_CAPTURE_PRESS                     (gOmmCapType == 2)
+#define OMM_CAP_CAPPY_CAPTURE_HOLD                      (gOmmCapType == 3)
+#define OMM_CAP_CAPPY_CAPTURE                           (OMM_CAP_CAPPY_CAPTURE_PRESS || OMM_CAP_CAPPY_CAPTURE_HOLD)
 #define OMM_STARS_CLASSIC                               (gOmmStarsMode == 0)
 #define OMM_STARS_NON_STOP                              (gOmmStarsMode == 1)
 #define OMM_STARS_NON_STOP_NOT_ENDING_CUTSCENE          (OMM_STARS_NON_STOP && !omm_is_ending_cutscene())
@@ -97,8 +73,9 @@
 #define OMM_CAMERA_8_DIRECTIONS                         (gOmmCameraMode == 1)
 #define OMM_CAMERA_16_DIRECTIONS                        (gOmmCameraMode == 2)
 #define OMM_SPARKLY_STARS_MODE                          (gOmmSparklyStarsMode)
-#define OMM_SPARKLY_STARS_ASSIST                        (gOmmSparklyStarsAssist)
-#define OMM_SPARKLY_STARS_HINT                          (gOmmSparklyStarsHint)
+#define OMM_SPARKLY_STARS_HINT_ALWAYS                   (gOmmSparklyStarsHintAtLevelEntry == 0)
+#define OMM_SPARKLY_STARS_HINT_NOT_COLLECTED            (gOmmSparklyStarsHintAtLevelEntry == 1)
+#define OMM_SPARKLY_STARS_HINT_NEVER                    (gOmmSparklyStarsHintAtLevelEntry == 2)
 #define OMM_EXTRAS_SMO_ANIMATIONS                       (gOmmExtrasSMOAnimations && OMM_MOVESET_ODYSSEY)
 #define OMM_EXTRAS_CAPPY_AND_TIARA                      (gOmmExtrasCappyAndTiara && !OMM_CAP_CLASSIC)
 #define OMM_EXTRAS_COLORED_STARS                        (gOmmExtrasColoredStars && !OMM_GAME_IS_SMMS)
@@ -107,8 +84,7 @@
 #define OMM_EXTRAS_RED_COINS_RADAR                      (gOmmExtrasRedCoinsRadar)
 #define OMM_EXTRAS_SHOW_STAR_NUMBER                     (gOmmExtrasShowStarNumber && !omm_is_ending_cutscene() && (!OMM_GAME_IS_SMSR || (gCurrLevelNum != LEVEL_ENDING)))
 #define OMM_EXTRAS_INVISIBLE_MODE                       (gOmmExtrasInvisibleMode)
-#define OMM_EXTRAS_CRYSTAL_STARS_REWARD                 (gOmmExtrasCrystalStarsReward && omm_ssd_is_completed(OMM_SSM_HARD))
-#define OMM_EXTRAS_NEBULA_STARS_REWARD                  (gOmmExtrasNebulaStarsReward && omm_ssd_is_completed(OMM_SSM_LUNATIC))
+#define OMM_EXTRAS_SPARKLY_STARS_REWARD                 (gOmmExtrasSparklyStarsReward)
 #define OMM_CHEAT_UNLIMITED_CAPPY_BOUNCES               (gOmmCheatUnlimitedCappyBounces == 1)
 #define OMM_CHEAT_CAPPY_STAYS_FOREVER                   (gOmmCheatCappyStaysForever == 1)
 #define OMM_CHEAT_HOMING_ATTACK_GLOBAL_RANGE            (gOmmCheatHomingAttackGlobalRange == 1)
@@ -116,18 +92,18 @@
 #define OMM_CHEAT_CAPPY_CAN_COLLECT_STARS               (gOmmCheatCappyCanCollectStars == 1)
 #define OMM_CHEAT_PLAY_AS_CAPPY                         (gOmmCheatPlayAsCappy == 1)
 #define OMM_CHEAT_PEACH_ENDLESS_VIBE_GAUGE              (gOmmCheatPeachEndlessVibeGauge == 1)
-#if OMM_GAME_IS_R96A
+#if OMM_GAME_IS_R96X
 #define OMM_CHEAT_MOON_JUMP                             (Cheats.EnableCheats && (Cheats.MoonJump && !Cheats.ChaosMode))
 #define OMM_CHEAT_GOD_MODE                              (Cheats.EnableCheats && (Cheats.GodMode && !Cheats.ChaosMode))
-#define OMM_CHEAT_INVINCIBLE                            (false) // Not implemented in R96A
-#define OMM_CHEAT_SUPER_SPEED                           (false) // Handled by R96A
+#define OMM_CHEAT_INVINCIBLE                            (false) // Not implemented in R96X
+#define OMM_CHEAT_SUPER_SPEED                           (false) // Handled by R96X
 #define OMM_CHEAT_SUPER_RESPONSIVE                      (Cheats.EnableCheats && ((Cheats.Responsive && !Cheats.ChaosMode) || ((Cheats.ChaosControls >> 0) & 1)))
 #define OMM_CHEAT_NO_FALL_DAMAGE                        (Cheats.EnableCheats && (Cheats.GodMode && !Cheats.ChaosMode))
 #define OMM_CHEAT_WALK_ON_LAVA                          (Cheats.EnableCheats && (Cheats.WalkOnHazards && !Cheats.ChaosMode))
 #define OMM_CHEAT_WALK_ON_QUICKSAND                     (Cheats.EnableCheats && (Cheats.WalkOnHazards && !Cheats.ChaosMode))
-#define OMM_CHEAT_WALK_ON_WATER                         (false) // Not implemented in R96A
-#define OMM_CHEAT_WALK_ON_GAS                           (false) // Not implemented in R96A
-#define OMM_CHEAT_WALK_ON_SLOPE                         (false) // Not implemented in R96A
+#define OMM_CHEAT_WALK_ON_WATER                         (false) // Not implemented in R96X
+#define OMM_CHEAT_WALK_ON_GAS                           (false) // Not implemented in R96X
+#define OMM_CHEAT_WALK_ON_SLOPE                         (false) // Not implemented in R96X
 #define OMM_CHEAT_WALK_ON_DEATH_BARRIER                 (Cheats.EnableCheats && (Cheats.NoDeathBarrier && !Cheats.ChaosMode))
 #define OMM_CHEAT_BLJ_ANYWHERE                          (Cheats.EnableCheats && (Cheats.BLJAnywhere && !Cheats.ChaosMode))
 #else
@@ -166,7 +142,7 @@
                                                          OMM_CHEAT_CAPPY_CAN_COLLECT_STARS || \
                                                          OMM_CHEAT_PLAY_AS_CAPPY || \
                                                          OMM_CHEAT_PEACH_ENDLESS_VIBE_GAUGE)
-#if OMM_GAME_IS_R96A
+#if OMM_GAME_IS_R96X
 #define OMM_CHEATS_DISABLE                              {gOmmCheatUnlimitedCappyBounces = false; \
                                                          gOmmCheatCappyStaysForever = false; \
                                                          gOmmCheatHomingAttackGlobalRange = false; \
@@ -203,67 +179,70 @@
 //
 
 #define OMM_DIALOG_START_INDEX                          (DIALOG_COUNT + 10)
-#define OMM_DIALOG_BOWSER_1_INTRO                       (OMM_DIALOG_START_INDEX + 0)
-#define OMM_DIALOG_BOWSER_1_HINT_1                      (OMM_DIALOG_START_INDEX + 1)
-#define OMM_DIALOG_BOWSER_1_HINT_2                      (OMM_DIALOG_START_INDEX + 2)
-#define OMM_DIALOG_BOWSER_1_HINT_3                      (OMM_DIALOG_START_INDEX + 3)
-#define OMM_DIALOG_BOWSER_2_INTRO                       (OMM_DIALOG_START_INDEX + 4)
-#define OMM_DIALOG_BOWSER_3_INTRO                       (OMM_DIALOG_START_INDEX + 5)
-#define OMM_DIALOG_BOWSER_3_DEFEAT                      (OMM_DIALOG_START_INDEX + 6)
+#define OMM_DIALOG_PEACHY_ROOM                          (OMM_DIALOG_START_INDEX + 0)
+#define OMM_DIALOG_LEVEL_VARIANTS                       (OMM_DIALOG_START_INDEX + 1)
+#define OMM_DIALOG_BOWSER_1_INTRO                       (OMM_DIALOG_START_INDEX + 2)
+#define OMM_DIALOG_BOWSER_1_HINT_1                      (OMM_DIALOG_START_INDEX + 3)
+#define OMM_DIALOG_BOWSER_1_HINT_2                      (OMM_DIALOG_START_INDEX + 4)
+#define OMM_DIALOG_BOWSER_1_HINT_3                      (OMM_DIALOG_START_INDEX + 5)
+#define OMM_DIALOG_BOWSER_2_INTRO                       (OMM_DIALOG_START_INDEX + 6)
+#define OMM_DIALOG_BOWSER_3_INTRO                       (OMM_DIALOG_START_INDEX + 7)
+#define OMM_DIALOG_BOWSER_3_DEFEAT                      (OMM_DIALOG_START_INDEX + 8)
 
-#define OMM_DIALOG_SPARKLY_MULTI(lpbN, lpbH, lpbE)      0, 0, (((lpbE) * 100) + ((lpbH) * 10) + ((lpbN) * 1))
+#define OMM_DIALOG_SPARKLY_MULTI(lpbN, lpbH, lpbL)      0, 0, (((lpbL) * 100) + ((lpbH) * 10) + ((lpbN) * 1))
 #define OMM_DIALOG_SPARKLY_MULTI_END                    "+\n"
-#define OMM_DIALOG_SPARKLY_STAR_NAMES                   (OMM_DIALOG_START_INDEX + 7)
-#define OMM_DIALOG_SPARKLY_STAR                         (OMM_DIALOG_START_INDEX + 8)
-#define OMM_DIALOG_SPARKLY_STAR_1                       (OMM_DIALOG_START_INDEX + 8)
-#define OMM_DIALOG_SPARKLY_STAR_2                       (OMM_DIALOG_START_INDEX + 9)
-#define OMM_DIALOG_SPARKLY_STAR_3                       (OMM_DIALOG_START_INDEX + 10)
-#define OMM_DIALOG_SPARKLY_STAR_4                       (OMM_DIALOG_START_INDEX + 11)
-#define OMM_DIALOG_SPARKLY_STAR_5                       (OMM_DIALOG_START_INDEX + 12)
-#define OMM_DIALOG_SPARKLY_STAR_6                       (OMM_DIALOG_START_INDEX + 13)
-#define OMM_DIALOG_SPARKLY_STAR_7                       (OMM_DIALOG_START_INDEX + 14)
-#define OMM_DIALOG_SPARKLY_STAR_8                       (OMM_DIALOG_START_INDEX + 15)
-#define OMM_DIALOG_SPARKLY_STAR_9                       (OMM_DIALOG_START_INDEX + 16)
-#define OMM_DIALOG_SPARKLY_STAR_10                      (OMM_DIALOG_START_INDEX + 17)
-#define OMM_DIALOG_SPARKLY_STAR_11                      (OMM_DIALOG_START_INDEX + 18)
-#define OMM_DIALOG_SPARKLY_STAR_12                      (OMM_DIALOG_START_INDEX + 19)
-#define OMM_DIALOG_SPARKLY_STAR_13                      (OMM_DIALOG_START_INDEX + 20)
-#define OMM_DIALOG_SPARKLY_STAR_14                      (OMM_DIALOG_START_INDEX + 21)
-#define OMM_DIALOG_SPARKLY_STAR_15                      (OMM_DIALOG_START_INDEX + 22)
-#define OMM_DIALOG_SPARKLY_STAR_16                      (OMM_DIALOG_START_INDEX + 23)
-#define OMM_DIALOG_SPARKLY_STAR_17                      (OMM_DIALOG_START_INDEX + 24)
-#define OMM_DIALOG_SPARKLY_STAR_18                      (OMM_DIALOG_START_INDEX + 25)
-#define OMM_DIALOG_SPARKLY_STAR_19                      (OMM_DIALOG_START_INDEX + 26)
-#define OMM_DIALOG_SPARKLY_STAR_20                      (OMM_DIALOG_START_INDEX + 27)
-#define OMM_DIALOG_SPARKLY_STAR_21                      (OMM_DIALOG_START_INDEX + 28)
-#define OMM_DIALOG_SPARKLY_STAR_22                      (OMM_DIALOG_START_INDEX + 29)
-#define OMM_DIALOG_SPARKLY_STAR_23                      (OMM_DIALOG_START_INDEX + 30)
-#define OMM_DIALOG_SPARKLY_STAR_24                      (OMM_DIALOG_START_INDEX + 31)
-#define OMM_DIALOG_SPARKLY_STAR_25                      (OMM_DIALOG_START_INDEX + 32)
-#define OMM_DIALOG_SPARKLY_STAR_26                      (OMM_DIALOG_START_INDEX + 33)
-#define OMM_DIALOG_SPARKLY_STAR_27                      (OMM_DIALOG_START_INDEX + 34)
-#define OMM_DIALOG_SPARKLY_STAR_28                      (OMM_DIALOG_START_INDEX + 35)
-#define OMM_DIALOG_SPARKLY_STAR_29                      (OMM_DIALOG_START_INDEX + 36)
-#define OMM_DIALOG_SPARKLY_BOWSER_4_UNLOCKED            (OMM_DIALOG_START_INDEX + 37)
-#define OMM_DIALOG_SPARKLY_BOWSER_4_INTRO               (OMM_DIALOG_START_INDEX + 38)
-#define OMM_DIALOG_SPARKLY_BOWSER_4_DEFEAT              (OMM_DIALOG_START_INDEX + 39)
+#define OMM_DIALOG_SPARKLY_START_INDEX                  (OMM_DIALOG_START_INDEX + 9)
+#define OMM_DIALOG_SPARKLY_STAR_NAMES                   (OMM_DIALOG_SPARKLY_START_INDEX + 0)
+#define OMM_DIALOG_SPARKLY_STAR                         (OMM_DIALOG_SPARKLY_START_INDEX + 1)
+#define OMM_DIALOG_SPARKLY_STAR_1                       (OMM_DIALOG_SPARKLY_START_INDEX + 1)
+#define OMM_DIALOG_SPARKLY_STAR_2                       (OMM_DIALOG_SPARKLY_START_INDEX + 2)
+#define OMM_DIALOG_SPARKLY_STAR_3                       (OMM_DIALOG_SPARKLY_START_INDEX + 3)
+#define OMM_DIALOG_SPARKLY_STAR_4                       (OMM_DIALOG_SPARKLY_START_INDEX + 4)
+#define OMM_DIALOG_SPARKLY_STAR_5                       (OMM_DIALOG_SPARKLY_START_INDEX + 5)
+#define OMM_DIALOG_SPARKLY_STAR_6                       (OMM_DIALOG_SPARKLY_START_INDEX + 6)
+#define OMM_DIALOG_SPARKLY_STAR_7                       (OMM_DIALOG_SPARKLY_START_INDEX + 7)
+#define OMM_DIALOG_SPARKLY_STAR_8                       (OMM_DIALOG_SPARKLY_START_INDEX + 8)
+#define OMM_DIALOG_SPARKLY_STAR_9                       (OMM_DIALOG_SPARKLY_START_INDEX + 9)
+#define OMM_DIALOG_SPARKLY_STAR_10                      (OMM_DIALOG_SPARKLY_START_INDEX + 10)
+#define OMM_DIALOG_SPARKLY_STAR_11                      (OMM_DIALOG_SPARKLY_START_INDEX + 11)
+#define OMM_DIALOG_SPARKLY_STAR_12                      (OMM_DIALOG_SPARKLY_START_INDEX + 12)
+#define OMM_DIALOG_SPARKLY_STAR_13                      (OMM_DIALOG_SPARKLY_START_INDEX + 13)
+#define OMM_DIALOG_SPARKLY_STAR_14                      (OMM_DIALOG_SPARKLY_START_INDEX + 14)
+#define OMM_DIALOG_SPARKLY_STAR_15                      (OMM_DIALOG_SPARKLY_START_INDEX + 15)
+#define OMM_DIALOG_SPARKLY_STAR_16                      (OMM_DIALOG_SPARKLY_START_INDEX + 16)
+#define OMM_DIALOG_SPARKLY_STAR_17                      (OMM_DIALOG_SPARKLY_START_INDEX + 17)
+#define OMM_DIALOG_SPARKLY_STAR_18                      (OMM_DIALOG_SPARKLY_START_INDEX + 18)
+#define OMM_DIALOG_SPARKLY_STAR_19                      (OMM_DIALOG_SPARKLY_START_INDEX + 19)
+#define OMM_DIALOG_SPARKLY_STAR_20                      (OMM_DIALOG_SPARKLY_START_INDEX + 20)
+#define OMM_DIALOG_SPARKLY_STAR_21                      (OMM_DIALOG_SPARKLY_START_INDEX + 21)
+#define OMM_DIALOG_SPARKLY_STAR_22                      (OMM_DIALOG_SPARKLY_START_INDEX + 22)
+#define OMM_DIALOG_SPARKLY_STAR_23                      (OMM_DIALOG_SPARKLY_START_INDEX + 23)
+#define OMM_DIALOG_SPARKLY_STAR_24                      (OMM_DIALOG_SPARKLY_START_INDEX + 24)
+#define OMM_DIALOG_SPARKLY_STAR_25                      (OMM_DIALOG_SPARKLY_START_INDEX + 25)
+#define OMM_DIALOG_SPARKLY_STAR_26                      (OMM_DIALOG_SPARKLY_START_INDEX + 26)
+#define OMM_DIALOG_SPARKLY_STAR_27                      (OMM_DIALOG_SPARKLY_START_INDEX + 27)
+#define OMM_DIALOG_SPARKLY_STAR_28                      (OMM_DIALOG_SPARKLY_START_INDEX + 28)
+#define OMM_DIALOG_SPARKLY_STAR_29                      (OMM_DIALOG_SPARKLY_START_INDEX + 29)
+#define OMM_DIALOG_SPARKLY_BOWSER_4_UNLOCKED            (OMM_DIALOG_SPARKLY_START_INDEX + 30)
+#define OMM_DIALOG_SPARKLY_BOWSER_4_INTRO               (OMM_DIALOG_SPARKLY_START_INDEX + 31)
+#define OMM_DIALOG_SPARKLY_BOWSER_4_DEFEAT              (OMM_DIALOG_SPARKLY_START_INDEX + 32)
 
-#define OMM_DIALOG_SPARKLY_MIPS_1                       (OMM_DIALOG_START_INDEX + 40)
-#define OMM_DIALOG_SPARKLY_MIPS_2                       (OMM_DIALOG_START_INDEX + 41)
-#define OMM_DIALOG_SPARKLY_MIPS_3                       (OMM_DIALOG_START_INDEX + 42)
-#define OMM_DIALOG_SPARKLY_ANTI_CHEAT_INTRO             (OMM_DIALOG_START_INDEX + 43)
-#define OMM_DIALOG_SPARKLY_ANTI_CHEAT_0                 (OMM_DIALOG_START_INDEX + 44)
-#define OMM_DIALOG_SPARKLY_ANTI_CHEAT_1                 (OMM_DIALOG_START_INDEX + 45)
-#define OMM_DIALOG_SPARKLY_ANTI_CHEAT_2                 (OMM_DIALOG_START_INDEX + 46)
-#define OMM_DIALOG_SPARKLY_ANTI_CHEAT_3                 (OMM_DIALOG_START_INDEX + 47)
-#define OMM_DIALOG_SPARKLY_ANTI_CHEAT_4                 (OMM_DIALOG_START_INDEX + 48)
-#define OMM_DIALOG_SPARKLY_ANTI_CHEAT_5                 (OMM_DIALOG_START_INDEX + 49)
-#define OMM_DIALOG_SPARKLY_ANTI_CHEAT_6                 (OMM_DIALOG_START_INDEX + 50)
-#define OMM_DIALOG_SPARKLY_ANTI_CHEAT_7                 (OMM_DIALOG_START_INDEX + 51)
-#define OMM_DIALOG_SPARKLY_ANTI_CHEAT_END_0             (OMM_DIALOG_START_INDEX + 52)
-#define OMM_DIALOG_SPARKLY_ANTI_CHEAT_END_1             (OMM_DIALOG_START_INDEX + 53)
-#define OMM_DIALOG_SPARKLY_ANTI_CHEAT_END_2             (OMM_DIALOG_START_INDEX + 54)
-#define OMM_DIALOG_END_INDEX                            (OMM_DIALOG_START_INDEX + 55)
+#define OMM_DIALOG_SPARKLY_MIPS_1                       (OMM_DIALOG_SPARKLY_START_INDEX + 33)
+#define OMM_DIALOG_SPARKLY_MIPS_2                       (OMM_DIALOG_SPARKLY_START_INDEX + 34)
+#define OMM_DIALOG_SPARKLY_MIPS_3                       (OMM_DIALOG_SPARKLY_START_INDEX + 35)
+#define OMM_DIALOG_SPARKLY_ANTI_CHEAT_INTRO             (OMM_DIALOG_SPARKLY_START_INDEX + 36)
+#define OMM_DIALOG_SPARKLY_ANTI_CHEAT_0                 (OMM_DIALOG_SPARKLY_START_INDEX + 37)
+#define OMM_DIALOG_SPARKLY_ANTI_CHEAT_1                 (OMM_DIALOG_SPARKLY_START_INDEX + 38)
+#define OMM_DIALOG_SPARKLY_ANTI_CHEAT_2                 (OMM_DIALOG_SPARKLY_START_INDEX + 39)
+#define OMM_DIALOG_SPARKLY_ANTI_CHEAT_3                 (OMM_DIALOG_SPARKLY_START_INDEX + 40)
+#define OMM_DIALOG_SPARKLY_ANTI_CHEAT_4                 (OMM_DIALOG_SPARKLY_START_INDEX + 41)
+#define OMM_DIALOG_SPARKLY_ANTI_CHEAT_5                 (OMM_DIALOG_SPARKLY_START_INDEX + 42)
+#define OMM_DIALOG_SPARKLY_ANTI_CHEAT_6                 (OMM_DIALOG_SPARKLY_START_INDEX + 43)
+#define OMM_DIALOG_SPARKLY_ANTI_CHEAT_7                 (OMM_DIALOG_SPARKLY_START_INDEX + 44)
+#define OMM_DIALOG_SPARKLY_ANTI_CHEAT_END_0             (OMM_DIALOG_SPARKLY_START_INDEX + 45)
+#define OMM_DIALOG_SPARKLY_ANTI_CHEAT_END_1             (OMM_DIALOG_SPARKLY_START_INDEX + 46)
+#define OMM_DIALOG_SPARKLY_ANTI_CHEAT_END_2             (OMM_DIALOG_SPARKLY_START_INDEX + 47)
+#define OMM_DIALOG_END_INDEX                            (OMM_DIALOG_SPARKLY_START_INDEX + 48)
 #define OMM_DIALOG_COUNT                                (OMM_DIALOG_END_INDEX - OMM_DIALOG_START_INDEX)
 
 //
@@ -281,6 +260,7 @@
 #define OMM_TEXTURE_(id, str) extern const char OMM_TEXTURE_##id[];
 #include "data/omm/omm_defines_textures.inl"
 #undef OMM_TEXTURE_
+extern const char *OMM_TEXTURE_MENU_FONT_[];
 
 //
 // Assets
@@ -289,6 +269,16 @@
 #define OMM_ASSET_(id, str) extern const char OMM_ASSET_##id[];
 #include "data/omm/omm_defines_assets.inl"
 #undef OMM_ASSET_
+
+//
+// Palettes
+//
+
+#define OMM_PALETTE_(id, str) extern const char OMM_PALETTE_##id[];
+#define OMM_PALETTE_LEVEL_(id, str) extern const char OMM_PALETTE_##id[];
+#include "data/omm/omm_defines_palettes.inl"
+#undef OMM_PALETTE_
+#undef OMM_PALETTE_LEVEL_
 
 //
 // Sounds
@@ -423,9 +413,6 @@
 #define oCurrAnim                                       header.gfx.mAnimInfo.curAnim
 #define oWall                                           OBJECT_FIELD_SURFACE(0x03)
 #define oCeil                                           OBJECT_FIELD_SURFACE(0x04)
-#define oGeoData                                        OBJECT_FIELD_VPTR(0x47)
-#define oBehaviorCommand                                OBJECT_FIELD_CVPTR(0x47)
-#define oBehaviorStackIndex                             OBJECT_FIELD_U32(0x48)
 #define oCappyLifeTimer                                 OBJECT_FIELD_S32(0x1B)
 #define oCappyBehavior                                  OBJECT_FIELD_S16(0x1C, 0)
 #define oCappyFlags                                     OBJECT_FIELD_S16(0x1C, 1)
@@ -479,8 +466,31 @@
 #define oPerryChargeSwordTimer                          OBJECT_FIELD_S32(0x1C)
 #define oPerryChargeHandTimer                           OBJECT_FIELD_S32(0x1D)
 #define oPerryType                                      oAnimState
-#define oBehaviorTypes                                  unused1
-#define oBehaviorRef                                    unused2
 #define oDistToFloor                                    oPosY - o->oFloorHeight
+
+//
+// str
+//
+
+#define omm_str_cpy(str, size, src)                     char str[size]; str_cpy(str, size, src);
+#define omm_str_cat(str, size, ...)                     char str[size]; str_cat(str, size, __VA_ARGS__);
+#define omm_sprintf(str, size, fmt, ...)                char str[size]; snprintf(str, size, fmt, __VA_ARGS__);
+#define omm_cat_paths(str, size, path1, path2)          char str[size]; fs_cat_paths(str, size, path1, path2);
+
+//
+// Debug
+//
+
+#define omm_printf(fmt, ...)                            { printf(fmt __VA_ARGS__); fflush(stdout); }
+#define omm_log(fmt, ...)                               { printf(__FUNCTION__); printf(": "); printf(fmt __VA_ARGS__); fflush(stdout); }
+#if OMM_CODE_DEBUG
+#define omm_debug_log(fmt, ...)                         { printf(__FUNCTION__); printf(": "); printf(fmt __VA_ARGS__); fflush(stdout); }
+#define omm_debug_text(x, y, fmt, ...)                  { char _str_[256]; snprintf(_str_, 256, fmt, __VA_ARGS__); print_text(x, y, _str_); }
+#define omm_debug_pos(x, y, z, model)                   { if (gMarioObject) { struct Object *dbg = spawn_object_abs_with_rot(gMarioObject, 0, model, bhvSparkle, x, y, z, 0, 0, 0); if (dbg) { obj_scale(dbg, 0.25f); dbg->oNodeFlags |= GRAPH_RENDER_BILLBOARD; } } }
+#else
+#define omm_debug_log(fmt, ...)
+#define omm_debug_text(x, y, fmt, ...)
+#define omm_debug_pos(x, y, z, model)
+#endif
 
 #endif // OMM_DEFINES_H

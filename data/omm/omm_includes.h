@@ -1,38 +1,38 @@
 #ifndef OMM_INCLUDES_H
 #define OMM_INCLUDES_H
 
-// Required headers
-#include <math.h>
-#include <limits.h>
-#include <dirent.h>
-#include <SDL2/SDL.h>
-#include "types.h"
-#include "libc/math.h"
-#include "game/memory.h"
-#include "game/camera.h"
-#include "game/ingame_menu.h"
-#include "game/mario_step.h"
-#include "game/object_list_processor.h"
-#include "pc/fs/fs.h"
-#include "pc/configfile.h"
-#include "stb/stb_image.h"
+// Required headers //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#include <SDL2/SDL.h>                       // SDL stuff
+#include "math_util.h"                      // Math stuff
+#include "game/camera.h"                    // struct Camera
+#include "game/object_list_processor.h"     // OBJECT_POOL_CAPACITY, bhv_mario_update
+#include "stb/stb_image.h"                  // stb_image_* functions
+#include "stb/stb_image_write.h"            // stb_image_write_* functions
 
-// OMM headers
+// OMM headers ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "data/omm/omm_macros.h"
 #include "data/omm/omm_defines.h"
 #include "data/omm/omm_patches.h"
 #include "data/omm/system/omm_memory.h"
 #include "data/omm/system/omm_system.h"
+#include "data/omm/system/omm_render.h"
+#include "data/omm/system/omm_options.h"
 #include "data/omm/engine/omm_engine.h"
 #include "data/omm/object/omm_object.h"
+#include "data/omm/object/omm_object_data.h"
+#include "data/omm/object/omm_object_fields.h"
+#include "data/omm/object/omm_behavior_data.h"
 #include "data/omm/mario/omm_mario.h"
 #include "data/omm/mario/omm_mario_actions.h"
 #include "data/omm/cappy/omm_cappy.h"
+#include "data/omm/cappy/omm_cappy_data.h"
 #include "data/omm/capture/omm_capture_all.h"
-#include "data/omm/peachy/omm_sparkly.h"
 #include "data/omm/peachy/omm_peach.h"
 #include "data/omm/peachy/omm_peach_actions.h"
+#include "data/omm/peachy/omm_perry.h"
+#include "data/omm/peachy/omm_sparkly.h"
 
+// All headers ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // #define OMM_ALL_HEADERS before including this file
 // to include all headers, not only the OMM ones
 #ifdef OMM_ALL_HEADERS
@@ -45,10 +45,8 @@
 #include "gfx_dimensions.h"
 #include "level_commands.h"
 #include "level_misc_macros.h"
-#include "macro_preset_names.h"
 #include "model_ids.h"
 #include "seq_ids.h"
-#include "special_preset_names.h"
 #include "actors/common0.h"
 #include "actors/common1.h"
 #include "actors/group0.h"
@@ -70,9 +68,11 @@
 #include "actors/group16.h"
 #include "actors/group17.h"
 #include "game/behavior_actions.h"
+#include "game/camera.h"
 #include "game/game_init.h"
 #include "game/geo_misc.h"
 #include "game/hud.h"
+#include "game/ingame_menu.h"
 #include "game/interaction.h"
 #include "game/level_geo.h"
 #include "game/level_update.h"
@@ -85,7 +85,6 @@
 #include "game/mario_actions_stationary.h"
 #include "game/mario_actions_submerged.h"
 #include "game/mario_misc.h"
-#include "game/mario_step.h"
 #include "game/moving_texture.h"
 #include "game/obj_behaviors.h"
 #include "game/object_helpers.h"
@@ -108,6 +107,7 @@
 #include "pc/cliopts.h"
 #include "pc/platform.h"
 #include "pc/configfile.h"
+#include "pc/fs/dirtree.h"
 #include "pc/gfx/gfx_pc.h"
 #include "pc/gfx/gfx_cc.h"
 #include "pc/gfx/gfx_screen_config.h"
@@ -116,6 +116,8 @@
 #include "pc/controller/controller_api.h"
 #include "pc/controller/controller_sdl.h"
 #include "pc/controller/controller_keyboard.h"
+#include FILE_MACRO_PRESETS_H
+#include FILE_SPECIAL_PRESETS_H
 #include FILE_OPTIONS_H
 #include FILE_SOUNDS_H
 #include FILE_CHEATS_H
@@ -127,7 +129,7 @@
 #include FILE_R96_SYSTEM_H
 #endif
 
-// SM64 globals
+// SM64 globals //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 extern s8 gDialogBoxState;
 extern s8 gDialogLineIndex;
 extern u8 sFramesSinceCutsceneEnded;
@@ -138,7 +140,6 @@ extern u8 *gEndCutsceneStringsEn[];
 extern s16 gCutsceneMsgIndex;
 extern s16 gDialogID;
 extern s16 gMenuMode;
-extern s16 g1HPMode;
 extern s16 sStatusFlags;
 extern s16 sYawSpeed;
 extern u16 sAcousticReachPerLevel[];
@@ -152,7 +153,7 @@ extern const BehaviorScript *sWarpBhvSpawnTable[];
 extern struct PlayerGeometry sMarioGeometry;
 extern struct PlayerCameraState *sMarioCamState;
 
-// SM64 functions
+// SM64 functions ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 extern s32 analog_stick_held_back(struct MarioState *m);
 extern s32 apply_slope_decel(struct MarioState *m, f32);
 extern s32 begin_braking_action(struct MarioState *m);
@@ -195,13 +196,13 @@ extern void play_sequence(u8, u8, u16);
 extern void push_mario_out_of_object(struct MarioState *, struct Object *, f32);
 extern void push_or_sidle_wall(struct MarioState *m, Vec3f startPos);
 extern void render_dialog_box_type(struct DialogEntry *dialog, s8 linesPerBox);
-extern void run_display_list(struct SPTask *spTask);
 extern void set_mario_initial_action(struct MarioState *, u32, u32);
 extern void set_play_mode(s16);
 extern void set_submerged_cam_preset_and_spawn_bubbles(struct MarioState *m);
 extern void sink_mario_in_quicksand(struct MarioState *m);
 extern void spawn_particle(u32 activeParticleFlag, s16 model, const BehaviorScript *behavior);
 extern void squish_mario_model(struct MarioState *m);
+extern void tilt_body_ground_shell(struct MarioState *m, s16 startYaw);
 extern void tilt_body_walking(struct MarioState *m, s16 startYaw);
 extern void update_lakitu(struct Camera *c);
 extern void update_mario_health(struct MarioState *);

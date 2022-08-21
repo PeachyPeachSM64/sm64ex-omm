@@ -74,7 +74,7 @@ omm_number_define_gfx(2digits_x9, 9, 8);
 
 Gfx *omm_geo_number_switch_1digit(s32 callContext, struct GraphNode *node, UNUSED void *context) {
     if (gCurrGraphNodeObject && callContext == GEO_CONTEXT_RENDER) {
-        s32 number = gCurrGraphNodeObject->oBehParams2ndByte;
+        s32 number = gCurrGraphNodeObject->oBhvArgs2ndByte;
         struct GraphNodeSwitchCase *switchCase = (struct GraphNodeSwitchCase *) node;
         if (number >= 0 && number < 10) {
             switchCase->selectedCase = number;
@@ -87,7 +87,7 @@ Gfx *omm_geo_number_switch_1digit(s32 callContext, struct GraphNode *node, UNUSE
 
 Gfx *omm_geo_number_switch_2digits_left(s32 callContext, struct GraphNode *node, UNUSED void *context) {
     if (gCurrGraphNodeObject && callContext == GEO_CONTEXT_RENDER) {
-        s32 number = gCurrGraphNodeObject->oBehParams2ndByte;
+        s32 number = gCurrGraphNodeObject->oBhvArgs2ndByte;
         struct GraphNodeSwitchCase *switchCase = (struct GraphNodeSwitchCase *) node;
         if (number >= 10) {
             switchCase->selectedCase = number / 10;
@@ -100,7 +100,7 @@ Gfx *omm_geo_number_switch_2digits_left(s32 callContext, struct GraphNode *node,
 
 Gfx *omm_geo_number_switch_2digits_right(s32 callContext, struct GraphNode *node, UNUSED void *context) {
     if (gCurrGraphNodeObject && callContext == GEO_CONTEXT_RENDER) {
-        s32 number = gCurrGraphNodeObject->oBehParams2ndByte;
+        s32 number = gCurrGraphNodeObject->oBhvArgs2ndByte;
         struct GraphNodeSwitchCase *switchCase = (struct GraphNodeSwitchCase *) node;
         if (number >= 10) {
             switchCase->selectedCase = number % 10;
@@ -195,7 +195,7 @@ const GeoLayout omm_geo_star_number[] = {
 // Behavior
 //
 
-static void omm_bhv_star_number_loop() {
+static void bhv_omm_star_number_loop() {
     struct Object *o = gCurrentObject;
     struct Object *p = o->parentObj;
     if (!OMM_EXTRAS_SHOW_STAR_NUMBER || !p || !p->activeFlags || !omm_obj_is_star_or_key(p) || obj_is_dormant(p)) {
@@ -209,11 +209,11 @@ static void omm_bhv_star_number_loop() {
     o->oNodeFlags = p->oNodeFlags;
 }
 
-const BehaviorScript omm_bhv_star_number[] = {
+const BehaviorScript bhvOmmStarNumber[] = {
     OBJ_TYPE_UNIMPORTANT,
     0x11010001,
     0x08000000,
-    0x0C000000, (uintptr_t) omm_bhv_star_number_loop,
+    0x0C000000, (uintptr_t) bhv_omm_star_number_loop,
     0x09000000,
 };
 
@@ -229,11 +229,11 @@ struct Object *omm_spawn_number(struct Object *o, s32 n) {
 }
 
 struct Object *omm_spawn_star_number(struct Object *o) {
-    struct Object *number = obj_spawn_from_geo(o, omm_geo_number, omm_bhv_star_number);
-    number->oBehParams2ndByte = 0;
+    struct Object *number = obj_spawn_from_geo(o, omm_geo_number, bhvOmmStarNumber);
+    number->oBhvArgs2ndByte = 0;
     u8 total = omm_stars_get_bits_total(gCurrLevelNum);
-    for (u8 i = 0; i <= (u8) ((o->oBehParams >> 24) & 0x07); ++i) {
-        number->oBehParams2ndByte += ((total >> i) & 1);
+    for (u8 i = 0; i <= (u8) ((o->oBhvArgs >> 24) & 0x07); ++i) {
+        number->oBhvArgs2ndByte += ((total >> i) & 1);
     }
     return number;
 }

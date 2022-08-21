@@ -2,24 +2,10 @@
 #define OMM_PATCHES_H
 
 //
-// Files
-//
-
-#define FILE_BETTERCAM_H    DEF("game/bettercamera.h", "game/bettercamera.h", "game/bettercamera.h", "extras/bettercamera.h", "extras/bettercamera.h", "extras/bettercamera.h")
-#define FILE_OPTIONS_H      DEF("game/options_menu.h", "game/options_menu.h", "game/options_menu.h", "extras/options_menu.h", "extras/options_menu.h", "extras/options_menu.h")
-#define FILE_SOUNDS_H       DEF("audio_defines.h", "audio_defines.h", "audio_defines.h", "sounds.h", "sounds.h", "sounds.h")
-#define FILE_CHEATS_H       DEF("pc/cheats.h", "pc/cheats.h", "pc/cheats.h", "extras/cheats.h", "extras/cheats.h", "extras/cheats.h")
-#define FILE_MARIO_CHEATS_H DEF("pc/cheats.h", "pc/cheats.h", "game/mario_cheats.h", "extras/cheats.h", "extras/cheats.h", "extras/cheats.h")
-#define FILE_TITLE_H        DEF("menu/level_select_menu.h", "menu/level_select_menu.h", "menu/level_select_menu.h", "menu/title_screen.h", "menu/title_screen.h", "menu/title_screen.h")
-#define FILE_TXT_CONV_H     DEF("types.h", "types.h", "text/txtconv.h", "types.h", "types.h", "types.h")
-#define FILE_TEXT_LOADER_H  DEF("types.h", "types.h", "text/text-loader.h", "types.h", "types.h", "types.h")
-#define FILE_R96_SYSTEM_H   DEF("types.h", "types.h", "data/r96/system/r96_system.h", "types.h", "types.h", "types.h")
-
-//
 // Patches
 //
 
-#if defined(DYNOS) || defined(R96A)
+#if defined(DYNOS) || defined(R96X)
 #define OMM_CODE_DYNOS 1
 #else
 #define OMM_CODE_DYNOS 0
@@ -82,6 +68,20 @@
 #define cur_obj_is_mario_ground_pounding_platform_1 cur_obj_is_mario_ground_pounding_platform(void)
 #define cur_obj_is_mario_ground_pounding_platform(...) CAT(cur_obj_is_mario_ground_pounding_platform_, N_ARGS(__VA_ARGS__))
 
+// Star Road: Don't print the Hard Mode strings
+#if OMM_GAME_IS_SMSR
+#define print_hard_mode_strings_0 
+#define print_hard_mode_strings_1 print_hard_mode_strings(void)
+#define print_hard_mode_strings(...) CAT(print_hard_mode_strings_, N_ARGS(__VA_ARGS__))
+#endif
+
+// DynOS init makes a call to omm_opt_init before initializing itself
+#define DynOS_Init \
+DynOS_Init_Startup_() { extern void DynOS_Init_Omm_(); DynOS_Init_Omm_(); } \
+extern "C" { extern void omm_opt_init(); } \
+void DynOS_Init_Omm_() { extern void DynOS_Init_(); omm_opt_init(); DynOS_Init_(); } \
+void DynOS_Init_
+
 // Redefine the play_sequence function if it was replaced by the static seq_player_play_sequence
 #if music_play_sequence_define
 #define unused_8031E4F0 \
@@ -100,7 +100,7 @@ if ((seqId & 0xFF) == SEQ_EVENT_BOSS) { \
     for (u8 i = 0; i <= sBackgroundMusicQueueSize; ++i) { \
         if (i == sBackgroundMusicQueueSize) { \
             sBackgroundMusicQueueSize = min_s(sBackgroundMusicQueueSize + 1, MUSIC_QUEUE_MAX_SIZE); \
-            OMM_MEMMOV(sBackgroundMusicQueue + 1, sBackgroundMusicQueue, sizeof(sBackgroundMusicQueue[0]) * (MUSIC_QUEUE_MAX_SIZE - 1)); \
+            omm_move(sBackgroundMusicQueue + 1, sBackgroundMusicQueue, sizeof(sBackgroundMusicQueue[0]) * (MUSIC_QUEUE_MAX_SIZE - 1)); \
             sBackgroundMusicQueue[0].seqId = SEQ_EVENT_BOSS; \
             sBackgroundMusicQueue[0].priority = 4; \
             break; \
@@ -109,6 +109,16 @@ if ((seqId & 0xFF) == SEQ_EVENT_BOSS) { \
         } \
     } \
 }
+
+// Compute the lower bound before resetting gDialogScrollOffsetY to not break frame interpolation
+#define fix_dialog_box_text_lower_bound() \
+lowerBound = (gDialogScrollOffsetY / 16) + 1; \
+if (gDialogScrollOffsetY >= dialog->linesPerBox * DIAG_VAL1) { \
+    gDialogTextPos = gLastDialogPageStrPos; \
+    gDialogBoxState = DIALOG_STATE_VERTICAL; \
+    gDialogScrollOffsetY = 0; \
+} \
+break
 
 // Fix annoying crashes that can occur in rooms with paintings
 #define geo_painting_update_fix_floor() \

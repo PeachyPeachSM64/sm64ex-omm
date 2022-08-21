@@ -14,7 +14,7 @@ const GeoLayout omm_geo_shockwave_spindrift[] = {
 // Behavior
 //
 
-static void omm_bhv_shockwave_spindrift_update() {
+static void bhv_omm_shockwave_spindrift_update() {
     struct Object *o = gCurrentObject;
     f32 t = (f32) o->oTimer / 12.f;
     if (t >= 1.f) {
@@ -34,11 +34,11 @@ static void omm_bhv_shockwave_spindrift_update() {
     omm_obj_process_interactions(o, OBJ_INT_PRESET_ATTACK_AND_COLLECT);
 }
 
-const BehaviorScript omm_bhv_shockwave_spindrift[] = {
+const BehaviorScript bhvOmmShockwaveSpindrift[] = {
     OBJ_TYPE_SPECIAL,
     0x110100C1,
     0x08000000,
-    0x0C000000, (uintptr_t) omm_bhv_shockwave_spindrift_update,
+    0x0C000000, (uintptr_t) bhv_omm_shockwave_spindrift_update,
     0x09000000,
 };
 
@@ -47,7 +47,7 @@ const BehaviorScript omm_bhv_shockwave_spindrift[] = {
 //
 
 struct Object *omm_spawn_shockwave_spindrift(struct Object *o) {
-    struct Object *shockwave = obj_spawn_from_geo(o, omm_geo_shockwave_spindrift, omm_bhv_shockwave_spindrift);
+    struct Object *shockwave = obj_spawn_from_geo(o, omm_geo_shockwave_spindrift, bhvOmmShockwaveSpindrift);
     shockwave->oParentRelativePosY = o->hitboxHeight / 2.f;
     return shockwave;
 }

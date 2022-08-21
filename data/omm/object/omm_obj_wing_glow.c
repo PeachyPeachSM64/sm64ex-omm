@@ -16,13 +16,11 @@ static Vtx omm_wing_get_vertex(Vec3f point, Vec3f dir, f32 radius, u8 alpha) {
 }
 
 static void omm_wing_set_vertex_color(Vtx *vertex, f32 ratio, u8 *alpha) {
-    u32 c = omm_player_get_selected_color();
+    u32 c = omm_player_properties_get_selected_color();
     vertex->v.cn[0] = (u8) ((((c >> 24) & 0xFF) * ratio) + (0xFF * (1.f - ratio)));
     vertex->v.cn[1] = (u8) ((((c >> 16) & 0xFF) * ratio) + (0xFF * (1.f - ratio)));
     vertex->v.cn[2] = (u8) ((((c >>  8) & 0xFF) * ratio) + (0xFF * (1.f - ratio)));
-    if (alpha != NULL) {
-        vertex->v.cn[3] = *alpha;
-    }
+    if (alpha) vertex->v.cn[3] = *alpha;
 }
 
 //
@@ -39,7 +37,7 @@ static Gfx sOmmWingGlowTriangles[OMM_WING_GLOW_NUM_POINTS * 4 + 1];
 static Gfx sOmmWingGlowDisplayList[8];
 static GeoLayout sOmmWingGlowGeoLayout[16];
 
-OMM_AT_STARTUP static void omm_bhv_wing_glow_init() {
+OMM_AT_STARTUP static void bhv_omm_wing_glow_init() {
 
     // Glow vertices and triangles
     Vtx *vtx = sOmmWingGlowVertices;
@@ -79,10 +77,10 @@ OMM_AT_STARTUP static void omm_bhv_wing_glow_init() {
         GEO_CLOSE_NODE(),
         GEO_END(),
     };
-    OMM_MEMCPY(sOmmWingGlowGeoLayout, geo, sizeof(geo));
+    omm_copy(sOmmWingGlowGeoLayout, geo, sizeof(geo));
 }
 
-static void omm_bhv_wing_glow_update() {
+static void bhv_omm_wing_glow_update() {
     struct MarioState *m = gMarioState;
     struct Object *o = gCurrentObject;
     if (!omm_mario_has_wing_cap(m)) {
@@ -105,7 +103,7 @@ static void omm_bhv_wing_glow_update() {
 
     // Update vertex color
     Vtx *vtx = sOmmWingGlowVertices;
-    for (s32 i = 0; i != OMM_ARRAY_SIZE(sOmmWingGlowVertices); i += 4) {
+    for (s32 i = 0; i != omm_static_array_length(sOmmWingGlowVertices); i += 4) {
         omm_wing_set_vertex_color(vtx++, 0.0f, NULL);
         omm_wing_set_vertex_color(vtx++, 0.2f, NULL);
         omm_wing_set_vertex_color(vtx++, 1.0f, NULL);
@@ -141,7 +139,7 @@ static Gfx sOmmWingTrailTriangles[2][(OMM_WING_TRAIL_NUM_POINTS - 1) * 5 + 1];
 static Gfx sOmmWingTrailDisplayList[8];
 static GeoLayout sOmmWingTrailGeoLayout[8];
 
-OMM_AT_STARTUP static void omm_bhv_wing_trail_init() {
+OMM_AT_STARTUP static void bhv_omm_wing_trail_init() {
 
     // Gfx
     Gfx *gfx = sOmmWingTrailDisplayList;
@@ -160,14 +158,14 @@ OMM_AT_STARTUP static void omm_bhv_wing_trail_init() {
         GEO_CLOSE_NODE(),
         GEO_END(),
     };
-    OMM_MEMCPY(sOmmWingTrailGeoLayout, geo, sizeof(geo));
+    omm_copy(sOmmWingTrailGeoLayout, geo, sizeof(geo));
 }
 
-static void omm_bhv_wing_trail_reset() {
-    OMM_MEMSET(sOmmWingTrailVertices, 0, sizeof(sOmmWingTrailVertices));
+static void bhv_omm_wing_trail_reset() {
+    omm_zero(sOmmWingTrailVertices, sizeof(sOmmWingTrailVertices));
 }
 
-static void omm_bhv_wing_trail_update() {
+static void bhv_omm_wing_trail_update() {
     struct MarioState *m = gMarioState;
     struct Object *o = gCurrentObject;
     bool swapTriangleBuffers = (m->faceAngle[2] < 0);
@@ -215,7 +213,7 @@ static void omm_bhv_wing_trail_update() {
         // Update current vertex
         Vtx *vtxHead = &sOmmWingTrailVertices[k][0];
         Vtx *vtxPrev = vtxHead + 5;
-        OMM_MEMMOV(vtxPrev, vtxHead, sizeof(Vtx) * (OMM_WING_TRAIL_NUM_POINTS - 1) * 5);
+        omm_move(vtxPrev, vtxHead, sizeof(Vtx) * (OMM_WING_TRAIL_NUM_POINTS - 1) * 5);
         if (trail) {
             *vtxHead = omm_wing_get_vertex(hPos, gVec3fZero, 0.f, 0xFF);
             omm_wing_set_vertex_color(vtxHead, 0.f, NULL);
@@ -313,28 +311,28 @@ static void omm_bhv_wing_trail_update() {
 // Behaviors
 //
 
-const BehaviorScript omm_bhv_wing_glow_left_hand[] = {
+const BehaviorScript bhvOmmWingGlowLeftHand[] = {
     OBJ_TYPE_UNIMPORTANT,
     0x11010001,
     0x08000000,
-    0x0C000000, (uintptr_t) omm_bhv_wing_glow_update,
+    0x0C000000, (uintptr_t) bhv_omm_wing_glow_update,
     0x09000000,
 };
 
-const BehaviorScript omm_bhv_wing_glow_right_hand[] = {
+const BehaviorScript bhvOmmWingGlowRightHand[] = {
     OBJ_TYPE_UNIMPORTANT,
     0x11010001,
     0x08000000,
-    0x0C000000, (uintptr_t) omm_bhv_wing_glow_update,
+    0x0C000000, (uintptr_t) bhv_omm_wing_glow_update,
     0x09000000,
 };
 
-const BehaviorScript omm_bhv_wing_trail[] = {
+const BehaviorScript bhvOmmWingTrail[] = {
     OBJ_TYPE_UNIMPORTANT,
     0x11010001,
-    0x0C000000, (uintptr_t) omm_bhv_wing_trail_reset,
+    0x0C000000, (uintptr_t) bhv_omm_wing_trail_reset,
     0x08000000,
-    0x0C000000, (uintptr_t) omm_bhv_wing_trail_update,
+    0x0C000000, (uintptr_t) bhv_omm_wing_trail_update,
     0x09000000,
 };
 
@@ -345,15 +343,15 @@ const BehaviorScript omm_bhv_wing_trail[] = {
 struct Object *omm_spawn_wing_glow_and_trail(struct Object *o) {
 
     // Wing glows
-    if (!obj_get_first_with_behavior(omm_bhv_wing_glow_right_hand)) {
-        spawn_object(o, MODEL_NONE, omm_bhv_wing_glow_right_hand)->oAction = 0;
-        spawn_object(o, MODEL_NONE, omm_bhv_wing_glow_left_hand)->oAction = 1;
+    if (!obj_get_first_with_behavior(bhvOmmWingGlowRightHand)) {
+        spawn_object(o, MODEL_NONE, bhvOmmWingGlowRightHand)->oAction = 0;
+        spawn_object(o, MODEL_NONE, bhvOmmWingGlowLeftHand)->oAction = 1;
     }
 
     // Wing trail
     if (gMarioState->action == ACT_FLYING) {
-        if (!obj_get_first_with_behavior(omm_bhv_wing_trail)) {
-            spawn_object(o, MODEL_NONE, omm_bhv_wing_trail);
+        if (!obj_get_first_with_behavior(bhvOmmWingTrail)) {
+            spawn_object(o, MODEL_NONE, bhvOmmWingTrail);
         }
     }
 

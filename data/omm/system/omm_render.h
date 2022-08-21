@@ -1,6 +1,12 @@
 #ifndef OMM_RENDER_H
 #define OMM_RENDER_H
 
+#include "types.h"
+
+// Fonts
+extern const char *gOmmFontText[0x100];
+extern const char *gOmmFontHud[0x100];
+
 // Commons
 #define OMM_INVSQRT2                                        0.70710678118
 #define OMM_HUD_DISPLAY_FLAG_POWER_UP                       HUD_DISPLAY_FLAG_STAR_COUNT
@@ -8,6 +14,7 @@
 #define OMM_HUD_DISPLAY_FLAG_O2_METER                       HUD_DISPLAY_FLAG_CAMERA_AND_POWER
 #define OMM_HUD_DISPLAY_FLAG_RED_COINS_RADAR                HUD_DISPLAY_FLAG_STAR_COUNT
 #define OMM_HUD_DISPLAY_FLAG_SPARKLY_STARS_CONDITIONS       HUD_DISPLAY_FLAG_STAR_COUNT
+#define OMM_SCROLL_STICK_VALUE_MIN                          (56)
 #define OMM_RENDER_GLYPH_SIZE                               (12)
 #define OMM_RENDER_LEFT_X                                   GFX_DIMENSIONS_RECT_FROM_LEFT_EDGE(16)
 #define OMM_RENDER_RIGHT_X                                  GFX_DIMENSIONS_RECT_FROM_RIGHT_EDGE(16)
@@ -17,6 +24,8 @@
 #define OMM_RENDER_STAR_OFFSET_X                            ((OMM_RENDER_GLYPH_SIZE * 9) / 8)
 #define OMM_RENDER_OFFSET_Y                                 ((OMM_RENDER_GLYPH_SIZE * 5) / 4)
 #define OMM_RENDER_ENABLE_ALPHA(p)                          gSPSetOtherMode(p, G_SETOTHERMODE_L, 18, 1, G_BL_A_MEM)
+#define OMM_RENDER_BACKUP_DL_HEAD(p)                        Gfx *dlh = gDisplayListHead; gDisplayListHead = p;
+#define OMM_RENDER_RESTORE_DL_HEAD(p)                       p = gDisplayListHead; gDisplayListHead = dlh;
 
 // Values
 #define OMM_RENDER_VALUE_GLYPH_X                            (OMM_RENDER_LEFT_X)
@@ -38,7 +47,7 @@
 // Dark mode
 #define OMM_RENDER_DARK_MODE_NUM_POINTS                     (256)
 #define OMM_RENDER_DARK_MODE_RADIUS_MIN                     (0.f)
-#define OMM_RENDER_DARK_MODE_RADIUS_MAX                     (0.3f)
+#define OMM_RENDER_DARK_MODE_RADIUS_MAX                     (0.4f)
 #define OMM_RENDER_DARK_MODE_RADIUS_OUT                     (1.5f)
 #define OMM_RENDER_DARK_MODE_HALF_WIDTH                     ((GFX_DIMENSIONS_RECT_FROM_RIGHT_EDGE(0) - GFX_DIMENSIONS_RECT_FROM_LEFT_EDGE(0)) / 2.f)
 #define OMM_RENDER_DARK_MODE_HALF_HEIGHT                    (SCREEN_HEIGHT / 2.f)
@@ -57,12 +66,12 @@
 #define OMM_RENDER_POWER_SEGMENT_RADIUS_1                   (OMM_RENDER_GLYPH_SIZE * 1.125f)
 #define OMM_RENDER_POWER_SEGMENT_RADIUS_2                   (OMM_RENDER_GLYPH_SIZE * 1.250f)
 #define OMM_RENDER_POWER_SEGMENT_RADIUS_3                   (OMM_RENDER_GLYPH_SIZE * 1.375f)
-#define OMM_RENDER_POWER_SEGMENT_CENTER_R                   ((OMM_ARRAY_OF(const u8) { 0xFF, 0xFF, 0xFF, 0x00, 0x00 })[index])
-#define OMM_RENDER_POWER_SEGMENT_CENTER_G                   ((OMM_ARRAY_OF(const u8) { 0xFF, 0x00, 0xC8, 0xE0, 0xC8 })[index])
-#define OMM_RENDER_POWER_SEGMENT_CENTER_B                   ((OMM_ARRAY_OF(const u8) { 0xFF, 0x00, 0x00, 0x00, 0xFF })[index])
-#define OMM_RENDER_POWER_SEGMENT_BORDER_R                   ((OMM_ARRAY_OF(const u8) { 0xFF, 0xD0, 0xD0, 0x00, 0x00 })[index])
-#define OMM_RENDER_POWER_SEGMENT_BORDER_G                   ((OMM_ARRAY_OF(const u8) { 0xFF, 0x00, 0xA0, 0xB8, 0xA0 })[index])
-#define OMM_RENDER_POWER_SEGMENT_BORDER_B                   ((OMM_ARRAY_OF(const u8) { 0xFF, 0x00, 0x00, 0x00, 0xD0 })[index])
+#define OMM_RENDER_POWER_SEGMENT_CENTER_R                   ((omm_static_array_of(const u8) { 0xFF, 0xFF, 0xFF, 0x00, 0x00 })[index])
+#define OMM_RENDER_POWER_SEGMENT_CENTER_G                   ((omm_static_array_of(const u8) { 0xFF, 0x00, 0xC8, 0xE0, 0xC8 })[index])
+#define OMM_RENDER_POWER_SEGMENT_CENTER_B                   ((omm_static_array_of(const u8) { 0xFF, 0x00, 0x00, 0x00, 0xFF })[index])
+#define OMM_RENDER_POWER_SEGMENT_BORDER_R                   ((omm_static_array_of(const u8) { 0xFF, 0xD0, 0xD0, 0x00, 0x00 })[index])
+#define OMM_RENDER_POWER_SEGMENT_BORDER_G                   ((omm_static_array_of(const u8) { 0xFF, 0x00, 0xA0, 0xB8, 0xA0 })[index])
+#define OMM_RENDER_POWER_SEGMENT_BORDER_B                   ((omm_static_array_of(const u8) { 0xFF, 0x00, 0x00, 0x00, 0xD0 })[index])
 #define OMM_RENDER_POWER_SEGMENT_DELTA                      (OMM_RENDER_GLYPH_SIZE / 16.f)
 #define OMM_RENDER_POWER_HEART_NUM_PIECES                   (64)
 #define OMM_RENDER_POWER_HEART_RADIUS_1_X                   (OMM_RENDER_GLYPH_SIZE * 1.250f)
@@ -75,17 +84,17 @@
 #define OMM_RENDER_POWER_HEART_BORDER_R                     (0xD0)
 #define OMM_RENDER_POWER_HEART_BORDER_G                     (0x30 + index * 0x50)
 #define OMM_RENDER_POWER_HEART_BORDER_B                     (0x30 + index * 0x50)
-#define OMM_RENDER_POWER_HEART_PULSE                        ((OMM_ARRAY_OF(const s32) { 2, 1, 0, 0, 0, 1, 2 })[hp < OMM_RENDER_POWER_HP_CRITICAL ? min_s(gGlobalTimer % 30, 6) : 0])
+#define OMM_RENDER_POWER_HEART_PULSE                        ((omm_static_array_of(const s32) { 2, 1, 0, 0, 0, 1, 2 })[ticks < OMM_RENDER_POWER_TICKS_CRITICAL ? min_s(gGlobalTimer % 30, 6) : 0])
 #define OMM_RENDER_POWER_HEART_OFFSET_Y                     (OMM_RENDER_GLYPH_SIZE / 8.f)
 #define OMM_RENDER_POWER_LIFE_UP_OFFSET_X                   (OMM_RENDER_GLYPH_SIZE / 2.f)
 #define OMM_RENDER_POWER_NUMBER_OFFSET_X                    (OMM_RENDER_GLYPH_SIZE / 2)
 #define OMM_RENDER_POWER_NUMBER_OFFSET_Y                    ((OMM_RENDER_GLYPH_SIZE * 11) / 16)
-#define OMM_RENDER_POWER_HP_FULL_SEGMENTS                   ((OMM_ARRAY_OF(const s32) { 8,  3,  6 })[gOmmMovesetType])
-#define OMM_RENDER_POWER_HP_PER_SEGMENT                     ((OMM_ARRAY_OF(const s32) { 1, 10, 10 })[gOmmMovesetType])
-#define OMM_RENDER_POWER_HP_NORMAL                          ((OMM_ARRAY_OF(const s32) { 7, 31, 61 })[gOmmMovesetType])
-#define OMM_RENDER_POWER_HP_LOW                             ((OMM_ARRAY_OF(const s32) { 5, 25, 25 })[gOmmMovesetType])
-#define OMM_RENDER_POWER_HP_CRITICAL                        ((OMM_ARRAY_OF(const s32) { 3, 15, 15 })[gOmmMovesetType])
-#define OMM_RENDER_POWER_HP_VALUE                           ((hp + OMM_RENDER_POWER_HP_PER_SEGMENT / 2) / OMM_RENDER_POWER_HP_PER_SEGMENT)
+#define OMM_RENDER_POWER_FULL_SEGMENTS                      ((omm_static_array_of(const s32) { 8,  3,  6 })[gOmmMovesetType])
+#define OMM_RENDER_POWER_TICKS_PER_SEGMENT                  ((omm_static_array_of(const s32) { 1, 10, 10 })[gOmmMovesetType])
+#define OMM_RENDER_POWER_TICKS_NORMAL                       ((omm_static_array_of(const s32) { 7, 31, 61 })[gOmmMovesetType])
+#define OMM_RENDER_POWER_TICKS_LOW                          ((omm_static_array_of(const s32) { 5, 25, 25 })[gOmmMovesetType])
+#define OMM_RENDER_POWER_TICKS_CRITICAL                     ((omm_static_array_of(const s32) { 3, 15, 15 })[gOmmMovesetType])
+#define OMM_RENDER_POWER_TICKS_TO_SEGMENTS                  ((ticks + OMM_RENDER_POWER_TICKS_PER_SEGMENT / 2) / OMM_RENDER_POWER_TICKS_PER_SEGMENT)
 
 // Oxygen meter
 #define OMM_RENDER_O2_NUM_QUADS                             (180)
@@ -150,15 +159,6 @@
 #define OMM_RENDER_COURSE_COMPLETE_OFFSET_Y                 (16)
 
 // Star select
-#define OMM_RENDER_STAR_SELECT_J                            (0x13)
-#define OMM_RENDER_STAR_SELECT_Q                            (0x1A)
-#define OMM_RENDER_STAR_SELECT_V                            (0x1F)
-#define OMM_RENDER_STAR_SELECT_X                            (0x21)
-#define OMM_RENDER_STAR_SELECT_Z                            (0x23)
-#define OMM_RENDER_STAR_SELECT_SPACE                        (DIALOG_CHAR_SPACE)
-#define OMM_RENDER_STAR_SELECT_COMMA                        (DIALOG_CHAR_COMMA)
-#define OMM_RENDER_STAR_SELECT_HYPHEN                       (0x9F)
-#define OMM_RENDER_STAR_SELECT_APOSTROPHE                   (0x3E)
 #define OMM_RENDER_STAR_SELECT_BACKGROUND_BOTTOM_Y0         (0)
 #define OMM_RENDER_STAR_SELECT_BACKGROUND_BOTTOM_Y1         (90)
 #define OMM_RENDER_STAR_SELECT_BACKGROUND_TOP_Y0            (SCREEN_HEIGHT - 70)
@@ -208,7 +208,7 @@ u8  *omm_render_get_star_glyph(s32 index, bool colored);
 #define omm_render_glyph_hud(x, y, red, green, blue, alpha, texture, shadow)                omm_render_texrect(x, y, OMM_RENDER_GLYPH_SIZE, OMM_RENDER_GLYPH_SIZE, G_IM_FMT_RGBA, G_IM_SIZ_16b, 16, 16, red, green, blue, alpha, texture, shadow)
 #define omm_render_glyph_hud_small(x, y, red, green, blue, alpha, texture, shadow)          omm_render_texrect(x, y, OMM_RENDER_GLYPH_SIZE / 2, OMM_RENDER_GLYPH_SIZE / 2, G_IM_FMT_RGBA, G_IM_SIZ_16b, 8, 8, red, green, blue, alpha, texture, shadow)
 #define omm_render_number_hud(x, y, alpha, number, digits, makeZerosTransparent, shadow)    omm_render_number(x, y, OMM_RENDER_GLYPH_SIZE, OMM_RENDER_GLYPH_SIZE, OMM_RENDER_NUMBER_OFFSET_X, alpha, number, digits, makeZerosTransparent, shadow)
-#define omm_render_counter(y, red, green, blue, alpha, glyph, count)                        { const u8 textX[] = { glyph, 0xFB, 0xFF }; OMM_STRING(textCount, 8, "%d", count); omm_render_string_left_align((SCREEN_WIDTH / 2) - 2 - omm_render_get_string_width(textX), y, red, green, blue, alpha, textX, false); omm_render_string_left_align((SCREEN_WIDTH / 2) + 2, y, red, green, blue, alpha, omm_text_convert(textCount, false), false); }
+#define omm_render_counter(y, red, green, blue, alpha, glyph, count)                        { const u8 textX[] = { glyph, 0xFB, 0xFF }; omm_sprintf(textCount, 8, "%d", count); omm_render_string_left_align((SCREEN_WIDTH / 2) - 2 - omm_render_get_string_width(textX), y, red, green, blue, alpha, textX, false); omm_render_string_left_align((SCREEN_WIDTH / 2) + 2, y, red, green, blue, alpha, omm_text_convert(textCount, false), false); }
 
 //
 // Effects

@@ -43,7 +43,7 @@ const GeoLayout omm_geo_peach_vibe_calm_sparkle[] = {
 // Behavior
 //
 
-static void omm_bhv_peach_vibe_calm_sparkle_update() {
+static void bhv_omm_peach_vibe_calm_sparkle_update() {
     struct Object *o = gCurrentObject;
     if (o->oTimer < 30) {
         f32 *marioRootPos = geo_get_marios_root_pos();
@@ -57,11 +57,11 @@ static void omm_bhv_peach_vibe_calm_sparkle_update() {
     }
 }
 
-const BehaviorScript omm_bhv_peach_vibe_calm_sparkle[] = {
+const BehaviorScript bhvOmmPeachVibeCalmSparkle[] = {
     OBJ_TYPE_UNIMPORTANT,
     0x11010001,
     0x08000000,
-    0x0C000000, (uintptr_t) omm_bhv_peach_vibe_calm_sparkle_update,
+    0x0C000000, (uintptr_t) bhv_omm_peach_vibe_calm_sparkle_update,
     0x09000000
 };
 
@@ -70,7 +70,7 @@ const BehaviorScript omm_bhv_peach_vibe_calm_sparkle[] = {
 //
 
 struct Object *omm_spawn_peach_vibe_calm_sparkle(struct Object *o) {
-    struct Object *sparkle = obj_spawn_from_geo(o, omm_geo_peach_vibe_calm_sparkle, omm_bhv_peach_vibe_calm_sparkle);
+    struct Object *sparkle = obj_spawn_from_geo(o, omm_geo_peach_vibe_calm_sparkle, bhvOmmPeachVibeCalmSparkle);
     obj_set_always_rendered(sparkle, true);
     obj_set_angle(sparkle, 0, 0, 0);
     obj_scale(sparkle, lerp_f(random_float(), 0.5f, 1.f));

@@ -144,7 +144,7 @@ const GeoLayout omm_geo_sparkly_star_3_sparkle[] = {
 // Behavior
 //
 
-static void omm_bhv_sparkly_star_sparkle_update() {
+static void bhv_omm_sparkly_star_sparkle_update() {
     struct Object *o = gCurrentObject;
     o->oPosX += o->oVelX;
     o->oPosY += o->oVelY;
@@ -152,20 +152,20 @@ static void omm_bhv_sparkly_star_sparkle_update() {
     o->oAnimState++;
 }
 
-const BehaviorScript omm_bhv_sparkly_star_sparkle[] = {
+const BehaviorScript bhvOmmSparklyStarSparkle[] = {
     OBJ_TYPE_UNIMPORTANT,
     0x11010001,
     0x05000020,
-    0x0C000000, (uintptr_t) omm_bhv_sparkly_star_sparkle_update,
+    0x0C000000, (uintptr_t) bhv_omm_sparkly_star_sparkle_update,
     0x06000000,
     0x1D000000
 };
 
-const BehaviorScript omm_bhv_sparkly_star_sparkle_mario[] = {
+const BehaviorScript bhvOmmSparklyStarSparkleMario[] = {
     OBJ_TYPE_UNIMPORTANT,
     0x11010001,
     0x05000020,
-    0x0C000000, (uintptr_t) omm_bhv_sparkly_star_sparkle_update,
+    0x0C000000, (uintptr_t) bhv_omm_sparkly_star_sparkle_update,
     0x06000000,
     0x1D000000
 };
@@ -175,7 +175,7 @@ const BehaviorScript omm_bhv_sparkly_star_sparkle_mario[] = {
 //
 
 struct Object *omm_spawn_sparkly_star_sparkle(struct Object *o, s32 mode, f32 yOffset, f32 vel, f32 scale, f32 offset) {
-    struct Object *sparkle = obj_spawn_from_geo(o, OMM_SSX_SPARKLE_GEO[mode], omm_bhv_sparkly_star_sparkle);
+    struct Object *sparkle = obj_spawn_from_geo(o, OMM_SPARKLY_SPARKLE_GEO[mode], bhvOmmSparklyStarSparkle);
     f32 vx = vel * (random_float() - 0.5f);
     f32 vy = vel * (random_float() - 0.5f);
     f32 vz = vel * (random_float() - 0.5f);
@@ -198,6 +198,6 @@ struct Object *omm_spawn_sparkly_star_sparkle(struct Object *o, s32 mode, f32 yO
 
 struct Object* omm_spawn_sparkly_star_sparkle_mario(struct Object* o, s32 mode, f32 yOffset, f32 vel, f32 scale, f32 offset) {
     struct Object *sparkle = omm_spawn_sparkly_star_sparkle(o, mode, yOffset, vel, scale, offset);
-    sparkle->behavior = omm_bhv_sparkly_star_sparkle_mario;
+    sparkle->behavior = bhvOmmSparklyStarSparkleMario;
     return sparkle;
 }

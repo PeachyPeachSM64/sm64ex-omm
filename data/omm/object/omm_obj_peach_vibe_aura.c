@@ -129,7 +129,7 @@ const GeoLayout omm_geo_peach_vibe_aura[] = {
 // Behavior
 //
 
-static void omm_bhv_peach_vibe_aura_update() {
+static void bhv_omm_peach_vibe_aura_update() {
     struct Object *o = gCurrentObject;
     f32 *marioRootPos = geo_get_marios_root_pos();
     f32 t = invlerp_0_1_s(o->oTimer, 0, 30);
@@ -141,11 +141,11 @@ static void omm_bhv_peach_vibe_aura_update() {
     }
 }
 
-const BehaviorScript omm_bhv_peach_vibe_aura[] = {
+const BehaviorScript bhvOmmPeachVibeAura[] = {
     OBJ_TYPE_UNIMPORTANT,
     0x11010001,
     0x08000000,
-    0x0C000000, (uintptr_t) omm_bhv_peach_vibe_aura_update,
+    0x0C000000, (uintptr_t) bhv_omm_peach_vibe_aura_update,
     0x09000000,
 };
 
@@ -154,7 +154,7 @@ const BehaviorScript omm_bhv_peach_vibe_aura[] = {
 //
 
 struct Object *omm_spawn_peach_vibe_aura(struct Object *o) {
-    struct Object *aura = obj_spawn_from_geo(o, omm_geo_peach_vibe_aura, omm_bhv_peach_vibe_aura);
+    struct Object *aura = obj_spawn_from_geo(o, omm_geo_peach_vibe_aura, bhvOmmPeachVibeAura);
     obj_set_always_rendered(aura, true);
     obj_set_angle(aura, 0, 0, 0);
     return aura;

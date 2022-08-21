@@ -614,6 +614,7 @@ u32 determine_knockback_action(struct MarioState *m, UNUSED s32 arg) {
     return bonkAction;
 }
 
+#if 0 // interaction.c [0]
 void push_mario_out_of_object(struct MarioState *m, struct Object *o, f32 padding) {
     f32 minDistance = o->hitboxRadius + m->marioObj->hitboxRadius + padding;
 
@@ -648,6 +649,7 @@ void push_mario_out_of_object(struct MarioState *m, struct Object *o, f32 paddin
     }
 }
 
+#endif // interaction.c [0]
 void bounce_back_from_attack(struct MarioState *m, u32 interaction) {
     if (interaction & (INT_PUNCH | INT_KICK | INT_TRIP)) {
         if (m->action == ACT_PUNCHING) {

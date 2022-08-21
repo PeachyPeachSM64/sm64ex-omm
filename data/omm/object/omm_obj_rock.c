@@ -21,19 +21,19 @@ const GeoLayout omm_geo_rock[] = {
 // Behavior
 //
 
-static void omm_bhv_rock_delete(struct Object *o) {
+static void bhv_omm_rock_delete(struct Object *o) {
     obj_spawn_white_puff(o, -1);
     obj_mark_for_deletion(o);
 }
 
-static void omm_bhv_rock_update() {
+static void bhv_omm_rock_update() {
     struct Object *o = gCurrentObject;
     perform_object_step(o, OBJ_STEP_UPDATE_HOME);
     o->oVelY -= 2.f;
 
     // Collided with a wall/floor
     if (o->oWall || o->oCeil || o->oDistToFloor <= 0.f) {
-        omm_bhv_rock_delete(o);
+        bhv_omm_rock_delete(o);
         return;
     }
 
@@ -44,14 +44,14 @@ static void omm_bhv_rock_update() {
     obj_reset_hitbox(o, 30, 50, 0, 0, 15, 25);
     struct Object *interacted = omm_obj_process_interactions(o, OBJ_INT_PRESET_ROCK);
     if (interacted && !omm_obj_is_collectible(interacted)) {
-        omm_bhv_rock_delete(o);
+        bhv_omm_rock_delete(o);
     }
 }
 
-const BehaviorScript omm_bhv_rock[] = {
+const BehaviorScript bhvOmmRock[] = {
     OBJ_TYPE_SPECIAL,
     0x08000000,
-    0x0C000000, (uintptr_t) omm_bhv_rock_update,
+    0x0C000000, (uintptr_t) bhv_omm_rock_update,
     0x09000000,
 };
 
@@ -60,7 +60,7 @@ const BehaviorScript omm_bhv_rock[] = {
 //
 
 struct Object *omm_spawn_rock(struct Object *o) {
-    struct Object *rock = obj_spawn_from_geo(o, omm_geo_rock, omm_bhv_rock);
+    struct Object *rock = obj_spawn_from_geo(o, omm_geo_rock, bhvOmmRock);
     s16 da = o->oFaceAngleYaw + 0x4000;
     f32 dx = -40.f * o->oScaleX * sins(da);
     f32 dy = +25.f * o->oScaleY;

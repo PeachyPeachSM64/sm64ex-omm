@@ -147,7 +147,7 @@ const GeoLayout omm_geo_metal_sparkle[] = {
 // Behavior
 //
 
-const BehaviorScript omm_bhv_metal_sparkle[] = {
+const BehaviorScript bhvOmmMetalSparkle[] = {
     OBJ_TYPE_UNIMPORTANT,
     0x11010001,
     0x111AFFFF,
@@ -162,7 +162,7 @@ const BehaviorScript omm_bhv_metal_sparkle[] = {
 //
 
 struct Object *omm_spawn_metal_sparkle(struct Object *o) {
-    struct Object *sparkle = obj_spawn_from_geo(o, omm_geo_metal_sparkle, omm_bhv_metal_sparkle);
+    struct Object *sparkle = obj_spawn_from_geo(o, omm_geo_metal_sparkle, bhvOmmMetalSparkle);
     sparkle->activeFlags  |= ACTIVE_FLAG_INITIATED_TIME_STOP;
     sparkle->oPosX         = o->oPosX;
     sparkle->oPosY         = o->oPosY + 50;

@@ -2,10 +2,6 @@
 #include "data/omm/omm_includes.h"
 #undef OMM_ALL_HEADERS
 
-// Required because some weird gcc optimizations make the OMM options menu not accessible in some releases
-#pragma GCC push_options
-#pragma GCC optimize ("O0")
-
 //
 // From options_menu.c
 //
@@ -21,14 +17,14 @@ struct SubMenu { struct SubMenu *prev; const u8 *label; struct Option *opts; s32
 // Options definition
 //
 
-u8 gOmmOptMenu[0x100 + sizeof(struct SubMenu)];
-u8 gOmmOptControls[0x100 + sizeof(struct SubMenu)];
-#if !OMM_GAME_IS_R96A
-u8 gOmmOptCheats[0x100 + sizeof(struct SubMenu)];
+OmmOptMenu gOmmOptMenu;
+OmmOptMenu gOmmOptControls;
+#if !OMM_GAME_IS_R96X
+OmmOptMenu gOmmOptCheats;
 #endif
 #if !OMM_CODE_DYNOS
-u8 gOmmOptWarpToLevel[0x100 + sizeof(struct SubMenu)];
-u8 gOmmOptReturnToMainMenu[0x100];
+OmmOptMenu gOmmOptWarpToLevel;
+OmmOptMenu gOmmOptReturnToMainMenu;
 #endif
 
 #define K_NONE VK_INVALID
@@ -57,87 +53,113 @@ static const struct {
     { gOmmControlsStickRight,   0x0020, K_NONE, K_NONE }, //     [D]     |   (L-R)   |   (L-R)   |
 };
 
-// Somehow works with GCC, but not MSVC
-DEFINE_KBINDS(gOmmControlsButtonA,     sOmmControlsDefault[ 0].b0, sOmmControlsDefault[ 0].b1, sOmmControlsDefault[ 0].b2);
-DEFINE_KBINDS(gOmmControlsButtonB,     sOmmControlsDefault[ 1].b0, sOmmControlsDefault[ 1].b1, sOmmControlsDefault[ 1].b2);
-DEFINE_KBINDS(gOmmControlsButtonX,     sOmmControlsDefault[ 2].b0, sOmmControlsDefault[ 2].b1, sOmmControlsDefault[ 2].b2);
-DEFINE_KBINDS(gOmmControlsButtonY,     sOmmControlsDefault[ 3].b0, sOmmControlsDefault[ 3].b1, sOmmControlsDefault[ 3].b2);
-DEFINE_KBINDS(gOmmControlsButtonStart, sOmmControlsDefault[ 4].b0, sOmmControlsDefault[ 4].b1, sOmmControlsDefault[ 4].b2);
-DEFINE_KBINDS(gOmmControlsTriggerL,    sOmmControlsDefault[ 5].b0, sOmmControlsDefault[ 5].b1, sOmmControlsDefault[ 5].b2);
-DEFINE_KBINDS(gOmmControlsTriggerR,    sOmmControlsDefault[ 6].b0, sOmmControlsDefault[ 6].b1, sOmmControlsDefault[ 6].b2);
-DEFINE_KBINDS(gOmmControlsTriggerZ,    sOmmControlsDefault[ 7].b0, sOmmControlsDefault[ 7].b1, sOmmControlsDefault[ 7].b2);
-DEFINE_KBINDS(gOmmControlsCUp,         sOmmControlsDefault[ 8].b0, sOmmControlsDefault[ 8].b1, sOmmControlsDefault[ 8].b2);
-DEFINE_KBINDS(gOmmControlsCDown,       sOmmControlsDefault[ 9].b0, sOmmControlsDefault[ 9].b1, sOmmControlsDefault[ 9].b2);
-DEFINE_KBINDS(gOmmControlsCLeft,       sOmmControlsDefault[10].b0, sOmmControlsDefault[10].b1, sOmmControlsDefault[10].b2);
-DEFINE_KBINDS(gOmmControlsCRight,      sOmmControlsDefault[11].b0, sOmmControlsDefault[11].b1, sOmmControlsDefault[11].b2);
-DEFINE_KBINDS(gOmmControlsDUp,         sOmmControlsDefault[12].b0, sOmmControlsDefault[12].b1, sOmmControlsDefault[12].b2);
-DEFINE_KBINDS(gOmmControlsDDown,       sOmmControlsDefault[13].b0, sOmmControlsDefault[13].b1, sOmmControlsDefault[13].b2);
-DEFINE_KBINDS(gOmmControlsDLeft,       sOmmControlsDefault[14].b0, sOmmControlsDefault[14].b1, sOmmControlsDefault[14].b2);
-DEFINE_KBINDS(gOmmControlsDRight,      sOmmControlsDefault[15].b0, sOmmControlsDefault[15].b1, sOmmControlsDefault[15].b2);
-DEFINE_KBINDS(gOmmControlsStickUp,     sOmmControlsDefault[16].b0, sOmmControlsDefault[16].b1, sOmmControlsDefault[16].b2);
-DEFINE_KBINDS(gOmmControlsStickDown,   sOmmControlsDefault[17].b0, sOmmControlsDefault[17].b1, sOmmControlsDefault[17].b2);
-DEFINE_KBINDS(gOmmControlsStickLeft,   sOmmControlsDefault[18].b0, sOmmControlsDefault[18].b1, sOmmControlsDefault[18].b2);
-DEFINE_KBINDS(gOmmControlsStickRight,  sOmmControlsDefault[19].b0, sOmmControlsDefault[19].b1, sOmmControlsDefault[19].b2);
-#if !OMM_GAME_IS_R96A
-DEFINE_TOGGLE(gOmmCheatEnable, 0);                   // Disabled
-DEFINE_TOGGLE(gOmmCheatMoonJump, 0);                 // Disabled
-DEFINE_TOGGLE(gOmmCheatGodMode, 0);                  // Disabled
-DEFINE_TOGGLE(gOmmCheatInvincible, 0);               // Disabled
-DEFINE_TOGGLE(gOmmCheatSuperSpeed, 0);               // Disabled
-DEFINE_TOGGLE(gOmmCheatSuperResponsive, 0);          // Disabled
-DEFINE_TOGGLE(gOmmCheatNoFallDamage, 0);             // Disabled
-DEFINE_TOGGLE(gOmmCheatWalkOnLava, 0);               // Disabled
-DEFINE_TOGGLE(gOmmCheatWalkOnQuicksand, 0);          // Disabled
-DEFINE_TOGGLE(gOmmCheatWalkOnWater, 0);              // Disabled
-DEFINE_TOGGLE(gOmmCheatWalkOnGas, 0);                // Disabled
-DEFINE_TOGGLE(gOmmCheatWalkOnSlope, 0);              // Disabled
-DEFINE_TOGGLE(gOmmCheatWalkOnDeathBarrier, 0);       // Disabled
-DEFINE_TOGGLE(gOmmCheatBljAnywhere, 0);              // Disabled
+DEFINE_KBINDS(gOmmControlsButtonA,     0x0026, 0x1000, K_NONE); //sOmmControlsDefault[ 0].b0, sOmmControlsDefault[ 0].b1, sOmmControlsDefault[ 0].b2);
+DEFINE_KBINDS(gOmmControlsButtonB,     0x0033, 0x1001, K_NONE); //sOmmControlsDefault[ 1].b0, sOmmControlsDefault[ 1].b1, sOmmControlsDefault[ 1].b2);
+DEFINE_KBINDS(gOmmControlsButtonX,     0x0025, 0x1002, K_NONE); //sOmmControlsDefault[ 2].b0, sOmmControlsDefault[ 2].b1, sOmmControlsDefault[ 2].b2);
+DEFINE_KBINDS(gOmmControlsButtonY,     0x0032, 0x1003, K_NONE); //sOmmControlsDefault[ 3].b0, sOmmControlsDefault[ 3].b1, sOmmControlsDefault[ 3].b2);
+DEFINE_KBINDS(gOmmControlsButtonStart, 0x0039, 0x1006, K_NONE); //sOmmControlsDefault[ 4].b0, sOmmControlsDefault[ 4].b1, sOmmControlsDefault[ 4].b2);
+DEFINE_KBINDS(gOmmControlsTriggerL,    0x002A, 0x1009, K_NONE); //sOmmControlsDefault[ 5].b0, sOmmControlsDefault[ 5].b1, sOmmControlsDefault[ 5].b2);
+DEFINE_KBINDS(gOmmControlsTriggerR,    0x0036, 0x100A, K_NONE); //sOmmControlsDefault[ 6].b0, sOmmControlsDefault[ 6].b1, sOmmControlsDefault[ 6].b2);
+DEFINE_KBINDS(gOmmControlsTriggerZ,    0x0018, 0x101B, K_NONE); //sOmmControlsDefault[ 7].b0, sOmmControlsDefault[ 7].b1, sOmmControlsDefault[ 7].b2);
+DEFINE_KBINDS(gOmmControlsCUp,         0x0148, K_NONE, K_NONE); //sOmmControlsDefault[ 8].b0, sOmmControlsDefault[ 8].b1, sOmmControlsDefault[ 8].b2);
+DEFINE_KBINDS(gOmmControlsCDown,       0x0150, K_NONE, K_NONE); //sOmmControlsDefault[ 9].b0, sOmmControlsDefault[ 9].b1, sOmmControlsDefault[ 9].b2);
+DEFINE_KBINDS(gOmmControlsCLeft,       0x014B, K_NONE, K_NONE); //sOmmControlsDefault[10].b0, sOmmControlsDefault[10].b1, sOmmControlsDefault[10].b2);
+DEFINE_KBINDS(gOmmControlsCRight,      0x014D, K_NONE, K_NONE); //sOmmControlsDefault[11].b0, sOmmControlsDefault[11].b1, sOmmControlsDefault[11].b2);
+DEFINE_KBINDS(gOmmControlsDUp,         0x000C, 0x100B, K_NONE); //sOmmControlsDefault[12].b0, sOmmControlsDefault[12].b1, sOmmControlsDefault[12].b2);
+DEFINE_KBINDS(gOmmControlsDDown,       0x001A, 0x100C, K_NONE); //sOmmControlsDefault[13].b0, sOmmControlsDefault[13].b1, sOmmControlsDefault[13].b2);
+DEFINE_KBINDS(gOmmControlsDLeft,       0x0019, 0x100D, K_NONE); //sOmmControlsDefault[14].b0, sOmmControlsDefault[14].b1, sOmmControlsDefault[14].b2);
+DEFINE_KBINDS(gOmmControlsDRight,      0x001B, 0x100E, K_NONE); //sOmmControlsDefault[15].b0, sOmmControlsDefault[15].b1, sOmmControlsDefault[15].b2);
+DEFINE_KBINDS(gOmmControlsStickUp,     0x0011, K_NONE, K_NONE); //sOmmControlsDefault[16].b0, sOmmControlsDefault[16].b1, sOmmControlsDefault[16].b2);
+DEFINE_KBINDS(gOmmControlsStickDown,   0x001F, K_NONE, K_NONE); //sOmmControlsDefault[17].b0, sOmmControlsDefault[17].b1, sOmmControlsDefault[17].b2);
+DEFINE_KBINDS(gOmmControlsStickLeft,   0x001E, K_NONE, K_NONE); //sOmmControlsDefault[18].b0, sOmmControlsDefault[18].b1, sOmmControlsDefault[18].b2);
+DEFINE_KBINDS(gOmmControlsStickRight,  0x0020, K_NONE, K_NONE); //sOmmControlsDefault[19].b0, sOmmControlsDefault[19].b1, sOmmControlsDefault[19].b2);
+#if !OMM_GAME_IS_R96X
+DEFINE_TOGGLE(gOmmCheatEnable, 0);                      // Disabled
+DEFINE_TOGGLE(gOmmCheatMoonJump, 0);                    // Disabled
+DEFINE_TOGGLE(gOmmCheatGodMode, 0);                     // Disabled
+DEFINE_TOGGLE(gOmmCheatInvincible, 0);                  // Disabled
+DEFINE_TOGGLE(gOmmCheatSuperSpeed, 0);                  // Disabled
+DEFINE_TOGGLE(gOmmCheatSuperResponsive, 0);             // Disabled
+DEFINE_TOGGLE(gOmmCheatNoFallDamage, 0);                // Disabled
+DEFINE_TOGGLE(gOmmCheatWalkOnLava, 0);                  // Disabled
+DEFINE_TOGGLE(gOmmCheatWalkOnQuicksand, 0);             // Disabled
+DEFINE_TOGGLE(gOmmCheatWalkOnWater, 0);                 // Disabled
+DEFINE_TOGGLE(gOmmCheatWalkOnGas, 0);                   // Disabled
+DEFINE_TOGGLE(gOmmCheatWalkOnSlope, 0);                 // Disabled
+DEFINE_TOGGLE(gOmmCheatWalkOnDeathBarrier, 0);          // Disabled
+DEFINE_TOGGLE(gOmmCheatBljAnywhere, 0);                 // Disabled
 #endif
-DEFINE_CHOICE(gOmmFPS, 0);                           // 30 FPS
-DEFINE_CHOICE_SC(gOmmCharacter, 0);                  // Mario
-DEFINE_CHOICE_SC(gOmmMovesetType, 1);                // Odyssey (3-Health)
-DEFINE_CHOICE_SC(gOmmCapType, 2);                    // Cappy (Capture)
-DEFINE_CHOICE_SC(gOmmStarsMode, 1);                  // Non-Stop
-DEFINE_CHOICE_SC(gOmmPowerUpsType, 1);               // Improved
-DEFINE_CHOICE_SC(gOmmCameraMode, 0);                 // Classic
-DEFINE_CHOICE_SC(gOmmSparklyStarsMode, 0);           // Disabled
-DEFINE_TOGGLE_SC(gOmmSparklyStarsAssist, 0);         // Disabled
-DEFINE_TOGGLE_SC(gOmmSparklyStarsHint, 1);           // Enabled
-DEFINE_TOGGLE(gOmmCheatUnlimitedCappyBounces, 0);    // Disabled
-DEFINE_TOGGLE(gOmmCheatCappyStaysForever, 0);        // Disabled
-DEFINE_TOGGLE(gOmmCheatHomingAttackGlobalRange, 0);  // Disabled
-DEFINE_TOGGLE(gOmmCheatMarioTeleportsToCappy, 0);    // Disabled
-DEFINE_TOGGLE(gOmmCheatCappyCanCollectStars, 0);     // Disabled
-DEFINE_TOGGLE(gOmmCheatPlayAsCappy, 0);              // Disabled
-DEFINE_TOGGLE(gOmmCheatPeachEndlessVibeGauge, 0);    // Disabled
-DEFINE_CHOICE(gOmmExtrasMarioColors, 0);             // Default
-DEFINE_CHOICE(gOmmExtrasPeachColors, 0);             // Default
-DEFINE_TOGGLE_SC(gOmmExtrasSMOAnimations, 1);        // Enabled
-DEFINE_TOGGLE_SC(gOmmExtrasCappyAndTiara, 1);        // Enabled
-DEFINE_TOGGLE_SC(gOmmExtrasColoredStars, 1);         // Enabled
-DEFINE_TOGGLE_SC(gOmmExtrasVanishingHUD, 1);         // Enabled
-DEFINE_TOGGLE_SC(gOmmExtrasRevealSecrets, 0);        // Disabled
-DEFINE_TOGGLE_SC(gOmmExtrasRedCoinsRadar, 0);        // Disabled
-DEFINE_TOGGLE_SC(gOmmExtrasShowStarNumber, 0);       // Disabled
-DEFINE_TOGGLE_SC(gOmmExtrasInvisibleMode, 0);        // Disabled
-#if OMM_CODE_DEV
-DEFINE_TOGGLE_SC(gOmmExtrasRender96Peach, 0);        // Disabled
-#endif
-DEFINE_TOGGLE_SC(gOmmExtrasCrystalStarsReward, 0);   // Disabled
-DEFINE_TOGGLE_SC(gOmmExtrasNebulaStarsReward, 0);    // Disabled
+DEFINE_TOGGLE(gOmmOneHealthMode, 0);                    // Disabled
+DEFINE_CHOICE(gOmmFrameRate, OMM_FPS_30);               // 30 FPS
+DEFINE_TOGGLE(gOmmShowFPS, 0);                          // Disabled
+DEFINE_CHOICE(gOmmPreloadTextures, 2);                  // From Disk
+DEFINE_CHOICE_SC(gOmmCharacter, 0);                     // Mario
+DEFINE_CHOICE_SC(gOmmMovesetType, 1);                   // Odyssey (3-Health)
+DEFINE_CHOICE_SC(gOmmCapType, 2);                       // Cappy (Capture - Press)
+DEFINE_CHOICE_SC(gOmmStarsMode, 1);                     // Non-Stop
+DEFINE_CHOICE_SC(gOmmPowerUpsType, 1);                  // Improved
+DEFINE_CHOICE_SC(gOmmCameraMode, 0);                    // Classic
+DEFINE_CHOICE_SC(gOmmSparklyStarsMode, 0);              // Disabled
+DEFINE_CHOICE_SC(gOmmSparklyStarsHintAtLevelEntry, 0);  // Always
+DEFINE_TOGGLE(gOmmCheatUnlimitedCappyBounces, 0);       // Disabled
+DEFINE_TOGGLE(gOmmCheatCappyStaysForever, 0);           // Disabled
+DEFINE_TOGGLE(gOmmCheatHomingAttackGlobalRange, 0);     // Disabled
+DEFINE_TOGGLE(gOmmCheatMarioTeleportsToCappy, 0);       // Disabled
+DEFINE_TOGGLE(gOmmCheatCappyCanCollectStars, 0);        // Disabled
+DEFINE_TOGGLE(gOmmCheatPlayAsCappy, 0);                 // Disabled
+DEFINE_TOGGLE(gOmmCheatPeachEndlessVibeGauge, 0);       // Disabled
+DEFINE_CHOICE(gOmmExtrasMarioColors, 0);                // Default
+DEFINE_CHOICE(gOmmExtrasPeachColors, 0);                // Default
+DEFINE_TOGGLE_SC(gOmmExtrasSMOAnimations, 1);           // Enabled
+DEFINE_TOGGLE_SC(gOmmExtrasCappyAndTiara, 1);           // Enabled
+DEFINE_TOGGLE_SC(gOmmExtrasColoredStars, 1);            // Enabled
+DEFINE_TOGGLE_SC(gOmmExtrasVanishingHUD, 1);            // Enabled
+DEFINE_TOGGLE_SC(gOmmExtrasRevealSecrets, 0);           // Disabled
+DEFINE_TOGGLE_SC(gOmmExtrasRedCoinsRadar, 1);           // Enabled
+DEFINE_TOGGLE_SC(gOmmExtrasShowStarNumber, 1);          // Enabled
+DEFINE_TOGGLE_SC(gOmmExtrasInvisibleMode, 0);           // Disabled
+DEFINE_CHOICE_SC(gOmmExtrasSparklyStarsReward, 0);      // Disabled
 #if OMM_CODE_DEBUG
-DEFINE_TOGGLE_SC(gOmmDebugHitbox, 0);                // Disabled
-DEFINE_TOGGLE_SC(gOmmDebugHurtbox, 0);               // Disabled
-DEFINE_TOGGLE_SC(gOmmDebugWallbox, 0);               // Disabled
-DEFINE_TOGGLE_SC(gOmmDebugSurface, 0);               // Disabled
-DEFINE_TOGGLE_SC(gOmmDebugMario, 0);                 // Disabled
-DEFINE_TOGGLE_SC(gOmmDebugCappy, 0);                 // Disabled
-DEFINE_TOGGLE_SC(gOmmDebugProfiler, 0);              // Disabled
-#if OMM_CODE_DEV_DEBUG
-DEFINE_TOGGLE_SC(gOmmDebugGameSpeedEnable, 0);       // Disabled
-DEFINE_CHOICE_SC(gOmmDebugGameSpeedFps, 0);          // 30 FPS
+DEFINE_TOGGLE_SC(gOmmDebugHitbox, 0);                   // Disabled
+DEFINE_TOGGLE_SC(gOmmDebugHurtbox, 0);                  // Disabled
+DEFINE_TOGGLE_SC(gOmmDebugWallbox, 0);                  // Disabled
+DEFINE_TOGGLE_SC(gOmmDebugSurface, 0);                  // Disabled
+DEFINE_TOGGLE_SC(gOmmDebugMario, 0);                    // Disabled
+DEFINE_TOGGLE_SC(gOmmDebugCappy, 0);                    // Disabled
 #endif
+#if OMM_CODE_DEV
+DEFINE_TOGGLE_SC(gOmmDevGameSpeedEnable, 0);            // Disabled
+DEFINE_CHOICE_SC(gOmmDevGameSpeedModifier, 0);          // x 1.00
+DEFINE_TOGGLE_SC(gOmmDevSaveState, 0);                  // Disabled
+DEFINE_TOGGLE_SC(gOmmDevLoadState, 0);                  // Disabled
+DEFINE_SCROLL(gOmmDevMainStarsBob, 0);                  // 0
+DEFINE_SCROLL(gOmmDevMainStarsWf, 0);                   // 0
+DEFINE_SCROLL(gOmmDevMainStarsJrb, 0);                  // 0
+DEFINE_SCROLL(gOmmDevMainStarsCcm, 0);                  // 0
+DEFINE_SCROLL(gOmmDevMainStarsBbh, 0);                  // 0
+DEFINE_SCROLL(gOmmDevMainStarsHmc, 0);                  // 0
+DEFINE_SCROLL(gOmmDevMainStarsLll, 0);                  // 0
+DEFINE_SCROLL(gOmmDevMainStarsSsl, 0);                  // 0
+DEFINE_SCROLL(gOmmDevMainStarsDdd, 0);                  // 0
+DEFINE_SCROLL(gOmmDevMainStarsSl, 0);                   // 0
+DEFINE_SCROLL(gOmmDevMainStarsWdw, 0);                  // 0
+DEFINE_SCROLL(gOmmDevMainStarsTtm, 0);                  // 0
+DEFINE_SCROLL(gOmmDevMainStarsThi, 0);                  // 0
+DEFINE_SCROLL(gOmmDevMainStarsTtc, 0);                  // 0
+DEFINE_SCROLL(gOmmDevMainStarsRr, 0);                   // 0
+DEFINE_SCROLL(gOmmDevMainStarsBitdw, 0);                // 0
+DEFINE_SCROLL(gOmmDevMainStarsBitfs, 0);                // 0
+DEFINE_SCROLL(gOmmDevMainStarsBits, 0);                 // 0
+DEFINE_SCROLL(gOmmDevMainStarsTotwc, 0);                // 0
+DEFINE_SCROLL(gOmmDevMainStarsCotmc, 0);                // 0
+DEFINE_SCROLL(gOmmDevMainStarsVcutm, 0);                // 0
+DEFINE_SCROLL(gOmmDevMainStarsPss, 0);                  // 0
+DEFINE_SCROLL(gOmmDevMainStarsWmotr, 0);                // 0
+DEFINE_SCROLL(gOmmDevMainStarsSa, 0);                   // 0
+DEFINE_SCROLL(gOmmDevMainStarsCastle, 0);               // 0
+DEFINE_SCROLL(gOmmDevSparklyStarsNormal, 0);            // 0
+DEFINE_SCROLL(gOmmDevSparklyStarsHard, 0);              // 0
+DEFINE_SCROLL(gOmmDevSparklyStarsLunatic, 0);           // 0
 #endif
 
 //
@@ -166,13 +188,12 @@ typedef struct {
 static const OmmOptShortcut sOmmOptShortcuts[] = {
 DEFINE_SHORTCUT_CHOICE(gOmmCharacter, OMM_TEXT_OPT_CHARACTER_LABEL, OMM_NUM_PLAYABLE_CHARACTERS, OMM_TEXT_MARIO, OMM_TEXT_PEACH, OMM_TEXT_LUIGI, OMM_TEXT_WARIO),
 DEFINE_SHORTCUT_CHOICE(gOmmMovesetType, OMM_TEXT_OPT_MOVESET_LABEL, 3, OMM_TEXT_OPT_MOVESET_CLASSIC, OMM_TEXT_OPT_MOVESET_ODYSSEY_3H, OMM_TEXT_OPT_MOVESET_ODYSSEY_6H),
-DEFINE_SHORTCUT_CHOICE(gOmmCapType, OMM_TEXT_OPT_CAP_LABEL, 3, OMM_TEXT_OPT_CAP_CLASSIC, OMM_TEXT_OPT_CAP_NO_CAPTURE, OMM_TEXT_OPT_CAP_CAPTURE),
+DEFINE_SHORTCUT_CHOICE(gOmmCapType, OMM_TEXT_OPT_CAP_LABEL, 4, OMM_TEXT_OPT_CAP_CLASSIC, OMM_TEXT_OPT_CAP_NO_CAPTURE, OMM_TEXT_OPT_CAP_CAPTURE_PRESS, OMM_TEXT_OPT_CAP_CAPTURE_HOLD),
 DEFINE_SHORTCUT_CHOICE(gOmmStarsMode, OMM_TEXT_OPT_STARS_LABEL, 2, OMM_TEXT_OPT_STARS_CLASSIC, OMM_TEXT_OPT_STARS_NON_STOP),
 DEFINE_SHORTCUT_CHOICE(gOmmPowerUpsType, OMM_TEXT_OPT_POWER_UPS_LABEL, 2, OMM_TEXT_OPT_POWER_UPS_CLASSIC, OMM_TEXT_OPT_POWER_UPS_IMPROVED),
 DEFINE_SHORTCUT_CHOICE(gOmmCameraMode, OMM_TEXT_OPT_CAMERA_LABEL, 3, OMM_TEXT_OPT_CAMERA_CLASSIC, OMM_TEXT_OPT_CAMERA_8_DIR, OMM_TEXT_OPT_CAMERA_16_DIR),
-DEFINE_SHORTCUT_CHOICE(gOmmSparklyStarsMode, OMM_TEXT_OPT_SPARKLY_STARS_MODE, 4, OMM_TEXT_OPT_SPARKLY_STARS_MODE_0, OMM_TEXT_OPT_SPARKLY_STARS_MODE_1, OMM_TEXT_OPT_SPARKLY_STARS_MODE_2, OMM_TEXT_OPT_SPARKLY_STARS_MODE_3),
-DEFINE_SHORTCUT_TOGGLE(gOmmSparklyStarsAssist, OMM_TEXT_OPT_SPARKLY_STARS_ASSIST),
-DEFINE_SHORTCUT_TOGGLE(gOmmSparklyStarsHint, OMM_TEXT_OPT_SPARKLY_STARS_HINT),
+DEFINE_SHORTCUT_CHOICE(gOmmSparklyStarsMode, OMM_TEXT_OPT_SPARKLY_STARS_MODE, 4, OMM_TEXT_OPT_SPARKLY_STARS_MODE_DISABLED, OMM_TEXT_OPT_SPARKLY_STARS_MODE_NORMAL, OMM_TEXT_OPT_SPARKLY_STARS_MODE_HARD, OMM_TEXT_OPT_SPARKLY_STARS_MODE_LUNATIC),
+DEFINE_SHORTCUT_CHOICE(gOmmSparklyStarsHintAtLevelEntry, OMM_TEXT_OPT_SPARKLY_STARS_HINT, 3, OMM_TEXT_OPT_SPARKLY_STARS_HINT_ALWAYS, OMM_TEXT_OPT_SPARKLY_STARS_HINT_NOT_COLLECTED, OMM_TEXT_OPT_SPARKLY_STARS_HINT_NEVER),
 DEFINE_SHORTCUT_TOGGLE(gOmmExtrasSMOAnimations, OMM_TEXT_OPT_SMO_ANIMATIONS),
 DEFINE_SHORTCUT_TOGGLE(gOmmExtrasCappyAndTiara, OMM_TEXT_OPT_CAPPY_AND_TIARA),
 DEFINE_SHORTCUT_TOGGLE(gOmmExtrasColoredStars, OMM_TEXT_OPT_COLORED_STARS),
@@ -181,9 +202,6 @@ DEFINE_SHORTCUT_TOGGLE(gOmmExtrasRevealSecrets, OMM_TEXT_OPT_REVEAL_SECRETS),
 DEFINE_SHORTCUT_TOGGLE(gOmmExtrasRedCoinsRadar, OMM_TEXT_OPT_RED_COINS_RADAR),
 DEFINE_SHORTCUT_TOGGLE(gOmmExtrasShowStarNumber, OMM_TEXT_OPT_SHOW_STAR_NUMBER),
 DEFINE_SHORTCUT_TOGGLE(gOmmExtrasInvisibleMode, OMM_TEXT_OPT_INVISIBLE_MODE),
-#if OMM_CODE_DEV
-DEFINE_SHORTCUT_TOGGLE(gOmmExtrasRender96Peach, OMM_TEXT_OPT_RENDER96_PEACH),
-#endif
 #if OMM_CODE_DEBUG
 DEFINE_SHORTCUT_TOGGLE(gOmmDebugHitbox, OMM_TEXT_OPT_DEBUG_HITBOX),
 DEFINE_SHORTCUT_TOGGLE(gOmmDebugHurtbox, OMM_TEXT_OPT_DEBUG_HURTBOX),
@@ -191,21 +209,21 @@ DEFINE_SHORTCUT_TOGGLE(gOmmDebugWallbox, OMM_TEXT_OPT_DEBUG_WALLBOX),
 DEFINE_SHORTCUT_TOGGLE(gOmmDebugSurface, OMM_TEXT_OPT_DEBUG_SURFACE),
 DEFINE_SHORTCUT_TOGGLE(gOmmDebugMario, OMM_TEXT_OPT_DEBUG_MARIO),
 DEFINE_SHORTCUT_TOGGLE(gOmmDebugCappy, OMM_TEXT_OPT_DEBUG_CAPPY),
-DEFINE_SHORTCUT_TOGGLE(gOmmDebugProfiler, OMM_TEXT_OPT_DEBUG_PROFILER),
-#if OMM_CODE_DEV_DEBUG
-DEFINE_SHORTCUT_TOGGLE(gOmmDebugGameSpeedEnable, OMM_TEXT_OPT_DEBUG_GAME_SPEED),
-DEFINE_SHORTCUT_CHOICE(gOmmDebugGameSpeedFps, OMM_TEXT_OPT_DEBUG_GAME_SPEED, 5, OMM_TEXT_OPT_DEBUG_GAME_SPEED_30_FPS, OMM_TEXT_OPT_DEBUG_GAME_SPEED_20_FPS, OMM_TEXT_OPT_DEBUG_GAME_SPEED_15_FPS, OMM_TEXT_OPT_DEBUG_GAME_SPEED_10_FPS, OMM_TEXT_OPT_DEBUG_GAME_SPEED_5_FPS),
 #endif
+#if OMM_CODE_DEV
+DEFINE_SHORTCUT_TOGGLE(gOmmDevGameSpeedEnable, OMM_TEXT_OPT_DEV_GAME_SPEED),
+DEFINE_SHORTCUT_CHOICE(gOmmDevGameSpeedModifier, OMM_TEXT_OPT_DEV_GAME_SPEED, 5, OMM_TEXT_OPT_DEV_GAME_SPEED_100, OMM_TEXT_OPT_DEV_GAME_SPEED_075, OMM_TEXT_OPT_DEV_GAME_SPEED_050, OMM_TEXT_OPT_DEV_GAME_SPEED_025, OMM_TEXT_OPT_DEV_GAME_SPEED_010),
+DEFINE_SHORTCUT_TOGGLE(gOmmDevSaveState, OMM_TEXT_OPT_DEV_SAVE_STATE),
+DEFINE_SHORTCUT_TOGGLE(gOmmDevLoadState, OMM_TEXT_OPT_DEV_LOAD_STATE),
 #endif
-DEFINE_SHORTCUT_TOGGLE(gOmmExtrasCrystalStarsReward, OMM_TEXT_OPT_CRYSTAL_STARS_REWARD), // Must be last
-DEFINE_SHORTCUT_TOGGLE(gOmmExtrasNebulaStarsReward, OMM_TEXT_OPT_CRYSTAL_STARS_REWARD), // Must be last
+DEFINE_SHORTCUT_CHOICE(gOmmExtrasSparklyStarsReward, OMM_TEXT_OPT_SPARKLY_STARS_REWARD, 4, OMM_TEXT_OPT_SPARKLY_STARS_REWARD_DISABLED, OMM_TEXT_OPT_SPARKLY_STARS_REWARD_NORMAL, OMM_TEXT_OPT_SPARKLY_STARS_REWARD_HARD, OMM_TEXT_OPT_SPARKLY_STARS_REWARD_LUNATIC), // Must be last
 };
 
 //
 // Option wrappers
 //
 
-#if OMM_GAME_IS_R96A
+#if OMM_GAME_IS_R96X
 #define omm_opt_text(str, ...)      (const u8 *) str
 #define omm_opt_text_length(str)    (s32) strlen((const char *) str)
 #else
@@ -226,7 +244,7 @@ static struct Option omm_opt_make_choice(const char *label, u32 *value, const ch
     opt.type = OPT_CHOICE;
     opt.label = omm_opt_text(label, true);
     opt.uval = value;
-    opt.choices = OMM_MEMNEW(u8 *, numChoices);
+    opt.choices = omm_new(u8 *, numChoices);
     opt.numChoices = numChoices;
     for (s32 i = 0; i != numChoices; ++i) {
         opt.choices[i] = omm_opt_text(choices[i], true);
@@ -265,9 +283,9 @@ static struct Option omm_opt_make_submenu(const char *label, const char *title, 
     struct Option opt = { 0 };
     opt.type = OPT_SUBMENU;
     opt.label = omm_opt_text(label, true);
-    opt.nextMenu = OMM_MEMNEW(struct SubMenu, 1);
+    opt.nextMenu = omm_new(struct SubMenu, 1);
     opt.nextMenu->label = omm_opt_text(title, true);
-    opt.nextMenu->opts = OMM_MEMNEW(struct Option, numOptions);
+    opt.nextMenu->opts = omm_new(struct Option, numOptions);
     opt.nextMenu->numOpts = numOptions;
     for (s32 i = 0; i != numOptions; ++i) {
         opt.nextMenu->opts[i] = options[i];
@@ -275,14 +293,13 @@ static struct Option omm_opt_make_submenu(const char *label, const char *title, 
     return opt;
 }
 
-static struct Option omm_opt_make_shortcuts_submenu(const char *label, const char *title) {
-    s32 numShortcuts = OMM_ARRAY_SIZE(sOmmOptShortcuts) - !omm_ssd_is_completed(OMM_SSM_HARD);
+static struct Option omm_opt_make_shortcuts_submenu(const char *label, const char *title, s32 numShortcuts) {
     struct Option opt = { 0 };
     opt.type = OPT_SUBMENU;
     opt.label = omm_opt_text(label, true);
-    opt.nextMenu = OMM_MEMNEW(struct SubMenu, 1);
+    opt.nextMenu = omm_new(struct SubMenu, 1);
     opt.nextMenu->label = omm_opt_text(title, true);
-    opt.nextMenu->opts = OMM_MEMNEW(struct Option, numShortcuts);
+    opt.nextMenu->opts = omm_new(struct Option, numShortcuts);
     opt.nextMenu->numOpts = numShortcuts;
     for (s32 i = 0; i != numShortcuts; ++i) {
         opt.nextMenu->opts[i] = omm_opt_make_bind(sOmmOptShortcuts[i].label, sOmmOptShortcuts[i].binds);
@@ -324,7 +341,7 @@ static void omm_opt_init_warp_to_level() {
         s32 areas = omm_level_get_areas(level);
         for (s32 j = 0; j != 32; ++j) {
             if ((areas >> j) & 1) {
-                AreaValues *value = OMM_MEMNEW(AreaValues, 1);
+                AreaValues *value = omm_new(AreaValues, 1);
                 value->level = level;
                 value->area = j;
                 omm_array_add(sOmmWarpAreaValues, ptr, value);
@@ -339,14 +356,14 @@ static void omm_opt_init_warp_to_level() {
         if (stars != 0) {
             for (s32 j = 0; j != 6; ++j) {
                 if ((stars >> j) & 1) {
-                    ActValues *value = OMM_MEMNEW(ActValues, 1);
+                    ActValues *value = omm_new(ActValues, 1);
                     value->level = level;
                     value->act = j + 1;
                     omm_array_add(sOmmWarpActValues, ptr, value);
                 }
             }
         } else {
-            ActValues *value = OMM_MEMNEW(ActValues, 1);
+            ActValues *value = omm_new(ActValues, 1);
             value->level = level;
             value->act = 1;
             omm_array_add(sOmmWarpActValues, ptr, value);
@@ -359,11 +376,11 @@ static struct Option omm_opt_make_choice_level(const char *label, u32 *value) {
     opt.type = OPT_CHOICE;
     opt.label = omm_opt_text(label, true);
     opt.uval = value;
-    opt.choices = OMM_MEMNEW(u8 *, omm_level_get_count());
+    opt.choices = omm_new(u8 *, omm_level_get_count());
     opt.numChoices = omm_level_get_count();
     for (s32 i = 0; i != (s32) opt.numChoices; ++i) {
         const u8 *name = omm_level_get_name(omm_level_get_list()[i], true, true);
-        opt.choices[i] = OMM_MEMDUP(name, omm_opt_text_length(name) + 1);
+        opt.choices[i] = omm_dup(name, omm_opt_text_length(name) + 1);
     }
     return opt;
 }
@@ -373,10 +390,10 @@ static struct Option omm_opt_make_choice_area(const char *label, u32 *value) {
     opt.type = OPT_CHOICE;
     opt.label = omm_opt_text(label, true);
     opt.uval = value;
-    opt.choices = OMM_MEMNEW(u8 *, omm_array_count(sOmmWarpAreaValues));
+    opt.choices = omm_new(u8 *, omm_array_count(sOmmWarpAreaValues));
     opt.numChoices = omm_array_count(sOmmWarpAreaValues);
     for (s32 i = 0; i != (s32) opt.numChoices; ++i) {
-        OMM_STRING(name, 256, "Area %d", ((AreaValues *) omm_array_get(sOmmWarpAreaValues, ptr, i))->area);
+        omm_sprintf(name, 256, "Area %d", ((AreaValues *) omm_array_get(sOmmWarpAreaValues, ptr, i))->area);
         opt.choices[i] = omm_opt_text(name, true);
     }
     return opt;
@@ -387,13 +404,13 @@ static struct Option omm_opt_make_choice_act(const char *label, u32 *value) {
     opt.type = OPT_CHOICE;
     opt.label = omm_opt_text(label, true);
     opt.uval = value;
-    opt.choices = OMM_MEMNEW(u8 *, omm_array_count(sOmmWarpActValues));
+    opt.choices = omm_new(u8 *, omm_array_count(sOmmWarpActValues));
     opt.numChoices = omm_array_count(sOmmWarpActValues);
     for (s32 i = 0; i != (s32) opt.numChoices; ++i) {
         s32 level = ((ActValues *) omm_array_get(sOmmWarpActValues, ptr, i))->level;
         s32 act = ((ActValues *) omm_array_get(sOmmWarpActValues, ptr, i))->act;
         const u8 *name = omm_level_get_act_name(level, act, true, true);
-        opt.choices[i] = OMM_MEMDUP(name, omm_opt_text_length(name) + 1);
+        opt.choices[i] = omm_dup(name, omm_opt_text_length(name) + 1);
     }
     return opt;
 }
@@ -501,7 +518,7 @@ void omm_opt_return_to_main_menu(UNUSED void *opt, s32 arg) {
 }
 
 void omm_opt_reset_binds(u32 *binds) {
-    for (s32 i = 0; i != OMM_ARRAY_SIZE(sOmmControlsDefault); ++i) {
+    for (s32 i = 0; i != omm_static_array_length(sOmmControlsDefault); ++i) {
         if (binds   == sOmmControlsDefault[i].binds) {
             binds[0] = sOmmControlsDefault[i].b0;
             binds[1] = sOmmControlsDefault[i].b1;
@@ -513,7 +530,7 @@ void omm_opt_reset_binds(u32 *binds) {
 
 static void omm_opt_reset_controls(UNUSED void *opt, s32 arg) {
     if (!arg) {
-        for (s32 i = 0; i != OMM_ARRAY_SIZE(sOmmControlsDefault); ++i) {
+        for (s32 i = 0; i != omm_static_array_length(sOmmControlsDefault); ++i) {
             sOmmControlsDefault[i].binds[0] = sOmmControlsDefault[i].b0;
             sOmmControlsDefault[i].binds[1] = sOmmControlsDefault[i].b1;
             sOmmControlsDefault[i].binds[2] = sOmmControlsDefault[i].b2;
@@ -525,169 +542,346 @@ static void omm_opt_reset_controls(UNUSED void *opt, s32 arg) {
 // Init
 //
 
-#define choices(...) (OMM_ARRAY_OF(const char *) { __VA_ARGS__ })
-#define options(...) (OMM_ARRAY_OF(struct Option) { __VA_ARGS__ })
+#define choices(...) (omm_static_array_of(const char *) { __VA_ARGS__ })
+#define options(...) (omm_static_array_of(struct Option) { __VA_ARGS__ })
+
+enum OmmOptState {
+    OMM_OPT_STATE_SPARKLY_STARS_LOCKED,
+    OMM_OPT_STATE_SPARKLY_STARS_UNLOCKED,
+    OMM_OPT_STATE_PEACH_UNLOCKED,
+    OMM_OPT_STATE_COUNT
+};
+static struct Option sOmmOptMenus[OMM_OPT_STATE_COUNT];
+
+static s32 omm_opt_get_state() {
+    if (OMM_SPARKLY_IS_PEACH_UNLOCKED) return OMM_OPT_STATE_PEACH_UNLOCKED;
+    if (OMM_SPARKLY_IS_GAMEMODE_UNLOCKED) return OMM_OPT_STATE_SPARKLY_STARS_UNLOCKED;
+    return OMM_OPT_STATE_SPARKLY_STARS_LOCKED;
+}
+
+static struct Option omm_opt_make_main_menu(s32 state) {
+
+    // Character
+    struct Option optCharacter = omm_opt_make_choice(OMM_TEXT_OPT_CHARACTER_LABEL, &gOmmCharacter, choices(
+        OMM_TEXT_MARIO,
+        OMM_TEXT_PEACH,
+        OMM_TEXT_LUIGI,
+        OMM_TEXT_WARIO),
+    OMM_NUM_PLAYABLE_CHARACTERS);
+
+    // Moveset
+    struct Option optMoveset = omm_opt_make_choice(OMM_TEXT_OPT_MOVESET_LABEL, &gOmmMovesetType, choices(
+        OMM_TEXT_OPT_MOVESET_CLASSIC,
+        OMM_TEXT_OPT_MOVESET_ODYSSEY_3H,
+        OMM_TEXT_OPT_MOVESET_ODYSSEY_6H),
+    3);
+
+    // Cap
+    struct Option optCap = omm_opt_make_choice(OMM_TEXT_OPT_CAP_LABEL, &gOmmCapType, choices(
+        OMM_TEXT_OPT_CAP_CLASSIC,
+        OMM_TEXT_OPT_CAP_NO_CAPTURE,
+        OMM_TEXT_OPT_CAP_CAPTURE_PRESS,
+        OMM_TEXT_OPT_CAP_CAPTURE_HOLD),
+    4);
+
+    // Stars
+    struct Option optStars = omm_opt_make_choice(OMM_TEXT_OPT_STARS_LABEL, &gOmmStarsMode, choices(
+        OMM_TEXT_OPT_STARS_CLASSIC,
+        OMM_TEXT_OPT_STARS_NON_STOP),
+    2);
+
+    // Power-ups
+    struct Option optPowerUps = omm_opt_make_choice(OMM_TEXT_OPT_POWER_UPS_LABEL, &gOmmPowerUpsType, choices(
+        OMM_TEXT_OPT_POWER_UPS_CLASSIC,
+        OMM_TEXT_OPT_POWER_UPS_IMPROVED),
+    2);
+
+    // Camera
+    struct Option optCamera = omm_opt_make_choice(OMM_TEXT_OPT_CAMERA_LABEL, &gOmmCameraMode, choices(
+        OMM_TEXT_OPT_CAMERA_CLASSIC,
+        OMM_TEXT_OPT_CAMERA_8_DIR,
+        OMM_TEXT_OPT_CAMERA_16_DIR),
+    3);
+
+    // Sparkly Stars
+    struct Option optSparklyStars = omm_opt_make_submenu(OMM_TEXT_OPT_SPARKLY_STARS_LABEL, OMM_TEXT_OPT_SPARKLY_STARS_TITLE, options(
+        omm_opt_make_choice(OMM_TEXT_OPT_SPARKLY_STARS_MODE, &gOmmSparklyStarsMode, choices(
+            OMM_TEXT_OPT_SPARKLY_STARS_MODE_DISABLED,
+            OMM_TEXT_OPT_SPARKLY_STARS_MODE_NORMAL,
+            OMM_TEXT_OPT_SPARKLY_STARS_MODE_HARD,
+            OMM_TEXT_OPT_SPARKLY_STARS_MODE_LUNATIC),
+        OMM_SPARKLY_MODE_COUNT),
+        omm_opt_make_choice(OMM_TEXT_OPT_SPARKLY_STARS_HINT, &gOmmSparklyStarsHintAtLevelEntry, choices(
+            OMM_TEXT_OPT_SPARKLY_STARS_HINT_ALWAYS,
+            OMM_TEXT_OPT_SPARKLY_STARS_HINT_NOT_COLLECTED,
+            OMM_TEXT_OPT_SPARKLY_STARS_HINT_NEVER),
+        3),
+    ), 2);
+
+    // Cheats
+    struct Option optCheats = omm_opt_make_submenu(OMM_TEXT_OPT_CHEATS_LABEL, OMM_TEXT_OPT_CHEATS_TITLE, options(
+        omm_opt_make_toggle(OMM_TEXT_OPT_CHEAT_UNLIMITED_CAPPY_BOUNCES, &gOmmCheatUnlimitedCappyBounces),
+        omm_opt_make_toggle(OMM_TEXT_OPT_CHEAT_CAPPY_STAYS_FOREVER, &gOmmCheatCappyStaysForever),
+        omm_opt_make_toggle(OMM_TEXT_OPT_CHEAT_GLOBAL_HOMING_ATTACK_RANGE, &gOmmCheatHomingAttackGlobalRange),
+        omm_opt_make_toggle(OMM_TEXT_OPT_CHEAT_MARIO_TELEPORTS_TO_CAPPY, &gOmmCheatMarioTeleportsToCappy),
+        omm_opt_make_toggle(OMM_TEXT_OPT_CHEAT_CAPPY_CAN_COLLECT_STARS, &gOmmCheatCappyCanCollectStars),
+        omm_opt_make_toggle(OMM_TEXT_OPT_CHEAT_PLAY_AS_CAPPY, &gOmmCheatPlayAsCappy),
+        omm_opt_make_toggle(OMM_TEXT_OPT_CHEAT_PEACH_ENDLESS_VIBE_GAUGE, &gOmmCheatPeachEndlessVibeGauge),
+    ), 6 + (state >= OMM_OPT_STATE_PEACH_UNLOCKED));
+
+    // Extras
+    struct Option optExtras = omm_opt_make_submenu(OMM_TEXT_OPT_EXTRAS_LABEL, OMM_TEXT_OPT_EXTRAS_TITLE, options(
+#if OMM_MK_MARIO_COLORS
+        omm_opt_make_choice(OMM_TEXT_OPT_MARIO_COLORS, &gOmmExtrasMarioColors, omm_mario_colors_choices(false), omm_mario_colors_count()),
+#endif
+        omm_opt_make_choice(OMM_TEXT_OPT_PEACH_COLORS, &gOmmExtrasPeachColors, omm_mario_colors_choices(true), omm_mario_colors_count()),
+        omm_opt_make_toggle(OMM_TEXT_OPT_SMO_ANIMATIONS, &gOmmExtrasSMOAnimations),
+        omm_opt_make_toggle(OMM_TEXT_OPT_CAPPY_AND_TIARA, &gOmmExtrasCappyAndTiara),
+#if !OMM_GAME_IS_SMMS
+        omm_opt_make_toggle(OMM_TEXT_OPT_COLORED_STARS, &gOmmExtrasColoredStars),
+#endif
+        omm_opt_make_toggle(OMM_TEXT_OPT_VANISHING_HUD, &gOmmExtrasVanishingHUD),
+        omm_opt_make_toggle(OMM_TEXT_OPT_REVEAL_SECRETS, &gOmmExtrasRevealSecrets),
+        omm_opt_make_toggle(OMM_TEXT_OPT_RED_COINS_RADAR, &gOmmExtrasRedCoinsRadar),
+        omm_opt_make_toggle(OMM_TEXT_OPT_SHOW_STAR_NUMBER, &gOmmExtrasShowStarNumber),
+        omm_opt_make_toggle(OMM_TEXT_OPT_INVISIBLE_MODE, &gOmmExtrasInvisibleMode),
+        omm_opt_make_choice(OMM_TEXT_OPT_SPARKLY_STARS_REWARD, &gOmmExtrasSparklyStarsReward, choices(
+            OMM_TEXT_OPT_SPARKLY_STARS_REWARD_DISABLED,
+            OMM_TEXT_OPT_SPARKLY_STARS_REWARD_NORMAL,
+            OMM_TEXT_OPT_SPARKLY_STARS_REWARD_HARD,
+            OMM_TEXT_OPT_SPARKLY_STARS_REWARD_LUNATIC),
+        OMM_SPARKLY_MODE_COUNT),
+    ), 8 + OMM_MK_MARIO_COLORS + !OMM_GAME_IS_SMMS + (state >= OMM_OPT_STATE_PEACH_UNLOCKED));
+
+    // Shortcuts
+    struct Option optShortcuts = omm_opt_make_shortcuts_submenu(OMM_TEXT_OPT_SHORTCUTS_LABEL, OMM_TEXT_OPT_SHORTCUTS_TITLE,
+        omm_static_array_length(sOmmOptShortcuts) - (state < OMM_OPT_STATE_PEACH_UNLOCKED)
+    );
+
+#if OMM_CODE_DEBUG
+    // Debug
+    struct Option optDebug = omm_opt_make_submenu(OMM_TEXT_OPT_DEBUG_LABEL, OMM_TEXT_OPT_DEBUG_TITLE, options(
+        omm_opt_make_toggle(OMM_TEXT_OPT_DEBUG_HITBOX, &gOmmDebugHitbox),
+        omm_opt_make_toggle(OMM_TEXT_OPT_DEBUG_HURTBOX, &gOmmDebugHurtbox),
+        omm_opt_make_toggle(OMM_TEXT_OPT_DEBUG_WALLBOX, &gOmmDebugWallbox),
+        omm_opt_make_toggle(OMM_TEXT_OPT_DEBUG_SURFACE, &gOmmDebugSurface),
+        omm_opt_make_toggle(OMM_TEXT_OPT_DEBUG_MARIO, &gOmmDebugMario),
+        omm_opt_make_toggle(OMM_TEXT_OPT_DEBUG_CAPPY, &gOmmDebugCappy),
+    ), 6);
+#endif
+
+#if OMM_CODE_DEV
+    // Dev
+    struct Option optDev = omm_opt_make_submenu(OMM_TEXT_OPT_DEV_LABEL, OMM_TEXT_OPT_DEV_TITLE, options(
+        omm_opt_make_toggle(OMM_TEXT_OPT_DEV_GAME_SPEED, &gOmmDevGameSpeedEnable),
+        omm_opt_make_choice(OMM_TEXT_BLANK, &gOmmDevGameSpeedModifier, choices(
+            OMM_TEXT_OPT_DEV_GAME_SPEED_100,
+            OMM_TEXT_OPT_DEV_GAME_SPEED_075,
+            OMM_TEXT_OPT_DEV_GAME_SPEED_050,
+            OMM_TEXT_OPT_DEV_GAME_SPEED_025,
+            OMM_TEXT_OPT_DEV_GAME_SPEED_010),
+        5),
+        omm_opt_make_toggle(OMM_TEXT_OPT_DEV_SAVE_STATE, &gOmmDevSaveState),
+        omm_opt_make_toggle(OMM_TEXT_OPT_DEV_LOAD_STATE, &gOmmDevLoadState),
+        omm_opt_make_submenu(OMM_TEXT_OPT_DEV_MAIN_STARS_LABEL, OMM_TEXT_OPT_DEV_MAIN_STARS_TITLE, options(
+            omm_opt_make_scroll(OMM_TEXT_OPT_DEV_MAIN_STARS_BOB, &gOmmDevMainStarsBob, 0, 7, 1),
+            omm_opt_make_scroll(OMM_TEXT_OPT_DEV_MAIN_STARS_WF, &gOmmDevMainStarsWf, 0, 7, 1),
+            omm_opt_make_scroll(OMM_TEXT_OPT_DEV_MAIN_STARS_JRB, &gOmmDevMainStarsJrb, 0, 7, 1),
+            omm_opt_make_scroll(OMM_TEXT_OPT_DEV_MAIN_STARS_CCM, &gOmmDevMainStarsCcm, 0, 7, 1),
+            omm_opt_make_scroll(OMM_TEXT_OPT_DEV_MAIN_STARS_BBH, &gOmmDevMainStarsBbh, 0, 7, 1),
+            omm_opt_make_scroll(OMM_TEXT_OPT_DEV_MAIN_STARS_HMC, &gOmmDevMainStarsHmc, 0, 7, 1),
+            omm_opt_make_scroll(OMM_TEXT_OPT_DEV_MAIN_STARS_LLL, &gOmmDevMainStarsLll, 0, 7, 1),
+            omm_opt_make_scroll(OMM_TEXT_OPT_DEV_MAIN_STARS_SSL, &gOmmDevMainStarsSsl, 0, 7, 1),
+            omm_opt_make_scroll(OMM_TEXT_OPT_DEV_MAIN_STARS_DDD, &gOmmDevMainStarsDdd, 0, 7, 1),
+            omm_opt_make_scroll(OMM_TEXT_OPT_DEV_MAIN_STARS_SL, &gOmmDevMainStarsSl, 0, 7, 1),
+            omm_opt_make_scroll(OMM_TEXT_OPT_DEV_MAIN_STARS_WDW, &gOmmDevMainStarsWdw, 0, 7, 1),
+            omm_opt_make_scroll(OMM_TEXT_OPT_DEV_MAIN_STARS_TTM, &gOmmDevMainStarsTtm, 0, 7, 1),
+            omm_opt_make_scroll(OMM_TEXT_OPT_DEV_MAIN_STARS_THI, &gOmmDevMainStarsThi, 0, 7, 1),
+            omm_opt_make_scroll(OMM_TEXT_OPT_DEV_MAIN_STARS_TTC, &gOmmDevMainStarsTtc, 0, 7, 1),
+            omm_opt_make_scroll(OMM_TEXT_OPT_DEV_MAIN_STARS_RR, &gOmmDevMainStarsRr, 0, 7, 1),
+            omm_opt_make_scroll(OMM_TEXT_OPT_DEV_MAIN_STARS_BITDW, &gOmmDevMainStarsBitdw, 0, 7, 1),
+            omm_opt_make_scroll(OMM_TEXT_OPT_DEV_MAIN_STARS_BITFS, &gOmmDevMainStarsBitfs, 0, 7, 1),
+            omm_opt_make_scroll(OMM_TEXT_OPT_DEV_MAIN_STARS_BITS, &gOmmDevMainStarsBits, 0, 7, 1),
+            omm_opt_make_scroll(OMM_TEXT_OPT_DEV_MAIN_STARS_TOTWC, &gOmmDevMainStarsTotwc, 0, 7, 1),
+            omm_opt_make_scroll(OMM_TEXT_OPT_DEV_MAIN_STARS_COTMC, &gOmmDevMainStarsCotmc, 0, 7, 1),
+            omm_opt_make_scroll(OMM_TEXT_OPT_DEV_MAIN_STARS_VCUTM, &gOmmDevMainStarsVcutm, 0, 7, 1),
+            omm_opt_make_scroll(OMM_TEXT_OPT_DEV_MAIN_STARS_PSS, &gOmmDevMainStarsPss, 0, 7, 1),
+            omm_opt_make_scroll(OMM_TEXT_OPT_DEV_MAIN_STARS_WMOTR, &gOmmDevMainStarsWmotr, 0, 7, 1),
+            omm_opt_make_scroll(OMM_TEXT_OPT_DEV_MAIN_STARS_SA, &gOmmDevMainStarsSa, 0, 7, 1),
+            omm_opt_make_scroll(OMM_TEXT_OPT_DEV_MAIN_STARS_CASTLE, &gOmmDevMainStarsCastle, 0, 7, 1),
+        ), 25),
+        omm_opt_make_submenu(OMM_TEXT_OPT_DEV_SPARKLY_STARS_LABEL, OMM_TEXT_OPT_DEV_SPARKLY_STARS_TITLE, options(
+            omm_opt_make_scroll(OMM_TEXT_OPT_DEV_SPARKLY_STARS_NORMAL, &gOmmDevSparklyStarsNormal, 0, 30, 1),
+            omm_opt_make_scroll(OMM_TEXT_OPT_DEV_SPARKLY_STARS_HARD, &gOmmDevSparklyStarsHard, 0, 30, 1),
+            omm_opt_make_scroll(OMM_TEXT_OPT_DEV_SPARKLY_STARS_LUNATIC, &gOmmDevSparklyStarsLunatic, 0, 90, 1),
+        ), 3),
+    ), 6);
+#endif
+
+    // OMM menu
+    struct Option optOmmMenu;
+    if (state >= OMM_OPT_STATE_SPARKLY_STARS_UNLOCKED) {
+        optOmmMenu = omm_opt_make_submenu(OMM_TEXT_OPT_MENU_LABEL, OMM_TEXT_OPT_MENU_TITLE, options(
+            optCharacter,
+            optMoveset,
+            optCap,
+            optStars,
+            optPowerUps,
+            optCamera,
+            optSparklyStars,
+            optCheats,
+            optExtras,
+            optShortcuts,
+#if OMM_CODE_DEBUG
+            optDebug,
+#endif
+#if OMM_CODE_DEV
+            optDev,
+#endif
+        ), 10 + OMM_CODE_DEBUG + OMM_CODE_DEV);
+    } else {
+        optOmmMenu = omm_opt_make_submenu(OMM_TEXT_OPT_MENU_LABEL, OMM_TEXT_OPT_MENU_TITLE, options(
+            optCharacter,
+            optMoveset,
+            optCap,
+            optStars,
+            optPowerUps,
+            optCamera,
+            optCheats,
+            optExtras,
+            optShortcuts,
+#if OMM_CODE_DEBUG
+            optDebug,
+#endif
+#if OMM_CODE_DEV
+            optDev,
+#endif
+        ), 9 + OMM_CODE_DEBUG + OMM_CODE_DEV);
+    }
+    return optOmmMenu;
+}
 
 #if !OMM_CODE_DYNOS
 OMM_AT_STARTUP static
 #endif
 void omm_opt_init() {
-    save_file_load_all();
-    omm_player_select(gOmmCharacter);
-#if OMM_CODE_DEV_DEBUG
-    gOmmDebugGameSpeedEnable = false;
-    gOmmDebugGameSpeedFps = 0;
+    static bool inited = false;
+    if (!inited) {
+        save_file_load_all();
+        omm_player_select(gOmmCharacter);
+#if OMM_CODE_DEV
+        gOmmDevGameSpeedEnable = false;
+        gOmmDevGameSpeedModifier = 0;
+        gOmmDevSaveState = false;
+        gOmmDevLoadState = false;
 #endif
 
-    // OMM menu
-    struct Option optOmmMenu =
-        omm_opt_make_submenu(OMM_TEXT_OPT_MENU_LABEL, OMM_TEXT_OPT_MENU_TITLE, options(
-            omm_opt_make_choice(OMM_TEXT_OPT_CHARACTER_LABEL, &gOmmCharacter, choices(OMM_TEXT_MARIO, OMM_TEXT_PEACH, OMM_TEXT_LUIGI, OMM_TEXT_WARIO), OMM_NUM_PLAYABLE_CHARACTERS),
-            omm_opt_make_choice(OMM_TEXT_OPT_MOVESET_LABEL, &gOmmMovesetType, choices(OMM_TEXT_OPT_MOVESET_CLASSIC, OMM_TEXT_OPT_MOVESET_ODYSSEY_3H, OMM_TEXT_OPT_MOVESET_ODYSSEY_6H), 3),
-            omm_opt_make_choice(OMM_TEXT_OPT_CAP_LABEL, &gOmmCapType, choices(OMM_TEXT_OPT_CAP_CLASSIC, OMM_TEXT_OPT_CAP_NO_CAPTURE, OMM_TEXT_OPT_CAP_CAPTURE), 3),
-            omm_opt_make_choice(OMM_TEXT_OPT_STARS_LABEL, &gOmmStarsMode, choices(OMM_TEXT_OPT_STARS_CLASSIC, OMM_TEXT_OPT_STARS_NON_STOP), 2),
-            omm_opt_make_choice(OMM_TEXT_OPT_POWER_UPS_LABEL, &gOmmPowerUpsType, choices(OMM_TEXT_OPT_POWER_UPS_CLASSIC, OMM_TEXT_OPT_POWER_UPS_IMPROVED), 2),
-            omm_opt_make_choice(OMM_TEXT_OPT_CAMERA_LABEL, &gOmmCameraMode, choices(OMM_TEXT_OPT_CAMERA_CLASSIC, OMM_TEXT_OPT_CAMERA_8_DIR, OMM_TEXT_OPT_CAMERA_16_DIR), 3),
-            omm_opt_make_submenu(OMM_TEXT_OPT_SPARKLY_STARS_LABEL, OMM_TEXT_OPT_SPARKLY_STARS_TITLE, options(
-                omm_opt_make_choice(OMM_TEXT_OPT_SPARKLY_STARS_MODE, &gOmmSparklyStarsMode, choices(OMM_TEXT_OPT_SPARKLY_STARS_MODE_0, OMM_TEXT_OPT_SPARKLY_STARS_MODE_1, OMM_TEXT_OPT_SPARKLY_STARS_MODE_2, OMM_TEXT_OPT_SPARKLY_STARS_MODE_3), OMM_SSM_COUNT),
-                omm_opt_make_toggle(OMM_TEXT_OPT_SPARKLY_STARS_ASSIST, &gOmmSparklyStarsAssist),
-                omm_opt_make_toggle(OMM_TEXT_OPT_SPARKLY_STARS_HINT, &gOmmSparklyStarsHint),
-            ), 3),
-            omm_opt_make_submenu(OMM_TEXT_OPT_CHEATS_LABEL, OMM_TEXT_OPT_CHEATS_TITLE, options(
-                omm_opt_make_toggle(OMM_TEXT_OPT_CHEAT_UNLIMITED_CAPPY_BOUNCES, &gOmmCheatUnlimitedCappyBounces),
-                omm_opt_make_toggle(OMM_TEXT_OPT_CHEAT_CAPPY_STAYS_FOREVER, &gOmmCheatCappyStaysForever),
-                omm_opt_make_toggle(OMM_TEXT_OPT_CHEAT_GLOBAL_HOMING_ATTACK_RANGE, &gOmmCheatHomingAttackGlobalRange),
-                omm_opt_make_toggle(OMM_TEXT_OPT_CHEAT_MARIO_TELEPORTS_TO_CAPPY, &gOmmCheatMarioTeleportsToCappy),
-                omm_opt_make_toggle(OMM_TEXT_OPT_CHEAT_CAPPY_CAN_COLLECT_STARS, &gOmmCheatCappyCanCollectStars),
-                omm_opt_make_toggle(OMM_TEXT_OPT_CHEAT_PLAY_AS_CAPPY, &gOmmCheatPlayAsCappy),
-                omm_opt_make_toggle(OMM_TEXT_OPT_CHEAT_PEACH_ENDLESS_VIBE_GAUGE, &gOmmCheatPeachEndlessVibeGauge),
-            ), 6 + omm_player_is_unlocked(OMM_PLAYER_PEACH)),
-            omm_opt_make_submenu(OMM_TEXT_OPT_EXTRAS_LABEL, OMM_TEXT_OPT_EXTRAS_TITLE, options(
-#if OMM_CODE_MARIO_COLORS
-                omm_opt_make_choice(OMM_TEXT_OPT_MARIO_COLORS, &gOmmExtrasMarioColors, omm_mario_colors_choices(), omm_mario_colors_count()),
-#endif
-                omm_opt_make_choice(OMM_TEXT_OPT_PEACH_COLORS, &gOmmExtrasPeachColors, omm_mario_colors_choices(), omm_mario_colors_count()),
-                omm_opt_make_toggle(OMM_TEXT_OPT_SMO_ANIMATIONS, &gOmmExtrasSMOAnimations),
-                omm_opt_make_toggle(OMM_TEXT_OPT_CAPPY_AND_TIARA, &gOmmExtrasCappyAndTiara),
-#if !OMM_GAME_IS_SMMS
-                omm_opt_make_toggle(OMM_TEXT_OPT_COLORED_STARS, &gOmmExtrasColoredStars),
-#endif
-                omm_opt_make_toggle(OMM_TEXT_OPT_VANISHING_HUD, &gOmmExtrasVanishingHUD),
-                omm_opt_make_toggle(OMM_TEXT_OPT_REVEAL_SECRETS, &gOmmExtrasRevealSecrets),
-                omm_opt_make_toggle(OMM_TEXT_OPT_RED_COINS_RADAR, &gOmmExtrasRedCoinsRadar),
-                omm_opt_make_toggle(OMM_TEXT_OPT_SHOW_STAR_NUMBER, &gOmmExtrasShowStarNumber),
-                omm_opt_make_toggle(OMM_TEXT_OPT_INVISIBLE_MODE, &gOmmExtrasInvisibleMode),
-#if OMM_CODE_DEV
-                omm_opt_make_toggle(OMM_TEXT_OPT_RENDER96_PEACH, &gOmmExtrasRender96Peach),
-#endif
-                omm_opt_make_toggle(OMM_TEXT_OPT_CRYSTAL_STARS_REWARD, &gOmmExtrasCrystalStarsReward),
-                omm_opt_make_toggle(OMM_TEXT_OPT_NEBULA_STARS_REWARD, &gOmmExtrasNebulaStarsReward),
-            ), 8 + OMM_CODE_MARIO_COLORS + !OMM_GAME_IS_SMMS + OMM_CODE_DEV + omm_ssd_is_completed(OMM_SSM_HARD) + omm_ssd_is_completed(OMM_SSM_LUNATIC)),
-            omm_opt_make_shortcuts_submenu(OMM_TEXT_OPT_SHORTCUTS_LABEL, OMM_TEXT_OPT_SHORTCUTS_TITLE),
-#if OMM_CODE_DEBUG
-            omm_opt_make_submenu(OMM_TEXT_OPT_DEBUG_LABEL, OMM_TEXT_OPT_DEBUG_TITLE, options(
-                omm_opt_make_toggle(OMM_TEXT_OPT_DEBUG_HITBOX, &gOmmDebugHitbox),
-                omm_opt_make_toggle(OMM_TEXT_OPT_DEBUG_HURTBOX, &gOmmDebugHurtbox),
-                omm_opt_make_toggle(OMM_TEXT_OPT_DEBUG_WALLBOX, &gOmmDebugWallbox),
-                omm_opt_make_toggle(OMM_TEXT_OPT_DEBUG_SURFACE, &gOmmDebugSurface),
-                omm_opt_make_toggle(OMM_TEXT_OPT_DEBUG_MARIO, &gOmmDebugMario),
-                omm_opt_make_toggle(OMM_TEXT_OPT_DEBUG_CAPPY, &gOmmDebugCappy),
-                omm_opt_make_toggle(OMM_TEXT_OPT_DEBUG_PROFILER, &gOmmDebugProfiler),
-#if OMM_CODE_DEV_DEBUG
-                omm_opt_make_toggle(OMM_TEXT_OPT_DEBUG_GAME_SPEED, &gOmmDebugGameSpeedEnable),
-                omm_opt_make_choice(OMM_TEXT_BLANK, &gOmmDebugGameSpeedFps, choices(
-                    OMM_TEXT_OPT_DEBUG_GAME_SPEED_30_FPS,
-                    OMM_TEXT_OPT_DEBUG_GAME_SPEED_20_FPS,
-                    OMM_TEXT_OPT_DEBUG_GAME_SPEED_15_FPS,
-                    OMM_TEXT_OPT_DEBUG_GAME_SPEED_10_FPS,
-                    OMM_TEXT_OPT_DEBUG_GAME_SPEED_5_FPS),
-                5),
-#endif
-            ), 7 + 2 * OMM_CODE_DEV_DEBUG),
-#endif
-        ), 10 + OMM_CODE_DEBUG);
-    OMM_MEMCPY(gOmmOptMenu, optOmmMenu.label, omm_opt_text_length(optOmmMenu.label) + 1);
-    OMM_MEMCPY(gOmmOptMenu + 0x100, optOmmMenu.nextMenu, sizeof(struct SubMenu));
+        // OMM menu
+        for (s32 state = 0; state != OMM_OPT_STATE_COUNT; ++state) {
+            sOmmOptMenus[state] = omm_opt_make_main_menu(state);
+            if (state == omm_opt_get_state()) {
+                gOmmOptMenu.label = omm_dup(sOmmOptMenus[state].label, omm_opt_text_length(sOmmOptMenus[state].label) + 1);
+                gOmmOptMenu.subMenu = omm_dup(sOmmOptMenus[state].nextMenu, sizeof(struct SubMenu));
+            }
+        }
 
 #if !OMM_CODE_DYNOS
-    // Warp to level
-    omm_opt_init_warp_to_level();
-    struct Option optWarpToLevel =
-        omm_opt_make_submenu(OMM_TEXT_OPT_WARP_TO_LEVEL_LABEL, OMM_TEXT_OPT_WARP_TO_LEVEL_TITLE, options(
-            omm_opt_make_choice_level(OMM_TEXT_OPT_WARP_TO_LEVEL_LEVEL, &sOmmWarpLevel),
-            omm_opt_make_choice_area(OMM_TEXT_OPT_WARP_TO_LEVEL_AREA, &sOmmWarpArea),
-            omm_opt_make_choice_act(OMM_TEXT_OPT_WARP_TO_LEVEL_ACT, &sOmmWarpAct),
-            omm_opt_make_button(OMM_TEXT_OPT_WARP_TO_LEVEL_WARP, (void (*)(struct Option *, s32)) omm_opt_warp_to_level),
-        ), 4);
-    OMM_MEMCPY(gOmmOptWarpToLevel, optWarpToLevel.label, omm_opt_text_length(optWarpToLevel.label) + 1);
-    OMM_MEMCPY(gOmmOptWarpToLevel + 0x100, optWarpToLevel.nextMenu, sizeof(struct SubMenu));
-    omm_add_routine(OMM_ROUTINE_TYPE_UPDATE, omm_opt_update_warp_to_level);
+        // Warp to level
+        omm_opt_init_warp_to_level();
+        struct Option optWarpToLevel =
+            omm_opt_make_submenu(OMM_TEXT_OPT_WARP_TO_LEVEL_LABEL, OMM_TEXT_OPT_WARP_TO_LEVEL_TITLE, options(
+                omm_opt_make_choice_level(OMM_TEXT_OPT_WARP_TO_LEVEL_LEVEL, &sOmmWarpLevel),
+                omm_opt_make_choice_area(OMM_TEXT_OPT_WARP_TO_LEVEL_AREA, &sOmmWarpArea),
+                omm_opt_make_choice_act(OMM_TEXT_OPT_WARP_TO_LEVEL_ACT, &sOmmWarpAct),
+                omm_opt_make_button(OMM_TEXT_OPT_WARP_TO_LEVEL_WARP, (void (*)(struct Option *, s32)) omm_opt_warp_to_level),
+            ), 4);
+        gOmmOptWarpToLevel.label = omm_dup(optWarpToLevel.label, omm_opt_text_length(optWarpToLevel.label) + 1);
+        gOmmOptWarpToLevel.subMenu = omm_dup(optWarpToLevel.nextMenu, sizeof(struct SubMenu));
+        omm_add_routine(OMM_ROUTINE_TYPE_UPDATE, omm_opt_update_warp_to_level);
 
-    // Return to main menu
-    u8 *optReturnToMainMenuLabel = omm_opt_text(OMM_TEXT_OPT_RETURN_TO_MAIN_MENU_LABEL, false);
-    OMM_MEMCPY(gOmmOptReturnToMainMenu, optReturnToMainMenuLabel, omm_opt_text_length(optReturnToMainMenuLabel) + 1);
+        // Return to main menu
+        u8 *optReturnToMainMenuLabel = omm_opt_text(OMM_TEXT_OPT_RETURN_TO_MAIN_MENU_LABEL, false);
+        gOmmOptReturnToMainMenu.label = omm_dup(optReturnToMainMenuLabel, omm_opt_text_length(optReturnToMainMenuLabel) + 1);
+        gOmmOptReturnToMainMenu.subMenu = NULL;
 #endif
 
-    // Controls
-    struct Option optControls =
-        omm_opt_make_submenu(OMM_TEXT_OPT_CONTROLS_TITLE, OMM_TEXT_OPT_CONTROLS_TITLE, options(
-            omm_opt_make_bind(OMM_TEXT_OPT_CONTROLS_A_BUTTON, gOmmControlsButtonA),
-            omm_opt_make_bind(OMM_TEXT_OPT_CONTROLS_B_BUTTON, gOmmControlsButtonB),
-            omm_opt_make_bind(OMM_TEXT_OPT_CONTROLS_X_BUTTON, gOmmControlsButtonX),
-            omm_opt_make_bind(OMM_TEXT_OPT_CONTROLS_Y_BUTTON, gOmmControlsButtonY),
-            omm_opt_make_bind(OMM_TEXT_OPT_CONTROLS_START_BUTTON, gOmmControlsButtonStart),
-            omm_opt_make_bind(OMM_TEXT_OPT_CONTROLS_L_TRIGGER, gOmmControlsTriggerL),
-            omm_opt_make_bind(OMM_TEXT_OPT_CONTROLS_R_TRIGGER, gOmmControlsTriggerR),
-            omm_opt_make_bind(OMM_TEXT_OPT_CONTROLS_Z_TRIGGER, gOmmControlsTriggerZ),
-            omm_opt_make_bind(OMM_TEXT_OPT_CONTROLS_C_UP, gOmmControlsCUp),
-            omm_opt_make_bind(OMM_TEXT_OPT_CONTROLS_C_DOWN, gOmmControlsCDown),
-            omm_opt_make_bind(OMM_TEXT_OPT_CONTROLS_C_LEFT, gOmmControlsCLeft),
-            omm_opt_make_bind(OMM_TEXT_OPT_CONTROLS_C_RIGHT, gOmmControlsCRight),
-            omm_opt_make_bind(OMM_TEXT_OPT_CONTROLS_D_UP, gOmmControlsDUp),
-            omm_opt_make_bind(OMM_TEXT_OPT_CONTROLS_D_DOWN, gOmmControlsDDown),
-            omm_opt_make_bind(OMM_TEXT_OPT_CONTROLS_D_LEFT, gOmmControlsDLeft),
-            omm_opt_make_bind(OMM_TEXT_OPT_CONTROLS_D_RIGHT, gOmmControlsDRight),
-            omm_opt_make_bind(OMM_TEXT_OPT_CONTROLS_STICK_UP, gOmmControlsStickUp),
-            omm_opt_make_bind(OMM_TEXT_OPT_CONTROLS_STICK_DOWN, gOmmControlsStickDown),
-            omm_opt_make_bind(OMM_TEXT_OPT_CONTROLS_STICK_LEFT, gOmmControlsStickLeft),
-            omm_opt_make_bind(OMM_TEXT_OPT_CONTROLS_STICK_RIGHT, gOmmControlsStickRight),
-            omm_opt_make_scroll(OMM_TEXT_OPT_CONTROLS_STICK_DEADZONE, &configStickDeadzone, 0, 100, 1),
-            omm_opt_make_button(OMM_TEXT_OPT_CONTROLS_RESET, (void (*)(struct Option *, s32)) omm_opt_reset_controls),
-        ), 22);
-    OMM_MEMCPY(gOmmOptControls, optControls.label, omm_opt_text_length(optControls.label) + 1);
-    OMM_MEMCPY(gOmmOptControls + 0x100, optControls.nextMenu, sizeof(struct SubMenu));
+        // Controls
+        struct Option optControls =
+            omm_opt_make_submenu(OMM_TEXT_OPT_CONTROLS_TITLE, OMM_TEXT_OPT_CONTROLS_TITLE, options(
+                omm_opt_make_bind(OMM_TEXT_OPT_CONTROLS_A_BUTTON, gOmmControlsButtonA),
+                omm_opt_make_bind(OMM_TEXT_OPT_CONTROLS_B_BUTTON, gOmmControlsButtonB),
+                omm_opt_make_bind(OMM_TEXT_OPT_CONTROLS_X_BUTTON, gOmmControlsButtonX),
+                omm_opt_make_bind(OMM_TEXT_OPT_CONTROLS_Y_BUTTON, gOmmControlsButtonY),
+                omm_opt_make_bind(OMM_TEXT_OPT_CONTROLS_START_BUTTON, gOmmControlsButtonStart),
+                omm_opt_make_bind(OMM_TEXT_OPT_CONTROLS_L_TRIGGER, gOmmControlsTriggerL),
+                omm_opt_make_bind(OMM_TEXT_OPT_CONTROLS_R_TRIGGER, gOmmControlsTriggerR),
+                omm_opt_make_bind(OMM_TEXT_OPT_CONTROLS_Z_TRIGGER, gOmmControlsTriggerZ),
+                omm_opt_make_bind(OMM_TEXT_OPT_CONTROLS_C_UP, gOmmControlsCUp),
+                omm_opt_make_bind(OMM_TEXT_OPT_CONTROLS_C_DOWN, gOmmControlsCDown),
+                omm_opt_make_bind(OMM_TEXT_OPT_CONTROLS_C_LEFT, gOmmControlsCLeft),
+                omm_opt_make_bind(OMM_TEXT_OPT_CONTROLS_C_RIGHT, gOmmControlsCRight),
+                omm_opt_make_bind(OMM_TEXT_OPT_CONTROLS_D_UP, gOmmControlsDUp),
+                omm_opt_make_bind(OMM_TEXT_OPT_CONTROLS_D_DOWN, gOmmControlsDDown),
+                omm_opt_make_bind(OMM_TEXT_OPT_CONTROLS_D_LEFT, gOmmControlsDLeft),
+                omm_opt_make_bind(OMM_TEXT_OPT_CONTROLS_D_RIGHT, gOmmControlsDRight),
+                omm_opt_make_bind(OMM_TEXT_OPT_CONTROLS_STICK_UP, gOmmControlsStickUp),
+                omm_opt_make_bind(OMM_TEXT_OPT_CONTROLS_STICK_DOWN, gOmmControlsStickDown),
+                omm_opt_make_bind(OMM_TEXT_OPT_CONTROLS_STICK_LEFT, gOmmControlsStickLeft),
+                omm_opt_make_bind(OMM_TEXT_OPT_CONTROLS_STICK_RIGHT, gOmmControlsStickRight),
+                omm_opt_make_scroll(OMM_TEXT_OPT_CONTROLS_STICK_DEADZONE, &configStickDeadzone, 0, 100, 1),
+                omm_opt_make_button(OMM_TEXT_OPT_CONTROLS_RESET, (void (*)(struct Option *, s32)) omm_opt_reset_controls),
+            ), 22);
+        gOmmOptControls.label = omm_dup(optControls.label, omm_opt_text_length(optControls.label) + 1);
+        gOmmOptControls.subMenu = omm_dup(optControls.nextMenu, sizeof(struct SubMenu));
 
-    // Cheats
-#if !OMM_GAME_IS_R96A
-    struct Option optCheats =
-        omm_opt_make_submenu(OMM_TEXT_OPT_CHEATS_TITLE, OMM_TEXT_OPT_CHEATS_TITLE, options(
-            omm_opt_make_toggle(OMM_TEXT_OPT_CHEAT_ENABLE, &gOmmCheatEnable),
-            omm_opt_make_toggle(OMM_TEXT_OPT_CHEAT_MOON_JUMP, &gOmmCheatMoonJump),
-            omm_opt_make_toggle(OMM_TEXT_OPT_CHEAT_GOD_MODE, &gOmmCheatGodMode),
-            omm_opt_make_toggle(OMM_TEXT_OPT_CHEAT_INVINCIBLE, &gOmmCheatInvincible),
-            omm_opt_make_toggle(OMM_TEXT_OPT_CHEAT_SUPER_SPEED, &gOmmCheatSuperSpeed),
-            omm_opt_make_toggle(OMM_TEXT_OPT_CHEAT_SUPER_RESPONSIVE, &gOmmCheatSuperResponsive),
-            omm_opt_make_toggle(OMM_TEXT_OPT_CHEAT_NO_FALL_DAMAGE, &gOmmCheatNoFallDamage),
-            omm_opt_make_toggle(OMM_TEXT_OPT_CHEAT_WALK_ON_LAVA, &gOmmCheatWalkOnLava),
-            omm_opt_make_toggle(OMM_TEXT_OPT_CHEAT_WALK_ON_QUICKSAND, &gOmmCheatWalkOnQuicksand),
-            omm_opt_make_toggle(OMM_TEXT_OPT_CHEAT_WALK_ON_WATER, &gOmmCheatWalkOnWater),
-            omm_opt_make_toggle(OMM_TEXT_OPT_CHEAT_WALK_ON_GAS, &gOmmCheatWalkOnGas),
-            omm_opt_make_toggle(OMM_TEXT_OPT_CHEAT_WALK_ON_SLOPE, &gOmmCheatWalkOnSlope),
-            omm_opt_make_toggle(OMM_TEXT_OPT_CHEAT_WALK_ON_DEATH_BARRIER, &gOmmCheatWalkOnDeathBarrier),
-            omm_opt_make_toggle(OMM_TEXT_OPT_CHEAT_BLJ_ANYWHERE, &gOmmCheatBljAnywhere),
-        ), 14);
-    OMM_MEMCPY(gOmmOptCheats, optCheats.label, omm_opt_text_length(optCheats.label) + 1);
-    OMM_MEMCPY(gOmmOptCheats + 0x100, optCheats.nextMenu, sizeof(struct SubMenu));
+        // Cheats
+#if !OMM_GAME_IS_R96X
+        struct Option optCheats =
+            omm_opt_make_submenu(OMM_TEXT_OPT_CHEATS_TITLE, OMM_TEXT_OPT_CHEATS_TITLE, options(
+                omm_opt_make_toggle(OMM_TEXT_OPT_CHEAT_ENABLE, &gOmmCheatEnable),
+                omm_opt_make_toggle(OMM_TEXT_OPT_CHEAT_MOON_JUMP, &gOmmCheatMoonJump),
+                omm_opt_make_toggle(OMM_TEXT_OPT_CHEAT_GOD_MODE, &gOmmCheatGodMode),
+                omm_opt_make_toggle(OMM_TEXT_OPT_CHEAT_INVINCIBLE, &gOmmCheatInvincible),
+                omm_opt_make_toggle(OMM_TEXT_OPT_CHEAT_SUPER_SPEED, &gOmmCheatSuperSpeed),
+                omm_opt_make_toggle(OMM_TEXT_OPT_CHEAT_SUPER_RESPONSIVE, &gOmmCheatSuperResponsive),
+                omm_opt_make_toggle(OMM_TEXT_OPT_CHEAT_NO_FALL_DAMAGE, &gOmmCheatNoFallDamage),
+                omm_opt_make_toggle(OMM_TEXT_OPT_CHEAT_WALK_ON_LAVA, &gOmmCheatWalkOnLava),
+                omm_opt_make_toggle(OMM_TEXT_OPT_CHEAT_WALK_ON_QUICKSAND, &gOmmCheatWalkOnQuicksand),
+                omm_opt_make_toggle(OMM_TEXT_OPT_CHEAT_WALK_ON_WATER, &gOmmCheatWalkOnWater),
+                omm_opt_make_toggle(OMM_TEXT_OPT_CHEAT_WALK_ON_GAS, &gOmmCheatWalkOnGas),
+                omm_opt_make_toggle(OMM_TEXT_OPT_CHEAT_WALK_ON_SLOPE, &gOmmCheatWalkOnSlope),
+                omm_opt_make_toggle(OMM_TEXT_OPT_CHEAT_WALK_ON_DEATH_BARRIER, &gOmmCheatWalkOnDeathBarrier),
+                omm_opt_make_toggle(OMM_TEXT_OPT_CHEAT_BLJ_ANYWHERE, &gOmmCheatBljAnywhere),
+            ), 14);
+        gOmmOptCheats.label = omm_dup(optCheats.label, omm_opt_text_length(optCheats.label) + 1);
+        gOmmOptCheats.subMenu = omm_dup(optCheats.nextMenu, sizeof(struct SubMenu));
 #endif
 
-    // Edit the options menu to include OMM sub-menus
-    extern void omm_opt_init_main_menu();
-    omm_opt_init_main_menu();
+        // Edit the options menu to include OMM sub-menus
+        extern void omm_opt_init_main_menu();
+        omm_opt_init_main_menu();
+        inited = true;
+    }
 }
 
 //
 // Options shortcuts
 //
+
+#if !OMM_CODE_DYNOS
+// This code updates the OMM menu each time something new is unlocked (Sparkly Stars, Peach...)
+// It has no effect on DynOS, so there is no point to run this code if DynOS is installed
+OMM_ROUTINE_UPDATE(omm_opt_update_menu) {
+    static s32 sPrevState = -1;
+    if (!omm_is_game_paused()) {
+        s32 state = omm_opt_get_state();
+        if (state != sPrevState) {
+            omm_copy(gOmmOptMenu.subMenu, sOmmOptMenus[state].nextMenu, sizeof(struct SubMenu));
+            sPrevState = state;
+        }
+    }
+}
+#endif
 
 OMM_ROUTINE_PRE_RENDER(omm_opt_update_shortcuts) {
     static const char *sToggleStrings[] = { OMM_TEXT_OPT_DISABLED, OMM_TEXT_OPT_ENABLED };
@@ -701,13 +895,13 @@ OMM_ROUTINE_PRE_RENDER(omm_opt_update_shortcuts) {
     // Check shortcuts and change the corresponding option if pressed
     if (!omm_is_main_menu() && !omm_is_game_paused() && gMarioObject) {
         bool changed = false;
-#if OMM_GAME_IS_R96A
+#if OMM_GAME_IS_R96X
         u32 keyPressed = gKeyPressed;
 #else
         u32 keyPressed = controller_get_raw_key();
 #endif
         if (keyPressed != VK_INVALID) {
-            for (s32 i = 0; i != OMM_ARRAY_SIZE(sOmmOptShortcuts); ++i) {
+            for (s32 i = 0; i != omm_static_array_length(sOmmOptShortcuts); ++i) {
                 const OmmOptShortcut *sc = &sOmmOptShortcuts[i];
                 for (s32 j = 0; j != MAX_BINDS; ++j) {
                     if (keyPressed == sc->binds[j]) {
@@ -745,10 +939,10 @@ OMM_ROUTINE_PRE_RENDER(omm_opt_update_shortcuts) {
         play_sound(SOUND_MENU_MARIO_CASTLE_WARP2, gGlobalSoundArgs);
         bool isChoice = (sOption & 1);
         u32 opt = (isChoice ? *((u32 *) (sOption >> 1)) : (u32) *((bool *) (sOption >> 1)));
-        OMM_MEMDEL(sDisplayStrings[0]);
-        OMM_MEMDEL(sDisplayStrings[1]);
-        OMM_MEMDEL(sDisplayStrings[2]);
-        OMM_MEMDEL(sDisplayStrings[3]);
+        omm_free(sDisplayStrings[0]);
+        omm_free(sDisplayStrings[1]);
+        omm_free(sDisplayStrings[2]);
+        omm_free(sDisplayStrings[3]);
         sDisplayStrings[0] = omm_text_convert(OMM_TEXT_OPT_SHORTCUTS_OPTION, true);
         sDisplayStrings[1] = omm_text_convert(sOptionLabel, true);
         sDisplayStrings[2] = omm_text_convert(OMM_TEXT_OPT_SHORTCUTS_SET_TO, true);
@@ -802,5 +996,3 @@ OMM_ROUTINE_PRE_RENDER(omm_opt_update_shortcuts) {
         gSPDisplayList(start, gDisplayListHead);
     }
 }
-
-#pragma GCC pop_options

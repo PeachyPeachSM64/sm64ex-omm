@@ -64,10 +64,10 @@ static const s32 sOmmMipsEscapePaths[][8] = {
 #define OMM_MIPS_ACT_MOVE 1
 #define OMM_MIPS_ACT_IDLE 2
 
-static s32 omm_bhv_mips_get_nearest_waypoint(struct Object *o) {
+static s32 bhv_omm_mips_get_nearest_waypoint(struct Object *o) {
     s32 nearestWaypoint = -1;
     f32 nearestDist = 1e10f;
-    for (s32 i = 0; i != OMM_ARRAY_SIZE(sOmmMipsWaypointPositions); ++i) {
+    for (s32 i = 0; i != omm_static_array_length(sOmmMipsWaypointPositions); ++i) {
         f32 dist = vec3f_hdist(sOmmMipsWaypointPositions[i], &o->oPosX);
         if (dist < nearestDist) {
             nearestWaypoint = i;
@@ -77,8 +77,8 @@ static s32 omm_bhv_mips_get_nearest_waypoint(struct Object *o) {
     return nearestWaypoint;
 }
 
-static s32 omm_bhv_mips_get_target_waypoint(struct Object *o) {
-    s32 nearestWaypoint = omm_bhv_mips_get_nearest_waypoint(o);
+static s32 bhv_omm_mips_get_target_waypoint(struct Object *o) {
+    s32 nearestWaypoint = bhv_omm_mips_get_nearest_waypoint(o);
     f32 marioDeltaDists[4] = { -1e10f, -1e10f, -1e10f, -1e10f };
     f32 cappyDeltaDists[4] = { 0, 0, 0, 0 };
 
@@ -149,21 +149,21 @@ static s32 omm_bhv_mips_get_target_waypoint(struct Object *o) {
     return waypoint;
 }
 
-static bool omm_bhv_mips_should_move(struct Object *o) {
+static bool bhv_omm_mips_should_move(struct Object *o) {
     struct Object *mario = gMarioObject;
     struct Object *cappy = omm_cappy_get_object();
     return (mario && obj_get_horizontal_distance(o, mario) < 600.f) ||
            (cappy && obj_get_horizontal_distance(o, cappy) < 600.f);
 }
 
-static bool omm_bhv_mips_should_jump(struct Object *o) {
+static bool bhv_omm_mips_should_jump(struct Object *o) {
     struct Object *mario = gMarioObject;
     struct Object *cappy = omm_cappy_get_object();
     return (mario && obj_get_horizontal_distance(o, mario) < 300.f && !(gMarioState->action & ACT_FLAG_AIR)) ||
            (cappy && obj_get_horizontal_distance(o, cappy) < 300.f);
 }
 
-static void omm_bhv_mips_play_step_sound(struct Object *o) {
+static void bhv_omm_mips_play_step_sound(struct Object *o) {
     if (o->oPosY < find_water_level(o->oPosX, o->oPosZ)) {
         obj_play_sound(o, SOUND_OBJ_MIPS_RABBIT_WATER);
         spawn_object(o, MODEL_NONE, bhvShallowWaterSplash);
@@ -172,7 +172,7 @@ static void omm_bhv_mips_play_step_sound(struct Object *o) {
     }
 }
 
-static void omm_bhv_mips_step(struct Object *o, f32 fVel, bool dropToFloor) {
+static void bhv_omm_mips_step(struct Object *o, f32 fVel, bool dropToFloor) {
     obj_set_forward_vel(o, o->oMoveAngleYaw, 1.f, fVel);
     perform_object_step(o, OBJ_STEP_UPDATE_HOME | OBJ_STEP_CHECK_ON_GROUND);
     if (dropToFloor) {
@@ -187,7 +187,7 @@ static void omm_bhv_mips_step(struct Object *o, f32 fVel, bool dropToFloor) {
 // Init
 //
 
-static void omm_bhv_mips_init() {
+static void bhv_omm_mips_init() {
     struct Object *o = gCurrentObject;
     obj_anim_play_with_sound(o, 0, 1.f, 0, true);
 }
@@ -196,7 +196,7 @@ static void omm_bhv_mips_init() {
 // Free state
 //
 
-static void omm_bhv_mips_act_wait(struct Object *o) {
+static void bhv_omm_mips_act_wait(struct Object *o) {
     f32 dx = gMarioState->pos[0] - o->oPosX;
     f32 dz = gMarioState->pos[2] - o->oPosZ;
     if (dx != 0.f || dz != 0.f) {
@@ -204,10 +204,10 @@ static void omm_bhv_mips_act_wait(struct Object *o) {
         o->oFaceAngleYaw = angleToMario - approach_s32((s16) (angleToMario - o->oFaceAngleYaw), 0, 0x1000, 0x1000);
         o->oMoveAngleYaw = o->oFaceAngleYaw;
     }
-    omm_bhv_mips_step(o, 0.f, true);
+    bhv_omm_mips_step(o, 0.f, true);
     obj_anim_play_with_sound(o, 0, 1.f, 0, false);
-    if (o->oMipsEscapePath != -1 || (o->oTimer >= (4 - 2 * o->oMipsGrabbedCounter) && omm_bhv_mips_should_move(o))) {
-        s32 nextWaypoint = omm_bhv_mips_get_target_waypoint(o);
+    if (o->oMipsEscapePath != -1 || (o->oTimer >= (4 - 2 * o->oMipsGrabbedCounter) && bhv_omm_mips_should_move(o))) {
+        s32 nextWaypoint = bhv_omm_mips_get_target_waypoint(o);
         if (nextWaypoint != -1) {
             o->oAction = OMM_MIPS_ACT_MOVE;
             o->oMipsTargetWaypoint = nextWaypoint;
@@ -216,7 +216,7 @@ static void omm_bhv_mips_act_wait(struct Object *o) {
     }
 }
 
-static void omm_bhv_mips_act_move(struct Object *o) {
+static void bhv_omm_mips_act_move(struct Object *o) {
     f32 dx = sOmmMipsWaypointPositions[o->oMipsTargetWaypoint][0] - o->oPosX;
     f32 dz = sOmmMipsWaypointPositions[o->oMipsTargetWaypoint][2] - o->oPosZ;
     s16 angle = atan2s(dz, dx);
@@ -226,22 +226,22 @@ static void omm_bhv_mips_act_move(struct Object *o) {
 
         // Running
         case 0: {
-            omm_bhv_mips_step(o, o->oMipsForwardVelocity, true);
-            if (omm_bhv_mips_should_jump(o)) {
+            bhv_omm_mips_step(o, o->oMipsForwardVelocity, true);
+            if (bhv_omm_mips_should_jump(o)) {
                 o->oVelY = 70.f;
                 o->oFloor = NULL;
                 o->oSubAction = 1;
                 o->oForwardVel = o->oMipsForwardVelocity * (0.5f + 0.3f * random_float());
                 obj_anim_play_with_sound(o, 1, 1.f, 0, true);
-                omm_bhv_mips_play_step_sound(o);
+                bhv_omm_mips_play_step_sound(o);
             } else if (obj_anim_is_near_end(o)) {
-                omm_bhv_mips_play_step_sound(o);
+                bhv_omm_mips_play_step_sound(o);
             }
         } break;
 
         // Jumping
         case 1: {
-            omm_bhv_mips_step(o, o->oForwardVel, false);
+            bhv_omm_mips_step(o, o->oForwardVel, false);
             if (obj_is_on_ground(o)) {
                 o->oSubAction = 0;
             }
@@ -254,7 +254,7 @@ static void omm_bhv_mips_act_move(struct Object *o) {
                 o->oMipsCurrentWaypoint = o->oMipsTargetWaypoint;
                 o->oAction = OMM_MIPS_ACT_WAIT;
             } else {
-                omm_bhv_mips_step(o, 0.f, false);
+                bhv_omm_mips_step(o, 0.f, false);
             }
         } break;
     }
@@ -266,12 +266,12 @@ static void omm_bhv_mips_act_move(struct Object *o) {
     }
 }
 
-static void omm_bhv_mips_act_idle(struct Object *o) {
+static void bhv_omm_mips_act_idle(struct Object *o) {
     switch (o->oSubAction) {
 
         // Falling
         case 0: {
-            omm_bhv_mips_step(o, 0.f, false);
+            bhv_omm_mips_step(o, 0.f, false);
             obj_anim_set_frame(o, 0);
             if (obj_is_on_ground(o)) {
                 o->oSubAction = 1;
@@ -286,16 +286,16 @@ static void omm_bhv_mips_act_idle(struct Object *o) {
         
         // Idle
         case 1: {
-            omm_bhv_mips_step(o, 0.f, true);
+            bhv_omm_mips_step(o, 0.f, true);
         } break;
     }
 }
 
-static void omm_bhv_mips_free(struct Object *o) {
+static void bhv_omm_mips_free(struct Object *o) {
     switch (o->oAction) {
-        case OMM_MIPS_ACT_WAIT: omm_bhv_mips_act_wait(o); break;
-        case OMM_MIPS_ACT_MOVE: omm_bhv_mips_act_move(o); break;
-        case OMM_MIPS_ACT_IDLE: omm_bhv_mips_act_idle(o); break;
+        case OMM_MIPS_ACT_WAIT: bhv_omm_mips_act_wait(o); break;
+        case OMM_MIPS_ACT_MOVE: bhv_omm_mips_act_move(o); break;
+        case OMM_MIPS_ACT_IDLE: bhv_omm_mips_act_idle(o); break;
     }
 }
 
@@ -303,7 +303,7 @@ static void omm_bhv_mips_free(struct Object *o) {
 // Held state
 //
 
-static void omm_bhv_mips_held(struct Object *o) {
+static void bhv_omm_mips_held(struct Object *o) {
     if (!(o->oInteractionSubtype & INT_SUBTYPE_DROP_IMMEDIATELY)) {
         o->oIntangibleTimer = -1;
         o->oNodeFlags |= GRAPH_RENDER_INVISIBLE;
@@ -313,7 +313,7 @@ static void omm_bhv_mips_held(struct Object *o) {
             if (set_mario_npc_dialog(1) == 2) {
                 o->activeFlags |= ACTIVE_FLAG_INITIATED_TIME_STOP;
                 if (cutscene_object_with_dialog(CUTSCENE_DIALOG, o, OMM_DIALOG_SPARKLY_MIPS_1 + o->oMipsGrabbedCounter)) {
-                    o->oMipsEscapePath = omm_bhv_mips_get_nearest_waypoint(o);
+                    o->oMipsEscapePath = bhv_omm_mips_get_nearest_waypoint(o);
                     o->oMipsEscapeIndex = 0;
                     o->oMipsGrabbedCounter++;
                     o->oMipsForwardVelocity += 15.f;
@@ -330,7 +330,7 @@ static void omm_bhv_mips_held(struct Object *o) {
 // Dropped state
 //
 
-static void omm_bhv_mips_dropped(struct Object *o) {
+static void bhv_omm_mips_dropped(struct Object *o) {
     if (o->oMipsGrabbedCounter < 3) {
         o->oAction = OMM_MIPS_ACT_WAIT;
     } else {
@@ -349,23 +349,31 @@ static void omm_bhv_mips_dropped(struct Object *o) {
 // Update
 //
 
-static void omm_bhv_mips_update() {
+static void bhv_omm_mips_update() {
     struct Object *o = gCurrentObject;
     switch (o->oHeldState) {
-        case HELD_FREE: omm_bhv_mips_free(o); break;
-        case HELD_HELD: omm_bhv_mips_held(o); break;
-        case HELD_THROWN: omm_bhv_mips_dropped(o); break;
-        case HELD_DROPPED: omm_bhv_mips_dropped(o); break;
+        case HELD_FREE: bhv_omm_mips_free(o); break;
+        case HELD_HELD: bhv_omm_mips_held(o); break;
+        case HELD_THROWN: bhv_omm_mips_dropped(o); break;
+        case HELD_DROPPED: bhv_omm_mips_dropped(o); break;
+    }
+
+    // Crystal sparkles
+    if (o->oMipsGrabbedCounter < 3 || o->oAction != OMM_MIPS_ACT_IDLE) {
+        s32 freq = (o->oHeldState == HELD_FREE && o->oAction == OMM_MIPS_ACT_MOVE ? 2 : 4);
+        if (gGlobalTimer % freq == 0) {
+            omm_spawn_sparkly_star_sparkle(o, OMM_SPARKLY_MODE_HARD, 40.f, 6.f, 0.3f, 20.f);
+        }
     }
 }
 
-const BehaviorScript omm_bhv_mips[] = {
+const BehaviorScript bhvOmmMips[] = {
     OBJ_TYPE_GENACTOR,
     0x11010409,
     0x27260000, (uintptr_t) mips_seg6_anims_06015634,
-    0x0C000000, (uintptr_t) omm_bhv_mips_init,
+    0x0C000000, (uintptr_t) bhv_omm_mips_init,
     0x08000000,
-    0x0C000000, (uintptr_t) omm_bhv_mips_update,
+    0x0C000000, (uintptr_t) bhv_omm_mips_update,
     0x09000000
 };
 
@@ -374,7 +382,7 @@ const BehaviorScript omm_bhv_mips[] = {
 //
 
 struct Object *omm_spawn_mips(struct Object *o, f32 x, f32 y, f32 z, f32 fVel) {
-    struct Object *mips = spawn_object(o, MODEL_MIPS, omm_bhv_mips);
+    struct Object *mips = spawn_object(o, MODEL_MIPS, bhvOmmMips);
     obj_set_pos(mips, x, y, z);
     obj_set_home(mips, x, y, z);
     obj_set_angle(mips, 0, 0, 0);
@@ -387,7 +395,7 @@ struct Object *omm_spawn_mips(struct Object *o, f32 x, f32 y, f32 z, f32 fVel) {
     mips->oBuoyancy = 1.2f;
     mips->oInteractionSubtype = INT_SUBTYPE_HOLDABLE_NPC;
     mips->oMipsForwardVelocity = fVel;
-    mips->oMipsCurrentWaypoint = omm_bhv_mips_get_nearest_waypoint(mips);
+    mips->oMipsCurrentWaypoint = bhv_omm_mips_get_nearest_waypoint(mips);
     mips->oMipsTargetWaypoint = 0;
     mips->oMipsGrabbedCounter = 0;
     mips->oMipsEscapePath = -1;

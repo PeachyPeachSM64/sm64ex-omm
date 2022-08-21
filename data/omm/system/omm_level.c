@@ -195,7 +195,7 @@ static void omm_level_init() {
 
 OMM_INLINE void convert_text_and_set_buffer(u8 *buffer, const char *str) {
     u8 *str64 = omm_text_convert(str, false);
-    OMM_MEMCPY(buffer, str64, omm_text_length(str64) + 1);
+    omm_copy(buffer, str64, omm_text_length(str64) + 1);
 }
 
 s32 omm_level_get_count() {
@@ -231,7 +231,7 @@ s32 omm_level_get_num_red_coins(s32 level, s32 area) {
 u8 *omm_level_get_name(s32 level, bool decaps, bool num) {
     omm_level_init();
     static u8 sBuffer[256];
-    OMM_MEMSET(sBuffer, 0xFF, 256);
+    omm_set(sBuffer, 0xFF, 256);
     s32 course = omm_level_get_course(level);
 
     // Level name
@@ -253,7 +253,7 @@ u8 *omm_level_get_name(s32 level, bool decaps, bool num) {
 #else
         const u8 *courseName = ((const u8 **) seg2_course_name_table)[course - COURSE_BOB] + 3;
 #endif
-        OMM_MEMCPY(sBuffer, courseName, omm_text_length(courseName));
+        omm_copy(sBuffer, courseName, omm_text_length(courseName));
     }
 
     // Decaps
@@ -263,7 +263,7 @@ u8 *omm_level_get_name(s32 level, bool decaps, bool num) {
 
     // Course number
     if (num && (course >= COURSE_BOB) && (course <= COURSE_STAGES_MAX)) {
-        OMM_MEMMOV(sBuffer + 5, sBuffer, omm_text_length(sBuffer));
+        omm_move(sBuffer + 5, sBuffer, omm_text_length(sBuffer));
         sBuffer[0] = ((course / 10) == 0 ? 158 : (course / 10));
         sBuffer[1] = (course % 10);
         sBuffer[2] = 158;
@@ -277,7 +277,7 @@ u8 *omm_level_get_name(s32 level, bool decaps, bool num) {
 u8 *omm_level_get_act_name(s32 level, s32 act, bool decaps, bool num) {
     omm_level_init();
     static u8 sBuffer[256];
-    OMM_MEMSET(sBuffer, 0xFF, 256);
+    omm_set(sBuffer, 0xFF, 256);
     s32 course = omm_level_get_course(level);
 
     // Star name
@@ -311,7 +311,7 @@ u8 *omm_level_get_act_name(s32 level, s32 act, bool decaps, bool num) {
 #else
         const u8 *actName = ((const u8 **) seg2_act_name_table)[(course - COURSE_BOB) * 6 + (act - 1)];
 #endif
-        OMM_MEMCPY(sBuffer, actName, omm_text_length(actName));
+        omm_copy(sBuffer, actName, omm_text_length(actName));
     }
 
     // Decaps
@@ -321,7 +321,7 @@ u8 *omm_level_get_act_name(s32 level, s32 act, bool decaps, bool num) {
 
     // Star number
     if (num && (course >= COURSE_BOB) && (course <= COURSE_STAGES_MAX)) {
-        OMM_MEMMOV(sBuffer + 5, sBuffer, omm_text_length(sBuffer));
+        omm_move(sBuffer + 5, sBuffer, omm_text_length(sBuffer));
         sBuffer[0] = ((act / 10) == 0 ? 158 : (act / 10));
         sBuffer[1] = (act % 10);
         sBuffer[2] = 158;

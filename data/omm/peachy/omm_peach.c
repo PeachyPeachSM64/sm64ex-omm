@@ -48,9 +48,9 @@ static void omm_peach_perry_charge_update_animation_and_sound(struct MarioState 
 
 s32 omm_act_peach_float(struct MarioState *m) {
     if (m->actionState == 0) {
-        action_condition(gOmmData->mario->peach.floated, ACT_OMM_PEACH_GLIDE, 0, RETURN_CANCEL);
-        gOmmData->mario->peach.floatTimer = 0;
-        gOmmData->mario->peach.floated = true;
+        action_condition(gOmmPeach->floated, ACT_OMM_PEACH_GLIDE, 0, RETURN_CANCEL);
+        gOmmPeach->floatTimer = 0;
+        gOmmPeach->floated = true;
         m->actionState = 1;
     }
 
@@ -59,7 +59,7 @@ s32 omm_act_peach_float(struct MarioState *m) {
     action_cappy(1, ACT_OMM_CAPPY_THROW_AIRBORNE, 0, RETURN_CANCEL);
     action_z_pressed(OMM_MOVESET_ODYSSEY, ACT_GROUND_POUND, 0, RETURN_CANCEL);
     action_b_pressed(OMM_MOVESET_ODYSSEY, ACT_JUMP_KICK, 0, RETURN_CANCEL);
-    if (!(m->controller->buttonDown & A_BUTTON) || (gOmmData->mario->peach.floatTimer >= OMM_PEACH_FLOAT_DURATION)) {
+    if (!(m->controller->buttonDown & A_BUTTON) || (gOmmPeach->floatTimer >= OMM_PEACH_FLOAT_DURATION)) {
         if (m->prevAction == ACT_DOUBLE_JUMP) {
             obj_anim_play(m->marioObj, MARIO_ANIM_DOUBLE_JUMP_FALL, 1.f);
             m->prevAction = m->action;
@@ -88,7 +88,7 @@ s32 omm_act_peach_float(struct MarioState *m) {
     if (obj_anim_is_at_end(m->marioObj)) m->marioObj->oAnimID = -1;
     obj_anim_play(m->marioObj, MARIO_ANIM_BEND_KNESS_RIDING_SHELL, 1.f);
     m->particleFlags |= PARTICLE_SPARKLES;
-    gOmmData->mario->peach.floatTimer++;
+    gOmmPeach->floatTimer++;
     return OMM_MARIO_ACTION_RESULT_CONTINUE;
 }
 
@@ -129,7 +129,7 @@ s32 omm_act_peach_attack_ground(struct MarioState *m) {
 
     // Spawn shockwave
     if (m->actionTimer == 0 && OMM_PEACH_SPAWN_PERRY_SHOCKWAVE) {
-        omm_spawn_perry_shockwave(m->marioObj, 6 + 2 * (m->actionArg == 4), omm_peach_get_perry_type(m), m->actionArg == 4);
+        omm_spawn_perry_shockwave(m->marioObj, 6 + 2 * (m->actionArg == 4), omm_perry_get_type(m), m->actionArg == 4);
     }
 
     // Update vel
@@ -213,7 +213,7 @@ s32 omm_act_peach_attack_fast(struct MarioState *m) {
 
     // Spawn shockwave
     if (m->actionTimer == 0 && OMM_PEACH_SPAWN_PERRY_SHOCKWAVE) {
-        omm_spawn_perry_shockwave(m->marioObj, 4, omm_peach_get_perry_type(m), false);
+        omm_spawn_perry_shockwave(m->marioObj, 4, omm_perry_get_type(m), false);
     }
 
     // Step
@@ -276,7 +276,7 @@ s32 omm_act_peach_attack_air(struct MarioState *m) {
 
     // Spawn shockwave
     if (m->actionTimer == 0 && OMM_PEACH_SPAWN_PERRY_SHOCKWAVE) {
-        omm_spawn_perry_shockwave(m->marioObj, 8, omm_peach_get_perry_type(m), true);
+        omm_spawn_perry_shockwave(m->marioObj, 8, omm_perry_get_type(m), true);
     }
 
     // Step
@@ -384,12 +384,12 @@ static s32 omm_peach_vibe_joy_update(struct MarioState *m, s32 yawVel, bool fly)
 
     // Update Gfx
     obj_anim_play(m->marioObj, MARIO_ANIM_TWIRL, 1.f);
-    gOmmData->mario->peach.joySpinYaw += yawVel;
-    gOmmData->mario->state.peakHeight = m->pos[1];
+    gOmmPeach->joySpinYaw += yawVel;
+    gOmmMario->state.peakHeight = m->pos[1];
     m->peakHeight = m->pos[1];
     m->quicksandDepth = 0.f;
     m->particleFlags |= fly * PARTICLE_DUST;
-    m->marioObj->oGfxAngle[1] = gOmmData->mario->peach.joySpinYaw;
+    m->marioObj->oGfxAngle[1] = gOmmPeach->joySpinYaw;
     m->marioBodyState->handState = MARIO_HAND_OPEN;
     return OMM_MARIO_ACTION_RESULT_CONTINUE;
 }
@@ -416,3 +416,223 @@ s32 omm_act_peach_vibe_joy_attack(struct MarioState *m) {
     return omm_peach_vibe_joy_update(m, relerp_0_1_f(m->actionTimer, 8, 12, 0x3000, 0x1000), false);
 }
 
+//
+// Charge
+//
+
+typedef struct {
+    u32 action;
+    bool charge;    // trigger a charge action if B is held
+    bool charged;   // keep Perry charged as long as B is held
+    bool release;   // attack as soon as B is released
+    bool attack;    // is an attack action
+} PerryChargeAction;
+
+static PerryChargeAction sOmmPerryChargeActions[] = {
+    { 0,                                 0, 0, 0, 0 },
+
+    // Stationary
+    { ACT_IDLE,                          1, 1, 1, 0 },
+    { ACT_START_SLEEPING,                1, 1, 1, 0 },
+    { ACT_SLEEPING,                      1, 1, 1, 0 },
+    { ACT_WAKING_UP,                     1, 1, 1, 0 },
+    { ACT_PANTING,                       1, 1, 1, 0 },
+    { ACT_STANDING_AGAINST_WALL,         1, 1, 1, 0 },
+    { ACT_COUGHING,                      1, 1, 1, 0 },
+    { ACT_SHIVERING,                     1, 1, 1, 0 },
+    { ACT_IN_QUICKSAND,                  1, 1, 1, 0 },
+    { ACT_CROUCHING,                     1, 1, 1, 0 },
+    { ACT_START_CROUCHING,               1, 1, 1, 0 },
+    { ACT_STOP_CROUCHING,                1, 1, 1, 0 },
+    { ACT_START_CRAWLING,                1, 1, 1, 0 },
+    { ACT_STOP_CRAWLING,                 1, 1, 1, 0 },
+    { ACT_SLIDE_KICK_SLIDE_STOP,         1, 1, 1, 0 },
+    { ACT_BACKFLIP_LAND_STOP,            1, 1, 1, 0 },
+    { ACT_JUMP_LAND_STOP,                1, 1, 1, 0 },
+    { ACT_DOUBLE_JUMP_LAND_STOP,         1, 1, 1, 0 },
+    { ACT_FREEFALL_LAND_STOP,            1, 1, 1, 0 },
+    { ACT_SIDE_FLIP_LAND_STOP,           1, 1, 1, 0 },
+    { ACT_AIR_THROW_LAND,                1, 1, 1, 0 },
+    { ACT_TWIRL_LAND,                    1, 1, 1, 0 },
+    { ACT_LAVA_BOOST_LAND,               1, 1, 1, 0 },
+    { ACT_TRIPLE_JUMP_LAND_STOP,         1, 1, 1, 0 },
+    { ACT_LONG_JUMP_LAND_STOP,           1, 1, 1, 0 },
+    { ACT_GROUND_POUND_LAND,             1, 1, 1, 0 },
+    { ACT_BRAKING_STOP,                  1, 1, 1, 0 },
+    { ACT_BUTT_SLIDE_STOP,               1, 1, 1, 0 },
+
+    // Moving
+    { ACT_WALKING,                       1, 1, 1, 0 },
+    { ACT_TURNING_AROUND,                1, 1, 1, 0 },
+    { ACT_FINISH_TURNING_AROUND,         1, 1, 1, 0 },
+    { ACT_BRAKING,                       1, 1, 1, 0 },
+    { ACT_CRAWLING,                      1, 1, 1, 0 },
+    { ACT_DECELERATING,                  1, 1, 1, 0 },
+    { ACT_BUTT_SLIDE,                    0, 1, 1, 0 },
+    { ACT_STOMACH_SLIDE,                 0, 1, 0, 0 },
+    { ACT_DIVE_SLIDE,                    0, 1, 0, 0 },
+    { ACT_MOVE_PUNCHING,                 1, 1, 1, 0 },
+    { ACT_CROUCH_SLIDE,                  1, 1, 1, 0 },
+    { ACT_SLIDE_KICK_SLIDE,              0, 1, 0, 0 },
+    { ACT_JUMP_LAND,                     1, 1, 1, 0 },
+    { ACT_FREEFALL_LAND,                 1, 1, 1, 0 },
+    { ACT_DOUBLE_JUMP_LAND,              1, 1, 1, 0 },
+    { ACT_SIDE_FLIP_LAND,                1, 1, 1, 0 },
+    { ACT_QUICKSAND_JUMP_LAND,           1, 1, 1, 0 },
+    { ACT_TRIPLE_JUMP_LAND,              1, 1, 1, 0 },
+    { ACT_LONG_JUMP_LAND,                1, 1, 1, 0 },
+    { ACT_BACKFLIP_LAND,                 1, 1, 1, 0 },
+
+    // Airborne
+    { ACT_JUMP,                          0, 1, 1, 0 },
+    { ACT_DOUBLE_JUMP,                   0, 1, 1, 0 },
+    { ACT_TRIPLE_JUMP,                   0, 1, 1, 0 },
+    { ACT_BACKFLIP,                      0, 1, 1, 0 },
+    { ACT_STEEP_JUMP,                    0, 1, 1, 0 },
+    { ACT_WALL_KICK_AIR,                 0, 1, 1, 0 },
+    { ACT_SIDE_FLIP,                     0, 1, 1, 0 },
+    { ACT_LONG_JUMP,                     0, 1, 1, 0 },
+    { ACT_WATER_JUMP,                    0, 1, 1, 0 },
+    { ACT_DIVE,                          0, 1, 0, 0 },
+    { ACT_FREEFALL,                      0, 1, 1, 0 },
+    { ACT_TOP_OF_POLE_JUMP,              0, 1, 1, 0 },
+    { ACT_BUTT_SLIDE_AIR,                0, 1, 1, 0 },
+    { ACT_TWIRLING,                      0, 1, 0, 0 },
+    { ACT_FORWARD_ROLLOUT,               0, 1, 1, 0 },
+    { ACT_BACKWARD_ROLLOUT,              0, 1, 1, 0 },
+    { ACT_RIDING_HOOT,                   0, 1, 0, 0 },
+    { ACT_GROUND_POUND,                  0, 1, 0, 0 },
+    { ACT_SLIDE_KICK,                    0, 1, 0, 0 },
+    { ACT_JUMP_KICK,                     1, 1, 1, 1 },
+
+    // Automatic
+    { ACT_HOLDING_POLE,                  0, 1, 0, 0 },
+    { ACT_GRAB_POLE_SLOW,                0, 1, 0, 0 },
+    { ACT_GRAB_POLE_FAST,                0, 1, 0, 0 },
+    { ACT_CLIMBING_POLE,                 0, 1, 0, 0 },
+    { ACT_TOP_OF_POLE_TRANSITION,        0, 1, 0, 0 },
+    { ACT_TOP_OF_POLE,                   0, 1, 0, 0 },
+    { ACT_START_HANGING,                 0, 1, 0, 0 },
+    { ACT_HANGING,                       0, 1, 0, 0 },
+    { ACT_HANG_MOVING,                   0, 1, 0, 0 },
+    { ACT_LEDGE_GRAB,                    0, 1, 0, 0 },
+    { ACT_LEDGE_CLIMB_SLOW_1,            0, 1, 0, 0 },
+    { ACT_LEDGE_CLIMB_SLOW_2,            0, 1, 0, 0 },
+    { ACT_LEDGE_CLIMB_DOWN,              0, 1, 0, 0 },
+    { ACT_LEDGE_CLIMB_FAST,              0, 1, 0, 0 },
+    { ACT_TORNADO_TWIRLING,              0, 1, 0, 0 },
+
+    // Object
+    { ACT_PUNCHING,                      1, 1, 1, 0 },
+    { ACT_STOMACH_SLIDE_STOP,            1, 1, 1, 0 },
+
+    // OMM
+    { ACT_OMM_SPIN_GROUND,               1, 1, 1, 0 },
+    { ACT_OMM_SPIN_POUND_LAND,           1, 1, 1, 0 },
+    { ACT_OMM_ROLL,                      0, 1, 1, 0 },
+    { ACT_OMM_CAPPY_THROW_GROUND,        1, 1, 1, 0 },
+    { ACT_OMM_CAPPY_BOUNCE,              0, 1, 1, 0 },
+    { ACT_OMM_CAPPY_VAULT,               0, 1, 1, 0 },
+    { ACT_OMM_GROUND_POUND_JUMP,         0, 1, 1, 0 },
+    { ACT_OMM_LEAVE_OBJECT_JUMP,         0, 1, 1, 0 },
+    { ACT_OMM_WALL_SLIDE,                1, 1, 1, 0 },
+    { ACT_OMM_CAPPY_THROW_AIRBORNE,      0, 1, 1, 0 },
+    { ACT_OMM_ROLL_AIR,                  0, 1, 1, 0 },
+    { ACT_OMM_SPIN_AIR,                  0, 1, 1, 0 },
+    { ACT_OMM_SPIN_JUMP,                 0, 1, 1, 0 },
+    { ACT_OMM_SPIN_POUND,                0, 1, 0, 0 },
+
+    // Peach
+    { ACT_OMM_PEACH_ATTACK_GROUND,       1, 1, 1, 1 },
+    { ACT_OMM_PEACH_ATTACK_FAST,         1, 1, 1, 1 },
+    { ACT_OMM_PEACH_FLOAT,               0, 1, 1, 0 },
+    { ACT_OMM_PEACH_GLIDE,               0, 1, 1, 0 },
+    { ACT_OMM_PEACH_ATTACK_AIR,          1, 1, 1, 1 },
+    { ACT_OMM_PEACH_PERRY_CHARGE_GROUND, 1, 1, 1, 0 },
+    { ACT_OMM_PEACH_PERRY_CHARGE_AIR,    1, 1, 1, 0 },
+};
+
+static PerryChargeAction *get_action(struct MarioState *m) {
+    for (s32 i = 0; i != (s32) omm_static_array_length(sOmmPerryChargeActions); ++i) {
+        if (sOmmPerryChargeActions[i].action == m->action) {
+            return &sOmmPerryChargeActions[i];
+        }
+    }
+    return &sOmmPerryChargeActions[0];
+}
+
+OMM_ROUTINE_PRE_RENDER(omm_act_peach_perry_charge_update) {
+    static bool sPerryChargeCanceled = false;
+    if (gMarioObject && !omm_is_game_paused() && !(gTimeStopState & TIME_STOP_ENABLED)) {
+        struct MarioState *m = gMarioState;
+        PerryChargeAction *a = get_action(m);
+
+        // Clear Perry blast flag if not attacking
+        if (!a->attack) {
+            gOmmPerryBlast = 0;
+        }
+
+        // Clear cancel flag if B is released or during the jump kick/air attack action
+        if (!(gPlayer1Controller->buttonDown & B_BUTTON) || m->action == ACT_JUMP_KICK || m->action == ACT_OMM_PEACH_ATTACK_AIR) {
+            sPerryChargeCanceled = false;
+        }
+
+        // Stop the charge sound effect if not charging
+        if (!OMM_PERRY_CHARGING) {
+            omm_sound_stop(OMM_SOUND_EFFECT_PERRY_CHARGE);
+        }
+
+        // Cancel charge if...
+        if (!OMM_SPARKLY_IS_PERRY_CHARGE_UNLOCKED || // Not unlocked
+            !OMM_PLAYER_IS_PEACH ||                  // Not Peach
+            !OMM_MOVESET_ODYSSEY ||                  // Not Odyssey Moveset
+            (!OMM_PERRY_CHARGED && !a->charge) ||    // Not a valid action during the charge
+            (OMM_PERRY_CHARGED && !a->charged))      // Not a valid action when fully charged
+        {
+            sPerryChargeCanceled = true;
+            gOmmPerryCharge = 0;
+            gOmmPerryBlast = 0;
+            return;
+        }
+
+        // Don't charge until the cancel flag is cleared
+        if (!sPerryChargeCanceled) {
+
+            // B button held
+            if (gPlayer1Controller->buttonDown & B_BUTTON) {
+                gOmmPerryCharge = min_s(gOmmPerryCharge + 1, OMM_PERRY_CHARGE_END);
+                gPlayer1Controller->buttonPressed &= ~B_BUTTON;
+
+                // After some time, change the current action to a charge action
+                if (gOmmPerryCharge > OMM_PERRY_CHARGE_ACTION &&
+                    gOmmPerryCharge < OMM_PERRY_CHARGE_FULL &&
+                    m->action != ACT_OMM_PEACH_PERRY_CHARGE_GROUND &&
+                    m->action != ACT_OMM_PEACH_PERRY_CHARGE_AIR) {
+                    if (m->action & ACT_FLAG_AIR) {
+                        action_set(omm_mario_set_action, ACT_OMM_PEACH_PERRY_CHARGE_AIR, 0, 0, NO_RETURN);
+                    } else {
+                        action_set(omm_mario_set_action, ACT_OMM_PEACH_PERRY_CHARGE_GROUND, 0, 0, NO_RETURN);
+                    }
+                }
+            }
+            
+            // B button released
+            else {
+
+                // If the charge is complete, release a powerful shockwave
+                if (gOmmPerryCharge >= OMM_PERRY_CHARGE_FULL && a->release) {
+                    gOmmPerryBlast = 1;
+                    if (m->action & ACT_FLAG_AIR) {
+                        action_set(omm_mario_set_action, ACT_JUMP_KICK, 0, 0, NO_RETURN);
+                    } else {
+                        action_set(omm_mario_set_action, ACT_OMM_PEACH_ATTACK_GROUND, 4, 0, NO_RETURN);
+                    }
+                }
+
+                // Cancel the charge and restore the B press if the charge hasn't started yet
+                gPlayer1Controller->buttonPressed |= B_BUTTON * (gOmmPerryCharge > 0 && gOmmPerryCharge < OMM_PERRY_CHARGE_ACTION);
+                gOmmPerryCharge = 0;
+            }
+        }
+    }
+}

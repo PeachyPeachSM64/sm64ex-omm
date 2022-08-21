@@ -129,7 +129,7 @@ const GeoLayout omm_geo_peach_vibe_gloom_aura[] = {
 // Behavior
 //
 
-static void omm_bhv_peach_vibe_gloom_aura_update() {
+static void bhv_omm_peach_vibe_gloom_aura_update() {
     struct Object *o = gCurrentObject;
     if (omm_peach_vibe_is_gloom()) {
         f32 *marioRootPos = geo_get_marios_root_pos();
@@ -154,10 +154,10 @@ static void omm_bhv_peach_vibe_gloom_aura_update() {
     }
 }
 
-const BehaviorScript omm_bhv_peach_vibe_gloom_aura[] = {
+const BehaviorScript bhvOmmPeachVibeGloomAura[] = {
     OBJ_TYPE_SPECIAL,
     0x08000000,
-    0x0C000000, (uintptr_t) omm_bhv_peach_vibe_gloom_aura_update,
+    0x0C000000, (uintptr_t) bhv_omm_peach_vibe_gloom_aura_update,
     0x09000000,
 };
 
@@ -166,9 +166,9 @@ const BehaviorScript omm_bhv_peach_vibe_gloom_aura[] = {
 //
 
 struct Object *omm_spawn_peach_vibe_gloom_aura(struct Object *o) {
-    struct Object *aura = obj_get_first_with_behavior(omm_bhv_peach_vibe_gloom_aura);
-    if (aura == NULL) {
-        aura = obj_spawn_from_geo(o, omm_geo_peach_vibe_gloom_aura, omm_bhv_peach_vibe_gloom_aura);
+    struct Object *aura = obj_get_first_with_behavior(bhvOmmPeachVibeGloomAura);
+    if (!aura) {
+        aura = obj_spawn_from_geo(o, omm_geo_peach_vibe_gloom_aura, bhvOmmPeachVibeGloomAura);
         obj_set_always_rendered(aura, true);
         obj_set_angle(aura, 0, 0, 0);
     }

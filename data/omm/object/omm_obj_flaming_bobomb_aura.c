@@ -14,7 +14,7 @@ const GeoLayout omm_geo_flaming_bobomb_aura[] = {
 // Behavior
 //
 
-const BehaviorScript omm_bhv_flaming_bobomb_aura[] = {
+const BehaviorScript bhvOmmFlamingBobombAura[] = {
     OBJ_TYPE_UNIMPORTANT,
     0x11010001,
     0x08000000,

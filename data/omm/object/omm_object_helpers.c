@@ -206,31 +206,100 @@ void obj_set_scale(struct Object *o, f32 x, f32 y, f32 z) {
     o->oScaleZ = z;
 }
 
-void obj_safe_step(struct Object *o, s32 update) {
-    static Vec3f sLastValidPos[OBJECT_POOL_CAPACITY];
-    s32 objIndex = (s32) (o - gObjectPool);
-    o->oFloorHeight = find_floor(o->oPosX, o->oPosY, o->oPosZ, &o->oFloor);
-    if (update) {
-        if (o->oFloorHeight - sLastValidPos[objIndex][1] < -100.f) {
-            o->oPosX = sLastValidPos[objIndex][0];
-            o->oPosZ = sLastValidPos[objIndex][2];
-            o->oFloorHeight = find_floor(o->oPosX, o->oPosY, o->oPosZ, &o->oFloor);
-            if (o->oPosY < o->oFloorHeight) {
-                o->oPosY = o->oFloorHeight;
-                o->oVelY *= o->oBounciness;
-                if (o->oVelY > 5.f) {
-                    o->oMoveFlags |= OBJ_MOVE_BOUNCE;
-                } else {
-                    o->oVelY = 0;
-                    o->oMoveFlags |= OBJ_MOVE_ON_GROUND;
-                }
+static void obj_safe_step_set_coords(struct Object *o, struct Surface *s) {
+    Vec3f p = { o->oPosX, 0, o->oPosZ };
+    Vec3f a = { s->vertex1[0], 0, s->vertex1[2] };
+    Vec3f b = { s->vertex2[0], 0, s->vertex2[2] };
+    Vec3f c = { s->vertex3[0], 0, s->vertex3[2] };
+    vec3f_get_barycentric_coords(&o->oSafeStepCoords, p, a, b, c);
+}
+
+static void obj_safe_step_set_new_pos(struct Object *o, struct Surface *s) {
+    Vec3f p;
+    Vec3f a = { s->vertex1[0], 0, s->vertex1[2] };
+    Vec3f b = { s->vertex2[0], 0, s->vertex2[2] };
+    Vec3f c = { s->vertex3[0], 0, s->vertex3[2] };
+    vec3f_from_barycentric_coords(p, &o->oSafeStepCoords, a, b, c);
+    o->oPosX = p[0];
+    o->oPosZ = p[2];
+}
+
+void obj_safe_step(struct Object *o, bool afterUpdate) {
+    if (!obj_alloc_fields(o)) return;
+    struct Surface *floor = NULL;
+
+    // Check unload, capture or Goomba stack
+    if (!o->activeFlags || o == gOmmCapture || omm_obj_is_goomba_stack(o)) {
+        o->oSafeStepInited = false;
+        o->oSafeStepIgnore = false;
+        return;
+    }
+
+    // Do nothing if ignored or attacked (goombas, bob-ombs)
+    if (o->oSafeStepIgnore || o->oAction >= 100 || o->oHeldState != HELD_FREE) {
+        o->oSafeStepIgnore = true;
+        return;
+    }
+
+    // Init (ignore still objects)
+    if (!o->oSafeStepInited) {
+        if (afterUpdate) {
+            f32 floorHeight = find_floor(o->oPosX, o->oPosY + 100.f, o->oPosZ, &floor);
+            if ((o->oGravity != 0 || vec3f_length(&o->oVelX) != 0) && floor && !SURFACE_IS_LETHAL(floor->type)) {
+                obj_safe_step_set_coords(o, floor);
+                o->oSafeStepIndex = get_index_from_surface(floor);
+                o->oSafeStepHeight = floorHeight;
+                o->oSafeStepIgnore = false;
+            } else {
+                o->oSafeStepIgnore = true;
+            }
+            o->oSafeStepInited = true;
+        }
+        return;
+    }
+
+    // Correct pos (and bounce) if no valid floor or if the floor below is too low
+    bool checkHeightDiff = afterUpdate && (o->behavior != bhvBobomb || o->oAction == BOBOMB_ACT_PATROL);
+    f32 floorHeight = find_floor(o->oPosX, o->oPosY + 100.f, o->oPosZ, &floor);
+    if (!floor || SURFACE_IS_LETHAL(floor->type) || (checkHeightDiff && (floorHeight - o->oSafeStepHeight) < -100.f)) {
+        struct Surface *surface = get_surface_from_index(o->oSafeStepIndex);
+
+        // If the surface is no longer a floor, give up for this frame and restart
+        if (!surface || SURFACE_CATEGORY(surface->normal.y) != SURFACE_FLOOR) {
+            o->oSafeStepInited = false;
+            o->oSafeStepIgnore = false;
+            return;
+        }
+
+        // Correct position, and recompute floor height
+        obj_safe_step_set_new_pos(o, surface);
+        o->oFloorHeight = -(o->oPosX * surface->normal.x + o->oPosZ * surface->normal.z + surface->originOffset) / surface->normal.y;
+        o->oFloor = surface;
+
+        // The object lands on floor, bounce if enough velocity
+        o->oSafeStepHeight = o->oFloorHeight;
+        if (o->oPosY < o->oFloorHeight) {
+            o->oPosY = o->oFloorHeight;
+            o->oVelY *= o->oBounciness;
+            if (o->oVelY > 5.f) {
+                o->oMoveFlags |= OBJ_MOVE_BOUNCE;
+            } else {
+                o->oVelY = 0;
+                o->oMoveFlags |= OBJ_MOVE_ON_GROUND;
             }
         }
-    } else {
-        sLastValidPos[objIndex][0] = o->oPosX;
-        sLastValidPos[objIndex][1] = o->oFloorHeight;
-        sLastValidPos[objIndex][2] = o->oPosZ;
     }
+
+    // Update coords and floor (only after update)
+    else if (afterUpdate) {
+        obj_safe_step_set_coords(o, floor);
+        o->oSafeStepIndex = get_index_from_surface(floor);
+        o->oSafeStepHeight = floorHeight;
+        o->oFloorHeight = floorHeight;
+        o->oFloor = floor;
+    }
+
+    // Set tangible if falling (coins)
     if (o->oVelY <= 0.f && (o->oNodeFlags & GRAPH_RENDER_ACTIVE) && !(o->oNodeFlags & GRAPH_RENDER_INVISIBLE)) {
         o->oIntangibleTimer = 0;
     }
@@ -349,7 +418,7 @@ s32 obj_get_coin_type(struct Object *o) {
 
 void obj_spawn_star(struct Object *o, f32 xFrom, f32 yFrom, f32 zFrom, f32 xTo, f32 yTo, f32 zTo, s32 starIndex, bool noExit) {
     struct Object *star = spawn_object_abs_with_rot(o, 0, MODEL_STAR, bhvStarSpawnCoordinates, xFrom, yFrom, zFrom, 0, 0, 0);
-    star->oBehParams = ((starIndex & 0x1F) << 24);
+    star->oBhvArgs = ((starIndex & 0x1F) << 24);
     star->oHomeX = xTo;
     star->oHomeY = yTo;
     star->oHomeZ = zTo;
@@ -369,7 +438,7 @@ void obj_spawn_white_puff_at(f32 x, f32 y, f32 z, s32 soundBits) {
             particle->oPosX = x;
             particle->oPosY = y;
             particle->oPosZ = z;
-            particle->oBehParams2ndByte = 2;
+            particle->oBhvArgs2ndByte = 2;
             particle->oMoveAngleYaw = random_u16();
             particle->oGravity = -4.f;
             particle->oDragStrength = 30.f;
@@ -578,7 +647,7 @@ void obj_destroy(struct Object *o) {
     destroy_preset(bhvBulletBill, 1, obj_destroy_bullet_bill, 0);
     destroy_preset(bhvHauntedChair, 1, obj_destroy_white_puff, 0, SOUND_OBJ_DEFAULT_DEATH);
     destroy_preset(bhvJrbSlidingBox, 1, obj_destroy_break_particles, 0, SOUND_GENERAL_WALL_EXPLOSION, 0x50, 0x40, 0x00);
-    destroy_preset(bhvMrI, o->oBehParams2ndByte, obj_destroy_spawn_star, SOUND_OBJ_MRI_DEATH, o->oPosX, o->oPosY + 100.f, o->oPosZ, 1370, 2000, -320, (o->oBehParams >> 24), false);
+    destroy_preset(bhvMrI, o->oBhvArgs2ndByte, obj_destroy_spawn_star, SOUND_OBJ_MRI_DEATH, o->oPosX, o->oPosY + 100.f, o->oPosZ, 1370, 2000, -320, (o->oBhvArgs >> 24), false);
     destroy_preset(bhvMrI, 1, obj_destroy_white_puff, -1, SOUND_OBJ_MRI_DEATH);
     destroy_preset(bhvSpiny, 1, obj_destroy_white_puff, 0, SOUND_OBJ_DEFAULT_DEATH);
     destroy_preset(bhvSmallWhomp, 1, obj_destroy_break_particles, 5, SOUND_OBJ_THWOMP, 0xE0, 0xE0, 0xE0);
@@ -627,7 +696,7 @@ void obj_create_respawner(struct Object *o, s32 model, const BehaviorScript *beh
     respawner->oPosX = o->oHomeX;
     respawner->oPosY = o->oHomeY;
     respawner->oPosZ = o->oHomeZ;
-    respawner->oBehParams = o->oBehParams;
+    respawner->oBhvArgs = o->oBhvArgs;
     respawner->oRespawnerModelToRespawn = model;
     respawner->oRespawnerMinSpawnDist = minSpawnDist;
     respawner->oRespawnerBehaviorToRespawn = behavior;
@@ -794,7 +863,7 @@ struct Object *obj_get_red_coin_star() {
     }
 
     // Actual red coin star
-    for_each_until_null(const BehaviorScript *, bhv, OMM_ARRAY_OF(const BehaviorScript *) { bhvStar, bhvStarSpawnCoordinates, NULL }) {
+    for_each_until_null(const BehaviorScript *, bhv, omm_static_array_of(const BehaviorScript *) { bhvStar, bhvStarSpawnCoordinates, NULL }) {
         for_each_object_with_behavior(star, *bhv) {
             if (star->activeFlags & ACTIVE_FLAG_RED_COIN_STAR) {
                 return star;
@@ -1075,6 +1144,14 @@ void obj_anim_advance(struct Object *o, f32 frames) {
             }
         }
     }
+    obj_anim_update_frame_from_accel_assist(&o->oAnimInfo);
+}
+
+void obj_anim_set_speed(struct Object *o, f32 animAccel) {
+    if (!o->oAnimInfo.animAccel) {
+        o->oAnimInfo.animFrameAccelAssist = (o->oAnimInfo.animFrame << 16);
+    }
+    o->oAnimInfo.animAccel = animAccel * 0x10000;
     obj_anim_update_frame_from_accel_assist(&o->oAnimInfo);
 }
 

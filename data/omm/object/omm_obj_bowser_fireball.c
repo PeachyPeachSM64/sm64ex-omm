@@ -334,7 +334,7 @@ const GeoLayout omm_geo_bowser_fireball[] = {
 // Behavior
 //
 
-static void omm_bhv_bowser_fireball_loop(void) {
+static void bhv_omm_bowser_fireball_loop(void) {
     struct Object *o = gCurrentObject;
     if (o->oTimer < o->oBowserFireDuration) {
         o->oPosX += o->oVelX;
@@ -352,12 +352,12 @@ static void omm_bhv_bowser_fireball_loop(void) {
     }
 }
 
-const BehaviorScript omm_bhv_bowser_fireball[] = {
+const BehaviorScript bhvOmmBowserFireball[] = {
     OBJ_TYPE_GENACTOR,
     0x11010001,
     0x08000000,
     0x0F1A0001,
-    0x0C000000, (uintptr_t) omm_bhv_bowser_fireball_loop,
+    0x0C000000, (uintptr_t) bhv_omm_bowser_fireball_loop,
     0x09000000,
 };
 
@@ -366,7 +366,7 @@ const BehaviorScript omm_bhv_bowser_fireball[] = {
 //
 
 struct Object *omm_spawn_bowser_fireball(struct Object *o, f32 x, f32 y, f32 z, f32 forwardVel, f32 maxDistance, s16 angle) {
-    struct Object *fireball = obj_spawn_from_geo(o, omm_geo_bowser_fireball, omm_bhv_bowser_fireball);
+    struct Object *fireball = obj_spawn_from_geo(o, omm_geo_bowser_fireball, bhvOmmBowserFireball);
     obj_set_pos(fireball, x, y, z);
     obj_set_angle(fireball, 0, angle, 0);
     obj_set_forward_vel(fireball, angle, 1.f, forwardVel);

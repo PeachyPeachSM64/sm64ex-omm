@@ -16,7 +16,7 @@ static OmmHMap sOmmCollisionCache = omm_hmap_zero;
 //
 
 static void omm_surface_add_to_cell(struct Surface *surface, bool dynamic, s16 cx, s16 cz) {
-    s32 type = SURF_TYPE(surface->normal.y);
+    s32 type = SURFACE_CATEGORY(surface->normal.y);
     OmmArray *surfaces = &gOmmSurfaces[dynamic][cz][cx][type].data;
     s32 *count = &gOmmSurfaces[dynamic][cz][cx][type].count;
     surface->flags |= SURFACE_FLAG_X_PROJECTION * (abs_f(surface->normal.x) > 0.707f);
@@ -30,10 +30,10 @@ static void omm_surface_add(struct Surface *surface, bool dynamic) {
     s16 x1  = max_3_s(surface->vertex1[0], surface->vertex2[0], surface->vertex3[0]);
     s16 z0  = min_3_s(surface->vertex1[2], surface->vertex2[2], surface->vertex3[2]);
     s16 z1  = max_3_s(surface->vertex1[2], surface->vertex2[2], surface->vertex3[2]);
-    s16 cx0 = clamp_s(((x0 + LEVEL_BOUNDS - (CELL_SIZE / 2)) / CELL_SIZE), 0, CELL_COUNT - 1);
-    s16 cx1 = clamp_s(((x1 + LEVEL_BOUNDS + (CELL_SIZE / 2)) / CELL_SIZE), 0, CELL_COUNT - 1);
-    s16 cz0 = clamp_s(((z0 + LEVEL_BOUNDS - (CELL_SIZE / 2)) / CELL_SIZE), 0, CELL_COUNT - 1);
-    s16 cz1 = clamp_s(((z1 + LEVEL_BOUNDS + (CELL_SIZE / 2)) / CELL_SIZE), 0, CELL_COUNT - 1);
+    s16 cx0 = clamp_s(((x0 + LEVEL_BOUNDARY_MAX - (CELL_SIZE / 2)) / CELL_SIZE), 0, NUM_CELLS - 1);
+    s16 cx1 = clamp_s(((x1 + LEVEL_BOUNDARY_MAX + (CELL_SIZE / 2)) / CELL_SIZE), 0, NUM_CELLS - 1);
+    s16 cz0 = clamp_s(((z0 + LEVEL_BOUNDARY_MAX - (CELL_SIZE / 2)) / CELL_SIZE), 0, NUM_CELLS - 1);
+    s16 cz1 = clamp_s(((z1 + LEVEL_BOUNDARY_MAX + (CELL_SIZE / 2)) / CELL_SIZE), 0, NUM_CELLS - 1);
     for (s16 cz = cz0; cz <= cz1; ++cz) {
         for (s16 cx = cx0; cx <= cx1; ++cx) {
             omm_surface_add_to_cell(surface, dynamic, cx, cz);
@@ -49,6 +49,22 @@ static OmmArray sOmmCollisionJumps = omm_array_zero;
 void omm_surface_register_collision_jump(s16 index, s16 *col) {
     omm_array_grow(sOmmCollisionJumps, ptr, NULL, index + 1);
     omm_array_set(sOmmCollisionJumps, ptr, col, index);
+}
+
+static bool check_vertex_in_range(struct Surface *s, s16 y) {
+    return s->lowerY < y && y < s->upperY;
+}
+
+static bool fix_vertex(Vec3s u, Vec3s v, s64 r2) {
+    s64 dx = (s64) u[0] - (s64) v[0];
+    s64 dy = (s64) u[1] - (s64) v[1];
+    s64 dz = (s64) u[2] - (s64) v[2];
+    s64 l2 = sqr(dx) + sqr(dy) + sqr(dz); // Cast to s64 is needed to avoid integer overflow with the sqr
+    if (l2 > 0 && l2 < r2) {
+        vec3s_copy(v, u);
+        return true;
+    }
+    return false;
 }
 
 static struct Surface *omm_surface_create(s16 *vBuffer, s16 vCount, s16 *vTranslation, s16 v1, s16 v2, s16 v3) {
@@ -75,7 +91,7 @@ static struct Surface *omm_surface_create(s16 *vBuffer, s16 vCount, s16 *vTransl
     if (mag < 0.1f) return NULL;
 
     // Create surface
-    omm_array_grow(sOmmLoadedSurfaces, ptr, OMM_MEMNEW(struct Surface, 1), gSurfacesAllocated + 1);
+    omm_array_grow(sOmmLoadedSurfaces, ptr, omm_new(struct Surface, 1), gSurfacesAllocated + 1);
     struct Surface *surface = omm_array_get(sOmmLoadedSurfaces, ptr, gSurfacesAllocated++);
     surface->type           = 0;
     surface->force          = 0;
@@ -97,6 +113,35 @@ static struct Surface *omm_surface_create(s16 *vBuffer, s16 vCount, s16 *vTransl
     surface->normal.z       = nz / mag;
     surface->originOffset   = -(nx * x1 + ny * y1 + nz * z1) / mag;
     surface->object         = NULL;
+    
+    // Try to glue nearest vertices together to fix holes due to float to int conversion and vertex misalignments
+    if (OMM_MOVESET_ODYSSEY && !gNumStaticSurfaces) {
+        u8 fixedVertices = 0;
+        for (s32 i = 0; i != gSurfacesAllocated - 1; ++i) {
+            struct Surface *s = omm_array_get(sOmmLoadedSurfaces, ptr, i);
+            if (!(fixedVertices & (1 << 0)) && check_vertex_in_range(s, surface->vertex1[1])) {
+                fixedVertices |= (fix_vertex(s->vertex1, surface->vertex1, 10) << 0);
+                fixedVertices |= (fix_vertex(s->vertex2, surface->vertex1, 10) << 0);
+                fixedVertices |= (fix_vertex(s->vertex3, surface->vertex1, 10) << 0);
+            }
+            if (!(fixedVertices & (1 << 1)) && check_vertex_in_range(s, surface->vertex2[1])) {
+                fixedVertices |= (fix_vertex(s->vertex1, surface->vertex2, 10) << 1);
+                fixedVertices |= (fix_vertex(s->vertex2, surface->vertex2, 10) << 1);
+                fixedVertices |= (fix_vertex(s->vertex3, surface->vertex2, 10) << 1);
+            }
+            if (!(fixedVertices & (1 << 2)) && check_vertex_in_range(s, surface->vertex3[1])) {
+                fixedVertices |= (fix_vertex(s->vertex1, surface->vertex3, 10) << 2);
+                fixedVertices |= (fix_vertex(s->vertex2, surface->vertex3, 10) << 2);
+                fixedVertices |= (fix_vertex(s->vertex3, surface->vertex3, 10) << 2);
+            }
+        }
+
+        // Remove invalid surfaces
+        if (fixedVertices && !recompute_surface_parameters(surface)) {
+            gSurfacesAllocated--;
+            return NULL;
+        }
+    }
     return surface;
 }
 
@@ -133,13 +178,13 @@ static void omm_surface_process_data(s16 areaIndex, s16 *data, struct Object *o,
         data = col->start;
     }
 
-    // Process every command, until a CMD_COL_END is found
+    // Process every command, until a COL_CMD_END is found
     for (;;) {
         s16 cmd = *data;
         switch (cmd) {
 
             // Initialize collision data
-            case CMD_COL_INIT: {
+            case COL_CMD_INIT: {
                 vBuffer = NULL;
                 vCount = 0;
                 properties.type = SURFACE_DEFAULT;
@@ -149,19 +194,19 @@ static void omm_surface_process_data(s16 areaIndex, s16 *data, struct Object *o,
             } break;
 
             // Initialize vertex buffer
-            case CMD_COL_VERTEX_INIT: {
+            case COL_CMD_VERTEX_INIT: {
                 vBuffer = &data[2];
                 vCount = 0;
                 transformed = false;
             } break;
 
             // Increment vertex counter
-            case CMD_COL_VERTEX: {
+            case COL_CMD_VERTEX: {
                 vCount++;
             } break;
 
             // Initialize surface data
-            case CMD_COL_TRI_INIT: {
+            case COL_CMD_TRI_INIT: {
                 properties.type = data[1];
                 properties.flags = (SURFACE_FLAG_DYNAMIC * (o != NULL)) | (SURFACE_FLAG_NO_CAM_COLLISION * omm_surface_has_no_cam_collision(properties.type));
                 properties.force = omm_surface_has_force(properties.type);
@@ -169,15 +214,15 @@ static void omm_surface_process_data(s16 areaIndex, s16 *data, struct Object *o,
 
                     // Store the vertex buffer in the look-up table
                     if (!params) {
-                        Col *col = OMM_MEMNEW(Col, 1);
+                        Col *col = omm_new(Col, 1);
                         col->start = data;
                         col->count = vCount;
-                        col->verts = OMM_MEMDUP(vBuffer, vCount * 4 * sizeof(s16));
+                        col->verts = omm_dup(vBuffer, vCount * 4 * sizeof(s16));
                         omm_hmap_insert(sOmmCollisionCache, (uintptr_t) o->collisionData, col);
                     }
 
                     // Compute the transform matrix
-                    if (o->oThrowMatrix == NULL) {
+                    if (!o->oThrowMatrix) {
                         o->oThrowMatrix = &o->transform;
                         obj_build_transform_from_pos_and_angle(o, O_POS_INDEX, O_FACE_ANGLE_INDEX);
                     }
@@ -196,8 +241,8 @@ static void omm_surface_process_data(s16 areaIndex, s16 *data, struct Object *o,
             } break;
 
             // Create surface
-            case CMD_COL_TRI:
-            case CMD_COL_TRI_SPECIAL: {
+            case COL_CMD_TRI:
+            case COL_CMD_TRI_SPECIAL: {
 
                 // Room
                 s8 room = 0;
@@ -214,7 +259,7 @@ static void omm_surface_process_data(s16 areaIndex, s16 *data, struct Object *o,
                 s16 v2 = data[2];
                 s16 v3 = data[3];
                 struct Surface *surface = omm_surface_create(vBuffer, vCount, vTranslation, v1, v2, v3);
-                if (surface != NULL) {
+                if (surface) {
                     surface->object = o;
                     surface->room = room;
                     surface->type = properties.type;
@@ -225,26 +270,26 @@ static void omm_surface_process_data(s16 areaIndex, s16 *data, struct Object *o,
             } break;
 
             // Stop creating surfaces
-            case CMD_COL_TRI_STOP: {
+            case COL_CMD_TRI_STOP: {
                 properties.type = SURFACE_DEFAULT;
                 properties.flags = 0;
                 properties.force = false;
             } break;
 
             // End collision data
-            case CMD_COL_END: {
+            case COL_CMD_END: {
                 vec3s_set(vTranslation, 0, 0, 0);
                 return;
             } break;
 
             // Spawn special objects
-            case CMD_COL_SPECIAL_INIT: {
+            case COL_CMD_SPECIAL_INIT: {
                 data += 1;
                 spawn_special_objects(areaIndex, &data);
             } break;
 
             // Initialize environment regions
-            case CMD_COL_WATER_BOX_INIT: {
+            case COL_CMD_WATER_BOX_INIT: {
                 gEnvironmentRegions = &data[1];
                 s32 numRegions = data[1];
                 for (s32 i = 0; i < numRegions; ++i, data += 6) {
@@ -255,7 +300,7 @@ static void omm_surface_process_data(s16 areaIndex, s16 *data, struct Object *o,
             } break;
 
             // Translate all vertices by a fixed amount (only works with static surfaces)
-            case CMD_COL_TRANSLATE: {
+            case COL_CMD_TRANSLATE: {
                 if (!o) {
                     vTranslation[0] = data[1];
                     vTranslation[1] = data[2];
@@ -264,7 +309,7 @@ static void omm_surface_process_data(s16 areaIndex, s16 *data, struct Object *o,
             } break;
 
             // Process another collision script (only works with static surfaces)
-            case CMD_COL_JUMP: {
+            case COL_CMD_JUMP: {
                 if (!o) {
                     s16 index = data[1];
                     omm_surface_process_data(areaIndex, (s16 *) omm_array_get(sOmmCollisionJumps, ptr, index), NULL, params);
@@ -283,11 +328,11 @@ static void omm_surface_process_data(s16 areaIndex, s16 *data, struct Object *o,
 //
 
 u32 get_area_terrain_size(s16 *data) {
-    static const s16 sCmdColEndByteSequence[] = { CMD_COL_END_BYTE_SEQUENCE };
+    static const s16 sCmdColEndByteSequence[] = { COL_CMD_END_BYTE_SEQUENCE };
     for (s16 *head = data;; head++) {
-        if (*head == CMD_COL_END) {
-            if (OMM_MEMCMP(head + 1, sCmdColEndByteSequence, OMM_ARRAY_SIZE(sCmdColEndByteSequence))) {
-                return (u32) ((head - data) + 1 + OMM_ARRAY_SIZE(sCmdColEndByteSequence));
+        if (*head == COL_CMD_END) {
+            if (omm_same(head + 1, sCmdColEndByteSequence, omm_static_array_length(sCmdColEndByteSequence))) {
+                return (u32) ((head - data) + 1 + omm_static_array_length(sCmdColEndByteSequence));
             }
         }
     }
@@ -295,21 +340,22 @@ u32 get_area_terrain_size(s16 *data) {
 }
 
 void load_area_terrain(s16 index, s16 *data, s8 *surfaceRooms, s16 *macroObjects) {
-    for (s32 cz = 0; cz != CELL_COUNT; ++cz)
-    for (s32 cx = 0; cx != CELL_COUNT; ++cx) {
+    for (s32 cz = 0; cz != NUM_CELLS; ++cz)
+    for (s32 cx = 0; cx != NUM_CELLS; ++cx) {
         gOmmFloors(0, cx, cz)->count = 0;
         gOmmCeils(0, cx, cz)->count = 0;
         gOmmWalls(0, cx, cz)->count = 0;
     }
     gEnvironmentRegions = NULL;
     gSurfacesAllocated = 0;
+    gNumStaticSurfaces = 0;
 
     // Load terrain
     omm_surface_process_data(index, data, NULL, surfaceRooms ? &surfaceRooms : NULL);
     gNumStaticSurfaces = gSurfacesAllocated;
 
     // Spawn macro objects
-    if (macroObjects != NULL && *macroObjects != -1) {
+    if (macroObjects && *macroObjects != -1) {
         if (0 <= *macroObjects && *macroObjects < 30) {
             spawn_macro_objects_hardcoded(index, macroObjects);
         } else {
@@ -320,8 +366,8 @@ void load_area_terrain(s16 index, s16 *data, s8 *surfaceRooms, s16 *macroObjects
 
 void clear_dynamic_surfaces() {
     if (!(gTimeStopState & TIME_STOP_ACTIVE)) {
-        for (s32 cz = 0; cz != CELL_COUNT; ++cz)
-        for (s32 cx = 0; cx != CELL_COUNT; ++cx) {
+        for (s32 cz = 0; cz != NUM_CELLS; ++cz)
+        for (s32 cx = 0; cx != NUM_CELLS; ++cx) {
             gOmmFloors(1, cx, cz)->count = 0;
             gOmmCeils(1, cx, cz)->count = 0;
             gOmmWalls(1, cx, cz)->count = 0;
@@ -341,7 +387,7 @@ static void omm_fix_object_collision_data(struct Object *o) {
         { thwomp_seg5_collision_0500B7D0, omm_thwomp_collision },
         { thwomp_seg5_collision_0500B92C, omm_thwomp_collision },
     };
-    for (s32 i = 0; i != OMM_ARRAY_SIZE(sFixedCollisions); ++i) {
+    for (s32 i = 0; i != omm_static_array_length(sFixedCollisions); ++i) {
         if (o->collisionData == sFixedCollisions[i][OMM_MOVESET_CLASSIC]) {
             o->collisionData = (void *) sFixedCollisions[i][OMM_MOVESET_ODYSSEY];
             return;
@@ -354,8 +400,8 @@ OMM_ROUTINE_LEVEL_ENTRY(omm_clear_collision_buffers) {
     omm_hmap_for_each(sOmmCollisionCache, _, v) {
         Col *col = (Col *) *v;
         if (col) {
-            OMM_MEMDEL(col->verts);
-            OMM_MEMDEL(col);
+            omm_free(col->verts);
+            omm_free(col);
         }
     }
     omm_hmap_delete(sOmmCollisionCache);
@@ -376,36 +422,33 @@ void load_object_collision_model() {
     }
     
     // Update distances
-    o->oCollisionDistance = LEVEL_BOUNDS;
+    o->oCollisionDistance = LEVEL_BOUNDARY_MAX;
     o->oDistanceToMario = dist_between_objects(o, gMarioObject);
     o->oNodeFlags |= GRAPH_RENDER_ACTIVE;
 }
 
-s32 get_object_surface_index(struct Object *o, struct Surface *s) {
-    if (o) {
-        for (s32 i = 0, j = -1; i != gSurfacesAllocated; ++i) {
-            struct Surface *surface = omm_array_get(sOmmLoadedSurfaces, ptr, i);
-            if (surface->object == o && j == -1) {
-                j = i;
-            }
-            if (surface == s) {
-                return i - j;
-            }
+s32 get_index_from_surface(struct Surface *s) {
+    for (s32 i = 0, j = -1, k = obj_get_slot_index(s->object); i != gSurfacesAllocated; ++i) {
+        struct Surface *surface = omm_array_get(sOmmLoadedSurfaces, ptr, i);
+        if (j == -1 && k != -1 && surface->object == s->object) {
+            j = i;
+        }
+        if (surface == s) {
+            return (k != -1 ? (((k + 1) << 16) | (i - j)) : i);
         }
     }
     return -1;
 }
 
-struct Surface *get_object_surface_from_index(struct Object *o, s32 index) {
-    if (o) {
-        for (s32 i = 0; i != gSurfacesAllocated; ++i) {
-            struct Surface *surface = omm_array_get(sOmmLoadedSurfaces, ptr, i);
-            if (surface->object == o) {
-                index += i;
-                break;
-            }
+struct Surface *get_surface_from_index(s32 index) {
+    s32 k = ((index >> 16) - 1);
+    if (k == -1) return omm_array_get(sOmmLoadedSurfaces, ptr, index & 0xFFFF);
+    struct Object *o = &gObjectPool[k];
+    for (s32 i = 0; i != gSurfacesAllocated; ++i) {
+        struct Surface *surface = omm_array_get(sOmmLoadedSurfaces, ptr, i);
+        if (surface->object == o) {
+            return omm_array_get(sOmmLoadedSurfaces, ptr, i + (index & 0xFFFF));
         }
-        return omm_array_get(sOmmLoadedSurfaces, ptr, index);
     }
     return NULL;
 }
@@ -427,10 +470,10 @@ static Gfx *omm_debug_surfaces_get_display_list() {
     static Vtx    *sOmmDebugRenderSurfacesVertices    = NULL;
 
     // Init
-    OMM_MEMDEL(sOmmDebugRenderSurfacesDisplayList);
-    OMM_MEMDEL(sOmmDebugRenderSurfacesVertices);
-    sOmmDebugRenderSurfacesDisplayList = OMM_MEMNEW(Gfx, 4 + gSurfacesAllocated * 10);
-    sOmmDebugRenderSurfacesVertices = OMM_MEMNEW(Vtx, gSurfacesAllocated * 6);
+    omm_free(sOmmDebugRenderSurfacesDisplayList);
+    omm_free(sOmmDebugRenderSurfacesVertices);
+    sOmmDebugRenderSurfacesDisplayList = omm_new(Gfx, 4 + gSurfacesAllocated * 10);
+    sOmmDebugRenderSurfacesVertices = omm_new(Vtx, gSurfacesAllocated * 6);
     Gfx *gfx = sOmmDebugRenderSurfacesDisplayList;
     Vtx *vtx = sOmmDebugRenderSurfacesVertices;
 

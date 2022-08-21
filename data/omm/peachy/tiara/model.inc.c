@@ -14,6 +14,18 @@ static const Lights1 omm_peachs_cap_light = gdSPDefLights1(
     0x28, 0x28, 0x28
 );
 
+Lights1 omm_tiara_eye_top_light = gdSPDefLights1(
+    0xff, 0x00, 0x80,
+    0xff, 0x00, 0x80,
+    0x28, 0x28, 0x28
+);
+
+Lights1 omm_tiara_eye_bottom_light = gdSPDefLights1(
+    0xff, 0x40, 0xff,
+    0xff, 0x40, 0xff,
+    0x28, 0x28, 0x28
+);
+
 //
 // Textures
 //
@@ -2360,6 +2372,7 @@ static const Gfx omm_peachs_cap_tiara_triangles[] = {
 };
 
 static const Gfx omm_peachs_cap_tiara_eyes_triangles[] = {
+    gsSPDisplayList(omm_peach_tiara_gfx_enable),
     gsSPVertex(omm_peachs_cap_tiara_eyes_vertices + 0, 26, 0),
     gsSP1Triangle(0, 1, 2, 0),
     gsSP1Triangle(3, 1, 4, 0),
@@ -2391,6 +2404,7 @@ static const Gfx omm_peachs_cap_tiara_eyes_triangles[] = {
     gsSP1Triangle(19, 17, 15, 0),
     gsSP1Triangle(20, 15, 25, 0),
     gsSP1Triangle(23, 20, 25, 0),
+    gsSPDisplayList(omm_peach_tiara_gfx_disable),
     gsSPEndDisplayList(),
 };
 

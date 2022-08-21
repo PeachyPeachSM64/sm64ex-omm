@@ -18,14 +18,14 @@ const GeoLayout omm_geo_fire_smoke_blue[] = {
 // Behavior
 //
 
-static void omm_bhv_fire_smoke_init() {
+static void bhv_omm_fire_smoke_init() {
     cur_obj_scale(4.f + 2.f * random_float());
 }
 
-const BehaviorScript omm_bhv_fire_smoke[] = {
+const BehaviorScript bhvOmmFireSmoke[] = {
     OBJ_TYPE_UNIMPORTANT,
     0x11010001,
-    0x0C000000, (uintptr_t) omm_bhv_fire_smoke_init,
+    0x0C000000, (uintptr_t) bhv_omm_fire_smoke_init,
     0x101AFFFF,
     0x0500000A,
     0x0F1A0001,
@@ -41,8 +41,8 @@ struct Object *omm_spawn_fire_smoke(struct Object *o, s32 type) {
     struct Object *smoke = NULL;
     switch (type) {
         default:
-        case 0: smoke = obj_spawn_from_geo(o, omm_geo_fire_smoke_red, omm_bhv_fire_smoke); break;
-        case 1: smoke = obj_spawn_from_geo(o, omm_geo_fire_smoke_blue, omm_bhv_fire_smoke); break;
+        case 0: smoke = obj_spawn_from_geo(o, omm_geo_fire_smoke_red, bhvOmmFireSmoke); break;
+        case 1: smoke = obj_spawn_from_geo(o, omm_geo_fire_smoke_blue, bhvOmmFireSmoke); break;
     }
     return smoke;
 }

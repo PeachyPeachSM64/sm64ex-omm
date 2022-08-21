@@ -2,26 +2,11 @@
 #include "data/omm/omm_includes.h"
 #undef OMM_ALL_HEADERS
 
-static void set_goomba_as_standalone(struct Object *goomba) {
-    if (goomba->parentObj && goomba->parentObj != goomba) {
-
-        // Mark the goomba as dead inside the triplet
-        set_object_respawn_info_bits(goomba->parentObj, (goomba->oBehParams2ndByte & GOOMBA_BP_TRIPLET_FLAG_MASK) >> 2);
-        goomba->parentObj->oBehParams = goomba->parentObj->oBehParams | (goomba->oBehParams2ndByte & GOOMBA_BP_TRIPLET_FLAG_MASK) << 6;
-
-        // Set the goomba as a standalone goomba
-        goomba->oBehParams = (goomba->oGoombaSize & GOOMBA_BP_SIZE_MASK) << 16;
-        goomba->oBehParams2ndByte = (goomba->oGoombaSize & GOOMBA_BP_SIZE_MASK);
-        goomba->parentObj = goomba;
-        goomba->prevObj = NULL;
-    }
-}
-
 //
 // Init
 //
 
-bool cappy_goomba_init(struct Object *o) {
+bool omm_cappy_goomba_init(struct Object *o) {
 
     // Retrieve the nearest Goombas (up to OBJ_GOOMBA_STACK_MAX)
     // First Goomba is the one Mario's trying to capture
@@ -34,7 +19,6 @@ bool cappy_goomba_init(struct Object *o) {
             f32 dist = obj_get_horizontal_distance(o, goomba);
             f32 ydif = abs_f(goomba->oPosY - o->oPosY);
             if (dist < 20.f && ydif < (70.f * OBJ_GOOMBA_STACK_MAX * o->oScaleY)) {
-                set_goomba_as_standalone(goomba);
                 goombas[goombaCount++] = goomba;
                 if (goombaCount >= OBJ_GOOMBA_STACK_MAX) {
                     break;
@@ -53,24 +37,23 @@ bool cappy_goomba_init(struct Object *o) {
     o->oPosY = lowestY;
     o->oGoombaStackParent = o;
     obj_update_gfx(o);
-    set_goomba_as_standalone(o);
 
     // Setup the Goomba stack
     for (s32 i = 1; i != goombaCount; ++i) {
-        gOmmData->object->goomba.stackObj[i - 1] = goombas[i];
+        gOmmObject->goomba.stackObj[i - 1] = goombas[i];
         goombas[i]->oPosY = o->oPosY + i * o->oScaleY * 65.f;
-        goombas[i]->curBhvCommand = omm_bhv_goomba_stack_capture;
+        goombas[i]->curBhvCommand = bhvOmmGoombaStackCapture;
         goombas[i]->bhvStackIndex = 0;
         goombas[i]->oInteractStatus = 0;
         goombas[i]->oIntangibleTimer = -1;
         goombas[i]->oGoombaStackParent = o;
         obj_update_gfx(goombas[i]);
     }
-    gOmmData->object->goomba.stackCount = (goombaCount - 1);
+    gOmmObject->goomba.stackCount = (goombaCount - 1);
     return true;
 }
 
-void cappy_goomba_end(struct Object *o) {
+void omm_cappy_goomba_end(struct Object *o) {
     struct MarioState *m = gMarioState;
 
     // Reset Goomba's state
@@ -80,35 +63,33 @@ void cappy_goomba_end(struct Object *o) {
     o->oInteractStatus = 0;
     o->oIntangibleTimer = 3;
     o->oGoombaStackParent = o;
-    set_goomba_as_standalone(o);
 
     // Stay stacked when released, but break the stack if Mario gets damaged
     bool stack = (m->action == ACT_IDLE || m->action == ACT_FREEFALL || m->action == ACT_WATER_IDLE || m->action == ACT_OMM_LEAVE_OBJECT_JUMP || m->action == ACT_OMM_LEAVE_OBJECT_WATER);
-    for (u8 i = 0; i != gOmmData->object->goomba.stackCount; ++i) {
-        struct Object *goomba = gOmmData->object->goomba.stackObj[i];
-        goomba->curBhvCommand = (stack ? omm_bhv_goomba_stack : goomba->behavior);
+    for (u8 i = 0; i != gOmmObject->goomba.stackCount; ++i) {
+        struct Object *goomba = gOmmObject->goomba.stackObj[i];
+        goomba->curBhvCommand = (stack ? bhvOmmGoombaStack : goomba->behavior);
         goomba->bhvStackIndex = 0;
         goomba->oAction = stack * (i + 1);
         goomba->oInteractStatus = 0;
         goomba->oIntangibleTimer = 3;
         goomba->oGoombaStackParent = o;
-        set_goomba_as_standalone(goomba);
     }
 }
 
-f32 cappy_goomba_get_top(UNUSED struct Object *o) {
-    return omm_capture_get_hitbox_height(o) * (1 + gOmmData->object->goomba.stackCount);
+f32 omm_cappy_goomba_get_top(UNUSED struct Object *o) {
+    return omm_capture_get_hitbox_height(o) * (1 + gOmmObject->goomba.stackCount);
 }
 
 //
 // Update
 //
 
-s32 cappy_goomba_update(struct Object *o) {
+s32 omm_cappy_goomba_update(struct Object *o) {
 
     // Hitbox
     o->hitboxRadius = omm_capture_get_hitbox_radius(o);
-    o->hitboxHeight = omm_capture_get_hitbox_height(o) * (gOmmData->object->goomba.stackCount + 1);
+    o->hitboxHeight = omm_capture_get_hitbox_height(o) * (gOmmObject->goomba.stackCount + 1);
     o->hitboxDownOffset = omm_capture_get_hitbox_down_offset(o);
     o->oWallHitboxRadius = omm_capture_get_wall_hitbox_radius(o);
 
@@ -138,7 +119,7 @@ s32 cappy_goomba_update(struct Object *o) {
     obj_open_door(o, obj);
 
     // Goomba stack
-    if (gOmmData->object->goomba.stackCount < (OBJ_GOOMBA_STACK_MAX - 1) && omm_obj_is_goomba(obj) && obj->oIntangibleTimer == 0) {
+    if (gOmmObject->goomba.stackCount < (OBJ_GOOMBA_STACK_MAX - 1) && omm_obj_is_goomba(obj) && obj->oIntangibleTimer == 0) {
 
         // Fall check
         if ((!obj_is_on_ground(o) && o->oVelY <= 0.f) || (obj_is_on_ground(o) && o->oPosY > obj->oPosY + obj->hitboxHeight / 4.f)) {
@@ -154,13 +135,12 @@ s32 cappy_goomba_update(struct Object *o) {
                 if (d2 < r2) {
 
                     // Add goomba to stack
-                    gOmmData->object->goomba.stackObj[gOmmData->object->goomba.stackCount++] = obj;
-                    obj->curBhvCommand = omm_bhv_goomba_stack_capture;
+                    gOmmObject->goomba.stackObj[gOmmObject->goomba.stackCount++] = obj;
+                    obj->curBhvCommand = bhvOmmGoombaStackCapture;
                     obj->bhvStackIndex = 0;
                     obj->oInteractStatus = INT_STATUS_INTERACTED;
                     obj->oIntangibleTimer = -1;
                     obj->oGoombaStackParent = o;
-                    set_goomba_as_standalone(obj);
                     obj_spawn_white_puff(obj, SOUND_OBJ_DEFAULT_DEATH);
                 }
             }
@@ -175,12 +155,12 @@ s32 cappy_goomba_update(struct Object *o) {
     obj_anim_play(o, 0, (o->oVelY <= 0.f) * max_f(1.f, o->oForwardVel * 2.f / (omm_capture_get_walk_speed(o))));
     obj_update_blink_state(o, &o->oGoombaBlinkTimer, 30, 50, 5);
     if (obj_is_on_ground(o)) {
-        obj_make_step_sound_and_particle(o, &gOmmData->object->state.walkDistance, omm_capture_get_walk_speed(o) * 8.f, o->oForwardVel, SOUND_OBJ_GOOMBA_WALK, OBJ_PARTICLE_NONE);
+        obj_make_step_sound_and_particle(o, &gOmmObject->state.walkDistance, omm_capture_get_walk_speed(o) * 8.f, o->oForwardVel, SOUND_OBJ_GOOMBA_WALK, OBJ_PARTICLE_NONE);
     }
 
     // Update Goomba stack
-    for (u8 i = 0; i != gOmmData->object->goomba.stackCount; ++i) {
-        struct Object *obj   = gOmmData->object->goomba.stackObj[i];
+    for (u8 i = 0; i != gOmmObject->goomba.stackCount; ++i) {
+        struct Object *obj   = gOmmObject->goomba.stackObj[i];
         obj->oPosX           = o->oPosX;
         obj->oPosY           = o->oPosY + omm_capture_get_hitbox_height(o) * (i + 1);
         obj->oPosZ           = o->oPosZ;
@@ -207,8 +187,8 @@ s32 cappy_goomba_update(struct Object *o) {
     }
 
     // Cappy values
-    gOmmData->object->cappy.offset[1] = (omm_capture_get_hitbox_height(o) / o->oScaleY) * (1 + gOmmData->object->goomba.stackCount);
-    gOmmData->object->cappy.scale     = 0.8f;
+    gOmmObject->cappy.offset[1] = (omm_capture_get_hitbox_height(o) / o->oScaleY) * (1 + gOmmObject->goomba.stackCount);
+    gOmmObject->cappy.scale     = 0.8f;
 
     // OK
     POBJ_RETURN_OK;

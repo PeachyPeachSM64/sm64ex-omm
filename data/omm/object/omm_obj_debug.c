@@ -239,7 +239,7 @@ static const GeoLayout omm_geo_debug_box[] = {
 // Behaviors
 //
 
-static void omm_bhv_debug_box_update() {
+static void bhv_omm_debug_box_update() {
     struct Object *o = gCurrentObject;
     if (!o->parentObj || !o->parentObj->activeFlags) {
         obj_mark_for_deletion(o);
@@ -252,11 +252,11 @@ static void omm_bhv_debug_box_update() {
         case 0: {
             if (o->parentObj == gOmmCapture) {
                 o->oPosX   = o->parentObj->oPosX;
-                o->oPosY   = o->parentObj->oPosY - gOmmData->mario->capture.hitboxOffset;
+                o->oPosY   = o->parentObj->oPosY - gOmmMario->capture.hitboxOffset;
                 o->oPosZ   = o->parentObj->oPosZ;
-                o->oScaleX = gOmmData->mario->capture.hitboxRadius / 100.f;
-                o->oScaleY = gOmmData->mario->capture.hitboxHeight / 100.f;
-                o->oScaleZ = gOmmData->mario->capture.hitboxRadius / 100.f;
+                o->oScaleX = gOmmMario->capture.hitboxRadius / 100.f;
+                o->oScaleY = gOmmMario->capture.hitboxHeight / 100.f;
+                o->oScaleZ = gOmmMario->capture.hitboxRadius / 100.f;
             } else {
                 o->oPosX   = o->parentObj->oPosX;
                 o->oPosY   = o->parentObj->oPosY - o->parentObj->hitboxDownOffset;
@@ -281,11 +281,11 @@ static void omm_bhv_debug_box_update() {
         case 2: {
             if (o->parentObj == gOmmCapture) {
                 o->oPosX   = o->parentObj->oPosX;
-                o->oPosY   = o->parentObj->oPosY - gOmmData->mario->capture.hitboxOffset;
+                o->oPosY   = o->parentObj->oPosY - gOmmMario->capture.hitboxOffset;
                 o->oPosZ   = o->parentObj->oPosZ;
-                o->oScaleX = gOmmData->mario->capture.hitboxWall   / 100.f;
-                o->oScaleY = gOmmData->mario->capture.hitboxHeight / 100.f;
-                o->oScaleZ = gOmmData->mario->capture.hitboxWall   / 100.f;
+                o->oScaleX = gOmmMario->capture.hitboxWall   / 100.f;
+                o->oScaleY = gOmmMario->capture.hitboxHeight / 100.f;
+                o->oScaleZ = gOmmMario->capture.hitboxWall   / 100.f;
             } else {
                 o->oPosX   = o->parentObj->oPosX;
                 o->oPosY   = o->parentObj->oPosY - o->parentObj->hitboxDownOffset;
@@ -299,11 +299,11 @@ static void omm_bhv_debug_box_update() {
     obj_set_angle(o, 0, 0, 0);
 }
 
-static const BehaviorScript omm_bhv_debug_box[] = {
+static const BehaviorScript bhv_omm_debug_box[] = {
     OBJ_TYPE_UNIMPORTANT,
     0x11010001,
     0x08000000,
-    0x0C000000, (uintptr_t) omm_bhv_debug_box_update,
+    0x0C000000, (uintptr_t) bhv_omm_debug_box_update,
     0x09000000,
 };
 
@@ -312,89 +312,12 @@ static const BehaviorScript omm_bhv_debug_box[] = {
 //
 
 static struct Object *omm_spawn_debug_box(struct Object *o, s32 type) {
-    struct Object *box = obj_spawn_from_geo(o, omm_geo_debug_box, omm_bhv_debug_box);
+    struct Object *box = obj_spawn_from_geo(o, omm_geo_debug_box, bhv_omm_debug_box);
     obj_set_always_rendered(box, true);
     box->activeFlags |= ACTIVE_FLAG_INITIATED_TIME_STOP;
     box->oAnimState = type;
     return box;
 }
-
-//
-// Code profiling
-//
-
-#if defined(_WIN32)
-#define OMM_DEBUG_COUNTER_FUNCTIONS_DEFINED
-#include <windows.h>
-
-static struct {
-    f64 start;
-    f64 end;
-    f64 sum;
-    f64 disp;
-} sCounters[OMM_NUM_COUNTERS];
-
-void omm_debug_start_counter(s32 counter) {
-    LARGE_INTEGER li;
-    QueryPerformanceFrequency(&li);
-    f64 freq = (s64) li.QuadPart;
-    QueryPerformanceCounter(&li);
-    sCounters[counter].start = (f64) li.QuadPart / freq;
-}
-
-void omm_debug_end_counter(s32 counter) {
-    LARGE_INTEGER li;
-    QueryPerformanceFrequency(&li);
-    f64 freq = (s64) li.QuadPart;
-    QueryPerformanceCounter(&li);
-    sCounters[counter].end = (f64) li.QuadPart / freq;
-    sCounters[counter].sum += (sCounters[counter].end - sCounters[counter].start);
-}
-
-static void omm_debug_update_counters() {
-    omm_debug_end_counter(OMM_COUNTER_FPS);
-    if (gGlobalTimer % 30 == 0) {
-        for (s32 i = 0; i != OMM_NUM_COUNTERS; ++i) {
-            sCounters[i].disp = sCounters[i].sum / (i != OMM_COUNTER_FPS ? 30.0 : 1.0);
-            sCounters[i].sum = 0;
-        }
-    }
-    if (gOmmDebugProfiler) {
-        static const struct { s32 idx; const char *str; }
-        sOmmDebugProfilerDisplay[] = {
-            { OMM_COUNTER_OMM, "OMM" },
-            { OMM_COUNTER_LVL, "LUL" },
-            { OMM_COUNTER_PRE, "PRE" },
-            { OMM_COUNTER_GEO, "GEO" },
-            { OMM_COUNTER_GFX, "GF*" },
-            { OMM_COUNTER_RDR, "RDR" },
-            { OMM_COUNTER_FRM, "FRM" },
-            { OMM_COUNTER_FPS, "FPS" },
-        };
-        for (s32 i = 0; i != OMM_NUM_COUNTERS; ++i) {
-            s32 us = (s32) (1000000ll * sCounters[sOmmDebugProfilerDisplay[i].idx].disp);
-            if (sOmmDebugProfilerDisplay[i].idx == OMM_COUNTER_FPS) {
-                s32 curFPS = (s32) ((1000000.0 / max_s(1, us)) * (gNumInterpolatedFrames * 30.5));
-                s32 maxUPS = (s32) (1.0 / max(0.0000001, sCounters[OMM_COUNTER_FRM].disp));
-
-                // curFPS is the number of drawn frames per second.
-                // maxUPS is the number of game updates the game could run per second if there was no sleep time.
-                // As long as this number is above 30, the game won't suffer any slowdown.
-                OMM_PRINT_TEXT(-60, -14 + 18 * (OMM_NUM_COUNTERS - i), "%s %d I %d", sOmmDebugProfilerDisplay[i].str, min_s(curFPS, gNumInterpolatedFrames * 30), maxUPS);
-            } else {
-                OMM_PRINT_TEXT(-60, -14 + 18 * (OMM_NUM_COUNTERS - i), "%s %d", sOmmDebugProfilerDisplay[i].str, us);
-            }
-        }
-    }
-    omm_debug_start_counter(OMM_COUNTER_FPS);
-}
-
-#else
-
-static void omm_debug_update_counters() {
-}
-
-#endif
 
 //
 // Update
@@ -408,10 +331,10 @@ OMM_ROUTINE_UPDATE(omm_debug_update) {
 
         // Register existing boxes and unload unused ones
         bool objHasBox[OBJECT_POOL_CAPACITY][3] = { false };
-        for_each_object_with_behavior(box, omm_bhv_debug_box) {
+        for_each_object_with_behavior(box, bhv_omm_debug_box) {
             struct Object *p = box->parentObj;
             s32 boxType = box->oAnimState;
-            if (p && p->activeFlags != ACTIVE_FLAG_DEACTIVATED && (
+            if (p && p->activeFlags && (
                 (boxType == 0 && gOmmDebugHitbox) ||
                 (boxType == 1 && gOmmDebugHurtbox) ||
                 (boxType == 2 && gOmmDebugWallbox))
@@ -469,39 +392,26 @@ OMM_ROUTINE_UPDATE(omm_debug_update) {
 
     // Mario info
     if (gOmmDebugMario) {
-        OMM_PRINT_TEXT(-60, 58, "POS %d %d %d", (s32) m->pos[0], (s32) m->pos[1], (s32) m->pos[2]);
-        OMM_PRINT_TEXT(-60, 40, "PEAK %d YAW %04X", (s32) (OMM_MOVESET_CLASSIC ? m->peakHeight : gOmmData->mario->state.peakHeight), (u16) m->faceAngle[1]);
-        OMM_PRINT_TEXT(-60, 22, "UEL %d %d %d FWD %d", (s32) m->vel[0], (s32) m->vel[1], (s32) m->vel[2], (s32) m->forwardVel);
-        OMM_PRINT_TEXT(-60,  4, "L %d C %d A %d R %d", (s32) gCurrLevelNum, (s32) gCurrCourseNum, (s32) gCurrAreaIndex, (s32) (m->floor ? m->floor->room : 0));
+        omm_debug_text(-60, 58, "POS %d %d %d", (s32) m->pos[0], (s32) m->pos[1], (s32) m->pos[2]);
+        omm_debug_text(-60, 40, "PEAK %d YAW %04X", (s32) (OMM_MOVESET_CLASSIC ? m->peakHeight : gOmmMario->state.peakHeight), (u16) m->faceAngle[1]);
+        omm_debug_text(-60, 22, "UEL %d %d %d FWD %d", (s32) m->vel[0], (s32) m->vel[1], (s32) m->vel[2], (s32) m->forwardVel);
+        omm_debug_text(-60,  4, "L %d C %d A %d R %d", (s32) gCurrLevelNum, (s32) gCurrCourseNum, (s32) gCurrAreaIndex, (s32) (m->floor ? m->floor->room : 0));
     }
 
     // Cappy info
     if (gOmmDebugCappy && gLoadedGraphNodes) {
         s32 sCapModels[5] = {
-            omm_player_get_selected_model(),
-            omm_player_get_selected_normal_cap(),
-            omm_player_get_selected_wing_cap(),
-            omm_player_get_selected_metal_cap(),
-            omm_player_get_selected_winged_metal_cap()
+            omm_player_graphics_get_selected_model(),
+            omm_player_graphics_get_selected_normal_cap(),
+            omm_player_graphics_get_selected_wing_cap(),
+            omm_player_graphics_get_selected_metal_cap(),
+            omm_player_graphics_get_selected_winged_metal_cap()
         };
         for (s32 i = 0; i != 5; ++i) {
             u32 id = omm_cappy_gfx_get_graph_node_identifier(gLoadedGraphNodes[sCapModels[i]]);
-            OMM_PRINT_TEXT(-60, 76 - 18 * i, "%08X", id);
+            omm_debug_text(-60, 76 - 18 * i, "%08X", id);
         }
     }
-
-    // Execution times
-    omm_debug_update_counters();
-}
-
-#endif
-
-#if !defined(OMM_DEBUG_COUNTER_FUNCTIONS_DEFINED)
-
-void omm_debug_start_counter(s32) {
-}
-
-void omm_debug_end_counter(s32) {
 }
 
 #endif

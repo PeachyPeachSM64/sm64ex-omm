@@ -14,21 +14,21 @@ const GeoLayout omm_geo_snowball[] = {
 // Behavior
 //
 
-static void omm_bhv_snowball_delete(struct Object *o) {
+static void bhv_omm_snowball_delete(struct Object *o) {
     f32 scale = o->oScaleX;
     play_sound(SOUND_OBJ_SNOW_SAND1, o->oCameraToObject);
     obj_spawn_particles(o, 8, MODEL_WHITE_PARTICLE, -o->hitboxDownOffset, 4 * scale, 2 * scale, 8 * scale, 4 * scale, -2 * sqrtf(scale), 0.3f * scale, 0.2f * scale);
     obj_mark_for_deletion(o);
 }
 
-static void omm_bhv_snowball_update() {
+static void bhv_omm_snowball_update() {
     struct Object *o = gCurrentObject;
 
     // In Mr. Blizzard's hand
-    if (o->parentObj != NULL) {
+    if (o->parentObj) {
 
         // Release if no longer in Mr. Blizzard's hand
-        if (o->parentObj->oMrBlizzardHeldObj == NULL) {
+        if (!o->parentObj->oMrBlizzardHeldObj) {
             o->parentObj = NULL;
             o->oVelX = 40.f * sins(o->oFaceAngleYaw);
             o->oVelY = 20.f;
@@ -55,16 +55,16 @@ static void omm_bhv_snowball_update() {
 
         // Collided with a wall/floor
         if (o->oWall || o->oCeil || o->oDistToFloor <= 0.f) {
-            omm_bhv_snowball_delete(o);
+            bhv_omm_snowball_delete(o);
             return;
         }
     }
 
     // Update
     vec3f_copy(o->oGfxPos, &o->oPosX);
-    obj_set_params(o, 0, 0, 0, 0, o->parentObj == NULL);
+    obj_set_params(o, 0, 0, 0, 0, !o->parentObj);
     obj_reset_hitbox(o, 30, 50, 0, 0, 15, 25);
-    if (o->parentObj == NULL) {
+    if (!o->parentObj) {
         struct Object *interacted = NULL;
         if (o->oScaleX >= 2.f) {
             interacted = omm_obj_process_interactions(o, OBJ_INT_PRESET_SNOWBALL_LARGE);
@@ -72,15 +72,15 @@ static void omm_bhv_snowball_update() {
             interacted = omm_obj_process_interactions(o, OBJ_INT_PRESET_SNOWBALL_SMALL);
         }
         if (interacted && !omm_obj_is_collectible(interacted)) {
-            omm_bhv_snowball_delete(o);
+            bhv_omm_snowball_delete(o);
         }
     }
 }
 
-const BehaviorScript omm_bhv_snowball[] = {
+const BehaviorScript bhvOmmSnowball[] = {
     OBJ_TYPE_SPECIAL,
     0x08000000,
-    0x0C000000, (uintptr_t) omm_bhv_snowball_update,
+    0x0C000000, (uintptr_t) bhv_omm_snowball_update,
     0x09000000,
 };
 
@@ -89,7 +89,7 @@ const BehaviorScript omm_bhv_snowball[] = {
 //
 
 struct Object *omm_spawn_snowball(struct Object *o) {
-    struct Object *snowball = obj_spawn_from_geo(o, omm_geo_snowball, omm_bhv_snowball);
+    struct Object *snowball = obj_spawn_from_geo(o, omm_geo_snowball, bhvOmmSnowball);
     snowball->parentObj = o;
     return snowball;
 }

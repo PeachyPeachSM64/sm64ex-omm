@@ -1,4 +1,40 @@
+#ifdef VSCODE
+#define OMM_ALL_HEADERS
+#include "data/omm/omm_includes.h"
+#undef OMM_ALL_HEADERS
+#endif
+
 static struct OmmDialogEntryRaw { s32 id; u32 soundBits; s32 linesPerBox; s32 leftOffset; s32 downOffset; const char *str; } sOmmDialogEntriesRaw[] = {
+
+{
+OMM_DIALOG_PEACHY_ROOM, 0, 3, 95, 200,
+"Many hear about me, but\n"
+"little gets to see me.\n"
+"\n"
+
+"To find me, gather\n"
+"enough power and\n"
+"return to this place..."
+},
+
+{
+OMM_DIALOG_LEVEL_VARIANTS, 0, 3, 95, 200,
+"Thanks to the power of\n"
+"the 120 Stars, you can\n"
+"access new levels.\n"
+
+"Leave a water level to\n"
+"explore the depths of\n"
+"Jolly Roger Bay.\n"
+
+"Exit a snow level to\n"
+"freeze the water of\n"
+"the Secret Aquarium.\n"
+
+"Go out of a dark level\n"
+"to enter a shadowy\n"
+"Bowser In The Sky..."
+},
 
 {
 OMM_DIALOG_BOWSER_1_INTRO, SOUND_OBJ_BOWSER_LAUGH | 0xFF00, 4, 30, 200,
@@ -151,277 +187,148 @@ OMM_DIALOG_BOWSER_3_DEFEAT, 0, 4, 30, 200,
 },
 
 {
-OMM_DIALOG_SPARKLY_STAR_NAMES, 0, 1, 95, 200,
-"PRECISE CANNON SHOTS\n"
-"SHINY GOLDEN COINS\n"
-"TREASURE OF THE FLOODED BAY\n"
-"SUSPICIOUS SLIDE SHORTCUT\n"
-"BLUE COINS HUNT\n"
-"CLIMBING IN THE CAVE\n"
-"IMMINENT VOLCANIC ERUPTION\n"
-"SHINING ABOVE THE PYRAMID\n"
-"IN FRONT OF BOWSER'S SUB\n"
-"A SNOWMAN ON THE BIG HEAD\n"
-"ABOVE THE SKY TUNNEL\n"
-"STAR OF THE DEADLY SLIDE\n"
-"TEN TINY GOOMBAS\n"
-"NO TIME TO WASTE\n"
-"PERILOUS RIDE\n"
-"ODYSSEY OF A GOOMBA\n"
-"MUSHROOMS IN THE FIRE SEA\n"
-"THE FINAL TASK\n"
-"FREE FLIGHT FOR COINS\n"
-"MASTERED AIR CONTROL\n"
-"WALL-JUMP MADNESS\n"
-"NOTHING BUT SLIDING\n"
-"JUST MARIO OVER THE RAINBOW\n"
-"FROZEN REDS IN COLD WATER\n"
-"ABOVE PEACH'S CASTLE\n"
-"INSIDE PEACH'S CASTLE\n"
-"TOADS DRAINING THE MOAT\n"
-"AT THE PINNACLE OF TIME\n"
-"COURTYARD CHEST TRAP?\n"
-"FIGHT FOR A PRINCESS\n"
+OMM_DIALOG_SPARKLY_STAR_NAMES, 0, OMM_DIALOG_SPARKLY_MULTI(1, 1, 1),
+"BOB-OMB BATTLEFIELD$PRECISE CANNON SHOTS\n"
+"WHOMP'S FORTRESS$SHINY GOLDEN COINS\n"
+"JOLLY ROGER BAY$TREASURE OF THE FLOODED BAY\n"
+"COOL, COOL MOUNTAIN$SUSPICIOUS SLIDE SHORTCUT\n"
+"BIG BOO'S HAUNT$BLUE COINS HUNT\n"
+"HAZY MAZE CAVE$CLIMBING IN THE CAVE\n"
+"LETHAL LAVA LAND$IMMINENT VOLCANIC ERUPTION\n"
+"SHIFTING SAND LAND$SHINING ABOVE THE PYRAMID\n"
+"DIRE, DIRE DOCKS$IN FRONT OF BOWSER'S SUB\n"
+"SNOWMAN'S LAND$A SNOWMAN ON THE BIG HEAD\n"
+"WET-DRY WORLD$CANNON SHOT TO THE SKY\n"
+"TALL, TALL MOUNTAIN$STAR OF THE DEADLY SLIDE\n"
+"TINY-HUGE ISLAND$TEN TINY GOOMBAS\n"
+"TICK TOCK CLOCK$NO TIME TO WASTE\n"
+"RAINBOW RIDE$SECRETS IN THE SKY\n"
+"BOWSER IN THE DARK WORLD$ODYSSEY OF A GOOMBA\n"
+"BOWSER IN THE FIRE SEA$MUSHROOMS IN THE FIRE SEA\n"
+"BOWSER IN THE SKY$THE FINAL TASK\n"
+"TOWER OF THE WING CAP$FREE FLIGHT FOR COINS\n"
+"VANISH CAP UNDER THE MOAT$MASTERED AIR CONTROL\n"
+"CAVERN OF THE METAL CAP$WALL-JUMP MADNESS\n"
+"THE PRINCESS'S SECRET SLIDE$NOTHING BUT SLIDING\n"
+"WING MARIO OVER THE RAINBOW$JUST MARIO OVER THE RAINBOW\n"
+"THE SECRET AQUARIUM$FROZEN REDS IN COLD WATER\n"
+"CASTLE GROUNDS$ABOVE PEACH'S CASTLE\n"
+"CASTLE INSIDE$INSIDE PEACH'S CASTLE\n"
+"CASTLE BASEMENT$TOADS DRAINING THE MOAT\n"
+"CASTLE UPSTAIRS$AT THE PINNACLE OF TIME\n"
+"CASTLE COURTYARD$COURTYARD CHEST TRAP?\n"
+"PINK-GOLD BOWSER$PINK-GOLD BOWSER\n"
+OMM_DIALOG_SPARKLY_MULTI_END
 
-"MARIO WINGLESS TO THE SKY\n"
-"HEIST OF WHOMP'S VAULT\n"
-"LOST IN THE DARK DEPTHS\n"
-"APEX OF THE MOUNTAIN\n"
-"TIMED BLUE COINS HUNT\n"
-"FIREFIGHTING IN THE CAVE\n"
-"VOLCANIC DISASTER\n"
-"SEALED INSIDE THE PYRAMID\n"
-"POLE-JUMPING ABOVE THE DOCKS\n"
-"THE FOUR SNOWMEN\n"
-"CHUCKYA MAGIC TRICK\n"
-"BLIND JUMP INTO THE VOID\n"
-"HUGE TOWER OF GOOMBAS\n"
-"CLIMBING THE CLOCK\n"
-"MUSHROOMS IN THE SKY\n"
-"GOOMBA EMERGENCY\n"
-"THROUGH THE FIRE AND FLAMES\n"
-"THE ULTIMATE TASK\n"
-"FAST FLIGHT FOR COINS\n"
-"PERFECT AIR CONTROL\n"
-"WALL-JUMP INSANITY\n"
-"NEVER-ENDING SLIDE\n"
-"ONLY MARIO OVER THE RAINBOW\n"
-"FROZEN COINS IN COLD WATER\n"
-"TOP OF PEACH'S CASTLE\n"
-"AVOIDING BOWSER'S TRAP\n"
-"MIPS THE YELLOW RABBIT\n"
-"SECRET OF THE MIRROR ROOM\n"
-"TOTALLY CLASSIC?\n"
-"HERE WE GO AGAIN\n"
+"BOB-OMB BATTLEFIELD$MARIO WINGLESS TO THE SKY\n"
+"WHOMP'S FORTRESS$HEIST OF WHOMP'S VAULT\n"
+"JOLLY ROGER BAY$LOST IN THE DARK DEPTHS\n"
+"COOL, COOL MOUNTAIN$APEX OF THE MOUNTAIN\n"
+"BIG BOO'S HAUNT$TIMED BLUE COINS HUNT\n"
+"HAZY MAZE CAVE$FIREFIGHTING IN THE CAVE\n"
+"LETHAL LAVA LAND$VOLCANIC DISASTER\n"
+"SHIFTING SAND LAND$SEALED INSIDE THE PYRAMID\n"
+"DIRE, DIRE DOCKS$POLE-JUMPING ABOVE THE DOCKS\n"
+"SNOWMAN'S LAND$SHELL-RIDING EXPERIENCE\n"
+"WET-DRY WORLD$CHUCKYA MAGIC TRICK\n"
+"TALL, TALL MOUNTAIN$BLIND JUMP INTO THE VOID\n"
+"TINY-HUGE ISLAND$HUGE TOWER OF GOOMBAS\n"
+"TICK TOCK CLOCK$RACE AGAINST THE CLOCK\n"
+"RAINBOW RIDE$MUSHROOMS IN THE SKY\n"
+"BOWSER IN THE DARK WORLD$GOOMBA EMERGENCY\n"
+"BOWSER IN THE FIRE SEA$THROUGH THE FIRE AND FLAMES\n"
+"BOWSER IN THE SKY$THE GRAND FINALE\n"
+"TOWER OF THE WING CAP$FAST FLIGHT FOR COINS\n"
+"VANISH CAP UNDER THE MOAT$PERFECT AIR CONTROL\n"
+"CAVERN OF THE METAL CAP$WALL-JUMP INSANITY\n"
+"THE PRINCESS'S SECRET SLIDE$NEVER-ENDING SLIDE\n"
+"WING MARIO OVER THE RAINBOW$ONLY MARIO OVER THE RAINBOW\n"
+"THE SECRET AQUARIUM$FROZEN COINS IN COLD WATER\n"
+"CASTLE GROUNDS$TOP OF PEACH'S CASTLE\n"
+"CASTLE INSIDE$AVOIDING BOWSER'S TRAP\n"
+"CASTLE BASEMENT$MIPS THE YELLOW RABBIT\n"
+"CASTLE UPSTAIRS$SECRET OF THE MIRROR ROOM\n"
+"CASTLE COURTYARD$TOTALLY CLASSIC?\n"
+"CRYSTAL BOWSER$CRYSTAL BOWSER\n"
+OMM_DIALOG_SPARKLY_MULTI_END
 
-"TRUE CHAMPIONS RACE\n"
-"SMMS - Green Woods\n"
-"HARDER, DEEPER, COLDER\n"
-"SM64 - Cool, Cool Mountain\n"
-"SMSR - Cloudrail Station\n"
-"74EE - Infernopit Cave\n"
-"SMSR - Koopa Canyon\n"
-"74EE - Overgrown Oasis\n"
-"SMSR - Mad Musical Mess\n"
-"74EE - Dried-out Dead Desert\n"
-"74EE - Cliff of Pain\n"
-"SM64 - Tall, Tall Mountain\n"
-"SMSR - Bob-omb Battle Factory\n"
-"SMSR - Starlight Runway\n"
-"74EE - Crudelo Sphere\n"
-"THE INVISIBLE STAR\n"
-"SMSR - Bowser's Rainbow Rumble\n"
-"74EE - Ztar Zanctuary\n"
-"SMSR - Windy Wing Cap Well\n"
-"SMMS - Sweet Sweet Rush\n"
-"74EE - Toxic Terrace\n"
-"THE ULTIMATE SLIDE\n"
-"SMSR - Mushroom Mountain Town\n"
-"74EE - Old Supply Slide\n"
-"SOARING STAR\n"
-"74EE - Lake of the Lords\n"
-"SMSR - Star Road (the place)\n"
-"SMSR - Zero Life Area\n"
-"74EE - Triarc Bridge\n"
-"SM64 - Final Boss\n"
+"\n"
+OMM_DIALOG_SPARKLY_MULTI_END
 },
 
 {
 OMM_DIALOG_SPARKLY_STAR_1, 0, OMM_DIALOG_SPARKLY_MULTI(3, 3, 3),
-"I'll give you a useful tip.\n"
-"You should take a look at\n"
-"your star counter.\n"
+"Welcome to the Pink-Gold\n"
+"Star Hunt! There is one\n"
+"in each level of the game.\n"
 
-"Do you see an 8th star\n"
-"icon? That's a Pink Gold\n"
-"Star indicator.\n"
+"Usually, Pink-Gold Star\n"
+"challenges follow specific\n"
+"rules.\n"
 
-"It should be empty. That\n"
-"means a Pink Gold Star\n"
-"is hidden somewhere.\n"
+"If you break these rules,\n"
+"you won't be able to\n"
+"collect the Star.\n"
 
-"If it's filled, then you\n"
-"already collected that\n"
-"Pink Gold Star.\n"
-
-"But if it disappears,\n"
-"that means you broke\n"
-"one of the rules.\n"
-
-"In that case, the Star\n"
-"will turn intangible,\n"
-"or won't spawn at all.\n"
-
-"But don't worry! Just\n"
+"If that happens, just\n"
 "restart the level to\n"
 "make it available again.\n"
 
-"And since that's the very\n"
-"first level of the game,\n"
-"here's a hint to help you.\n"
+"Here's the challenge of\n"
+"the battlefield's Pink-\n"
+"Gold Star.\n"
 
 "Five secrets in five rings\n"
 "in the sky, but you cannot\n"
 "use the Wing cap to fly.\n"
 
 "If a secret is too high,\n"
-"you should try to use\n"
-"a Bob-omb buddy cannon."
+"a Bob-omb buddy's cannon\n"
+"could be your best ally."
 OMM_DIALOG_SPARKLY_MULTI_END
 
-"Nothing really new here.\n"
-"Five secrets, but no wing\n"
-"cap, and no cannon.\n"
+"Welcome to the Crystal\n"
+"Star Hunt! There is one\n"
+"in each level of the game.\n"
 
-"Fairly simple rules, but\n"
-"not so easy to actually\n"
-"get to the Crystal Star.\n"
+"Usually, Crystal Star\n"
+"challenges...\n"
+"\n"
 
-"To give you an idea of the\n"
-"difficulty, this is one of\n"
-"the easiest Stars.\n"
+"You already know that,\n"
+"right? Then, let's get\n"
+"to the point.\n"
 
-"If you don't feel good\n"
-"enough for this, give\n"
-"up now or get better."
+"Objective: Five secrets.\n"
+"Rules: No cap power-up,\n"
+"no cannon, no cheat.\n"
+
+"Difficulty: Definitely\n"
+"harder than Pink-Gold\n"
+"Stars."
 OMM_DIALOG_SPARKLY_MULTI_END
 
-"For years Koopa the Quick\n"
-"was misunderstood.\n"
-"\n"
-
-"He knows he can't win\n"
-"against people that keep\n"
-"jumping and rolling around.\n"
-
-"But nobody listens to him,\n"
-"everyone keeps mashing\n"
-"the A button.\n"
-
-"So, here's the actual\n"
-"challenge, intended by\n"
-"Koopa the Quick himself.\n"
-
-"How about a race to the\n"
-"mountaintop, while you\n"
-"collect every single star?\n"
-
-"Of course, no cheating\n"
-"allowed.\n"
-"\n"
-
-"You can't collect anything\n"
-"or talk to King Bob-omb\n"
-"before the race starts.\n"
-
-"And you can't end the\n"
-"race before collecting\n"
-"all stars.\n"
-
-"This is a race for the\n"
-"true champions, like\n"
-"Koopa the Quick."
+""
 OMM_DIALOG_SPARKLY_MULTI_END
 },
 
 {
-OMM_DIALOG_SPARKLY_STAR_2, 0, OMM_DIALOG_SPARKLY_MULTI(3, 3, 0),
-"There are various ways\n"
-"to make Pink Gold Stars\n"
-"appear.\n"
-
-"Most of them stand still\n"
-"somewhere in the level,\n"
-"waiting for Mario.\n"
-
-"This type is the easiest\n"
-"to find, but the hardest\n"
-"to collect, as those Stars\n"
-
-"are often located in the\n"
-"least convenient places.\n"
-"\n"
-
-"You can spot them by\n"
-"looking around you, or by\n"
-"noticing something unusual.\n"
-
-"The other type can spawn\n"
-"only after Mario meets\n"
-"certain conditions.\n"
-
-"These ones are hard to\n"
-"find, but quite easy to\n"
-"reach once revealed.\n"
-
-"Also, after revealing a\n"
-"Pink Gold Star, most of\n"
-"the restrictions don't\n"
-
-"apply anymore, and, for\n"
-"instance, Mario can use\n"
-"caps again.\n"
-
-"In this level, the Star\n"
-"will show up once you've\n"
-"collected 90 gold coins."
+OMM_DIALOG_SPARKLY_STAR_2, 0, OMM_DIALOG_SPARKLY_MULTI(4, 4, 0),
+"Hidden somewhere in the\n"
+"fortress, the Star will\n"
+"show up once 90 gold\n"
+"coins are collected."
 OMM_DIALOG_SPARKLY_MULTI_END
 
-"You horrid little human!\n"
-"How did you dare stealing\n"
-"my precious gold coins?\n"
+"Kept in the fortress\n"
+"vault, the Star will\n"
+"show up once 100 gold\n"
+"coins are collected.\n"
 
-"We build your houses.\n"
-"We put your walls up.\n"
-"We pave your roads.\n"
-
-"We earned this money\n"
-"and that Sparkly Star\n"
-"from our hard work!\n"
-
-"You can't just pass by\n"
-"and take these as if\n"
-"they were yours!\n"
-
-"It makes me so mad!\n"
-"But I'm not going to\n"
-"let you rob us twice.\n"
-
-"This time, you'll need\n"
-"100 golden coins to\n"
-"make the Star appear.\n"
-
-"I hid the Star inside\n"
-"the fortress vault, so\n"
-"nobody can reach it!\n"
-
-"On top of that, I even\n"
-"added a timer, to make\n"
-"the vault inaccessible\n"
-
-"after 1 minute and 50\n"
-"seconds! Ha!\n"
-"//// --- Whomp King"
+"You'll have to be fast,\n"
+"the vault stays open\n"
+"only for 1 minute and\n"
+"45 seconds!"
 OMM_DIALOG_SPARKLY_MULTI_END
 
 ""
@@ -454,37 +361,20 @@ OMM_DIALOG_SPARKLY_MULTI_END
 "bring the light back."
 OMM_DIALOG_SPARKLY_MULTI_END
 
-"You keep going deeper.\n"
-"Welcome to the lowest\n"
-"point known to mankind.\n"
-
-"Surprisingly, you can\n"
-"clearly see around you.\n"
-"\n"
-
-"But there is something\n"
-"worse than a pitch black\n"
-"darkness.\n"
-
-"Look. You're the only\n"
-"living being. Because\n"
-"of that deadly cold.\n"
-
-"Fortunately, the Calm\n"
-"Vibe prevents Peach from\n"
-"being frozen to death.\n"
-
-"But let it run out, and\n"
-"you won't survive long..."
+""
 OMM_DIALOG_SPARKLY_MULTI_END
 },
 
 {
-OMM_DIALOG_SPARKLY_STAR_4, 0, OMM_DIALOG_SPARKLY_MULTI(0, 0, 0),
-""
+OMM_DIALOG_SPARKLY_STAR_4, 0, OMM_DIALOG_SPARKLY_MULTI(3, 3, 0),
+"To reach the Star,\n"
+"climb the walls of ice\n"
+"of the forbidden path."
 OMM_DIALOG_SPARKLY_MULTI_END
 
-""
+"To reach the Star,\n"
+"harness the power\n"
+"of the Flower Head."
 OMM_DIALOG_SPARKLY_MULTI_END
 
 ""
@@ -504,7 +394,7 @@ OMM_DIALOG_SPARKLY_MULTI_END
 "and only blue ones...\n"
 
 "...under 2 minutes and\n"
-"15 seconds. Hurry up!"
+"10 seconds. Hurry up!"
 OMM_DIALOG_SPARKLY_MULTI_END
 
 ""
@@ -512,24 +402,23 @@ OMM_DIALOG_SPARKLY_MULTI_END
 },
 
 {
-OMM_DIALOG_SPARKLY_STAR_6, 0, OMM_DIALOG_SPARKLY_MULTI(0, 4, 0),
-""
+OMM_DIALOG_SPARKLY_STAR_6, 0, OMM_DIALOG_SPARKLY_MULTI(2, 4, 0),
+"The Star is sparkling\n"
+"above the largest room.\n"
+
+"Use your cap abilities\n"
+"to get high enough."
 OMM_DIALOG_SPARKLY_MULTI_END
 
-"The flames of the cave\n"
-"are bigger than usual...\n"
-"Is that because of the\n"
-"Crystal Star?\n"
+"The cave is burning,\n"
+"and the fire is wild!\n"
+"Put the flames out\n"
+"before it's too late!\n"
 
-"The fire is pretty wild,\n"
-"someone should extinguish\n"
-"it to avoid a disastrous\n"
-"outcome...\n"
-
-"3 minutes. There isn't too\n"
-"much time left! Find the\n"
-"17 flames, put them out,\n"
-"and grab the Star!"
+"But there's no water\n"
+"nearby... Time to think\n"
+"fast, you only have 2\n"
+"minutes and a half left!"
 OMM_DIALOG_SPARKLY_MULTI_END
 
 ""
@@ -538,7 +427,7 @@ OMM_DIALOG_SPARKLY_MULTI_END
 
 {
 OMM_DIALOG_SPARKLY_STAR_7, 0, OMM_DIALOG_SPARKLY_MULTI(2, 2, 0),
-"The Pink Gold Star's been\n"
+"The Pink-Gold Star's been\n"
 "shattered into 8 pieces.\n"
 
 "Gathering them all will\n"
@@ -560,25 +449,21 @@ OMM_DIALOG_SPARKLY_MULTI_END
 },
 
 {
-OMM_DIALOG_SPARKLY_STAR_8, 0, OMM_DIALOG_SPARKLY_MULTI(0, 3, 0),
-""
+OMM_DIALOG_SPARKLY_STAR_8, 0, OMM_DIALOG_SPARKLY_MULTI(2, 3, 0),
+"The Pink-Gold Star shines\n"
+"way above the pyramid.\n"
+
+"But you won't get anywhere\n"
+"without something bouncy."
 OMM_DIALOG_SPARKLY_MULTI_END
 
-"To get the Crystal Star\n"
-"of the pyramid, you'll\n"
-"have to break two seals.\n"
-
-"The first condition is\n"
-"to open the path leading\n"
+"Collect all 62 coins of\n"
+"the pyramid, then head\n"
 "to the top.\n"
 
-"The second condition is\n"
-"to collect all 62 coins\n"
-"scattered inside.\n"
-
-"You start with almost no\n"
-"time, but coins are here\n"
-"to fill your hourglass."
+"The hourglass is almost\n"
+"empty, and it can't be\n"
+"filled with sand..."
 OMM_DIALOG_SPARKLY_MULTI_END
 
 ""
@@ -586,11 +471,19 @@ OMM_DIALOG_SPARKLY_MULTI_END
 },
 
 {
-OMM_DIALOG_SPARKLY_STAR_9, 0, OMM_DIALOG_SPARKLY_MULTI(0, 0, 0),
-""
+OMM_DIALOG_SPARKLY_STAR_9, 0, OMM_DIALOG_SPARKLY_MULTI(2, 2, 0),
+"This Pink-Gold Star is\n"
+"looking at Bowser's sub.\n"
+
+"Reach it with a well-\n"
+"timed wall jump."
 OMM_DIALOG_SPARKLY_MULTI_END
 
-""
+"This Crystal Star lies\n"
+"way above the docks.\n"
+
+"Reach it with well-\n"
+"timed pole jumps."
 OMM_DIALOG_SPARKLY_MULTI_END
 
 ""
@@ -601,31 +494,20 @@ OMM_DIALOG_SPARKLY_MULTI_END
 OMM_DIALOG_SPARKLY_STAR_10, 0, OMM_DIALOG_SPARKLY_MULTI(3, 3, 0),
 "Can you reach the top\n"
 "of the big snowman...\n"
-"as a snowman?\n"
-
-"The Pink Gold Star power\n"
-"gives you an extra bit\n"
-"of determination...\n"
-
-"...making snowmen jump\n"
-"higher than usual."
+"as a snowman?"
 OMM_DIALOG_SPARKLY_MULTI_END
 
-"Prepare for trouble!\n"
-"And make it quadruple!\n"
-"\n"
+"Want something cooler?\n"
+"What about a shell-ride\n"
+"around Snowman's Land?\n"
 
-"The snowman you brought\n"
-"to the top enjoyed the\n"
-"view so much that...\n"
+"Collect at least 85\n"
+"coins while riding\n"
+"a Koopa shell.\n"
 
-"He wants to go back\n"
-"again! But this time,\n"
-"with his friends.\n"
-
-"You'll probably need the\n"
-"help of some spindrifts\n"
-"to gain extra height."
+"There is no time limit,\n"
+"so no need to hurry.\n"
+"Just enjoy the view."
 OMM_DIALOG_SPARKLY_MULTI_END
 
 ""
@@ -633,27 +515,16 @@ OMM_DIALOG_SPARKLY_MULTI_END
 },
 
 {
-OMM_DIALOG_SPARKLY_STAR_11, 0, OMM_DIALOG_SPARKLY_MULTI(0, 2, 0),
-""
+OMM_DIALOG_SPARKLY_STAR_11, 0, OMM_DIALOG_SPARKLY_MULTI(1, 2, 0),
+"Ready...\n"
+
+"Aim,\n"
+
+"Fire!"
 OMM_DIALOG_SPARKLY_MULTI_END
 
-"You see the opening where\n"
-"the red coins star is?\n"
-
-"You should try to bring\n"
-"a Chuckya in there."
-OMM_DIALOG_SPARKLY_MULTI_END
-
-""
-OMM_DIALOG_SPARKLY_MULTI_END
-},
-
-{
-OMM_DIALOG_SPARKLY_STAR_12, 0, OMM_DIALOG_SPARKLY_MULTI(0, 0, 0),
-""
-OMM_DIALOG_SPARKLY_MULTI_END
-
-""
+"Bring a Chuckya to where\n"
+"the fifth star shines."
 OMM_DIALOG_SPARKLY_MULTI_END
 
 ""
@@ -661,27 +532,32 @@ OMM_DIALOG_SPARKLY_MULTI_END
 },
 
 {
-OMM_DIALOG_SPARKLY_STAR_13, 0, OMM_DIALOG_SPARKLY_MULTI(4, 4, 0),
-"Those little Goombas\n"
-"aren't very strong, but\n"
-"they're fast. Catching\n"
-"them isn't that easy.\n"
-
-"Rumors say that if you\n"
-"manage to pile up ten of\n"
-"them in one go, a Pink\n"
-"Gold Star will appear."
+OMM_DIALOG_SPARKLY_STAR_12, 0, OMM_DIALOG_SPARKLY_MULTI(3, 3, 0),
+"Where the path ends,\n"
+"don't stop and jump\n"
+"to reach new heights."
 OMM_DIALOG_SPARKLY_MULTI_END
 
-"A Crystal Star is hidden\n"
-"somewhere in the clouds,\n"
-"but you can't see it from\n"
-"the ground...\n"
+"Even if the path makes a\n"
+"turn, keep going forward\n"
+"and jump into the void."
+OMM_DIALOG_SPARKLY_MULTI_END
 
-"You must be at least as\n"
-"tall as ten giant Goombas\n"
-"to have a chance to catch\n"
-"sight of it..."
+""
+OMM_DIALOG_SPARKLY_MULTI_END
+},
+
+{
+OMM_DIALOG_SPARKLY_STAR_13, 0, OMM_DIALOG_SPARKLY_MULTI(4, 3, 0),
+"Little Goombas are fast\n"
+"for sure. If you manage\n"
+"to catch all 10, a Pink-\n"
+"Gold Star could appear."
+OMM_DIALOG_SPARKLY_MULTI_END
+
+"To catch sight of the Star,\n"
+"you must be at least as\n"
+"tall as ten giant Goombas."
 OMM_DIALOG_SPARKLY_MULTI_END
 
 ""
@@ -690,37 +566,25 @@ OMM_DIALOG_SPARKLY_MULTI_END
 
 {
 OMM_DIALOG_SPARKLY_STAR_14, 0, OMM_DIALOG_SPARKLY_MULTI(3, 3, 0),
-"You're inside a clock.\n"
-"What about playing\n"
-"a timed game?\n"
+"How about playing a\n"
+"timed game when you're\n"
+"stuck inside a clock?\n"
 
-"You see that yellow box?\n"
-"There are 13 of them in\n"
-"this stage.\n"
-
-"Will you be fast enough\n"
-"to open them all in less\n"
-"than 60 seconds?"
+"Be fast enough to open\n"
+"all 13 yellow boxes in\n"
+"less than 60 seconds."
 OMM_DIALOG_SPARKLY_MULTI_END
 
 "It's the same clock again.\n"
-"And you're going to be in\n"
-"for a rough time.\n"
+"But this time, you don't\n"
+"have to break some boxes.\n"
 
-"You don't have to break\n"
-"some boxes. You're not\n"
-"limited by a timer.\n"
+"The Star is at the very\n"
+"top, but you only have\n"
+"35 seconds to reach it.\n"
 
-"And the Crystal Star is\n"
-"already here, waiting\n"
-"for you at the top.\n"
-
-"...\n"
-"But you still have to\n"
-"follow one simple rule.\n"
-
-"Don't touch the floor\n"
-"again after leaving it.\n"
+"Also, you cannot land\n"
+"after leaving the floor.\n"
 "Super Mario Maker style."
 OMM_DIALOG_SPARKLY_MULTI_END
 
@@ -730,18 +594,18 @@ OMM_DIALOG_SPARKLY_MULTI_END
 
 {
 OMM_DIALOG_SPARKLY_STAR_15, 0, OMM_DIALOG_SPARKLY_MULTI(3, 3, 0),
-"Can you reach the top\n"
-"of the mansion without\n"
-"pressing the [A] button?"
+"Climb the 6 poles from\n"
+"bottom to top to make\n"
+"your way to the Star."
 OMM_DIALOG_SPARKLY_MULTI_END
 
-"For the last level of the\n"
-"game, you have to collect\n"
-"all nine 1-up mushrooms.\n"
+"This level has nine 1-up\n"
+"mushrooms, scattered\n"
+"across the entire level.\n"
 
-"But! You can only use\n"
-"Cappy. You can't press\n"
-"the [A], [B] and [Z] buttons."
+"You don't have too much\n"
+"time. Give it your all to\n"
+"get a hand on that Star!"
 OMM_DIALOG_SPARKLY_MULTI_END
 
 ""
@@ -751,87 +615,28 @@ OMM_DIALOG_SPARKLY_MULTI_END
 {
 OMM_DIALOG_SPARKLY_STAR_16, 0, OMM_DIALOG_SPARKLY_MULTI(3, 3, 4),
 "You are now a Goomba.\n"
-"Until you've got all 8 red\n"
-"coins, follow these rules:\n"
+"Gather all red coins to\n"
+"summon a Pink-Gold Star.\n"
 
 "Don't leave the blue area\n"
-"or grab a coin as Mario,\n"
-"or you'll have to restart."
+"or grab a coin as Mario."
 OMM_DIALOG_SPARKLY_MULTI_END
 
 "You are now a Goomba.\n"
-"And this is really bad.\n"
-"You didn't do your job.\n"
+"Six impostors stole\n"
+"74 coins from Bowser.\n"
 
-"Six impostors, disguised\n"
-"as Goombas, stole 74 of\n"
-"Bowser's coins.\n"
-
-"Get the money back, and\n"
-"catch the culprits before\n"
-"Bowser learns about it.\n"
+"Take the money back\n"
+"and catch the culprits,\n"
+"disguised as Goombas.\n"
 
 "You only have 1 minute\n"
-"and 45 seconds before\n"
-"you get roasted. Go!\n"
+"and 40 seconds before\n"
+"getting roasted. Go!\n"
 
 "(Remember: You can't\n"
 "leave the blue area or\n"
 "grab a coin as Mario.)"
-OMM_DIALOG_SPARKLY_MULTI_END
-
-"In a parallel universe,\n"
-"there is a version of\n"
-"BITS where everything\n"
-"is invisible.\n"
-
-"In that universe lies\n"
-"a great power. This is\n"
-"the power of a Nebula\n"
-"Star.\n"
-
-"To be able to summon it,\n"
-"one must go through all\n"
-"30 Star rings under\n"
-"3 minutes.\n"
-
-"A true champion doesn't\n"
-"need to see the floor\n"
-"he's on to move forward.\n"
-"Be that champion."
-OMM_DIALOG_SPARKLY_MULTI_END
-},
-
-{
-OMM_DIALOG_SPARKLY_STAR_17, 0, OMM_DIALOG_SPARKLY_MULTI(3, 3, 0),
-"Let's crank the difficulty\n"
-"up a bit. There are seven\n"
-"1-up mushrooms here.\n"
-
-"It's simple. Grab them all,\n"
-"but only with captures.\n"
-"Don't get them as Mario."
-OMM_DIALOG_SPARKLY_MULTI_END
-
-"Let's step up the pace.\n"
-"Six secrets (and a star)\n"
-"are waiting for you.\n"
-
-"For the first four, cross\n"
-"the fire sea and reach the\n"
-"corners, then come back.\n"
-
-"For the last two, climb\n"
-"the pillars that support\n"
-"the middle and top floors.\n"
-
-"Survive these trials, and\n"
-"the Crystal Star should\n"
-"spawn at the end.\n"
-
-"And don't try to take\n"
-"shortcuts, it will end\n"
-"badly for you..."
 OMM_DIALOG_SPARKLY_MULTI_END
 
 ""
@@ -839,27 +644,62 @@ OMM_DIALOG_SPARKLY_MULTI_END
 },
 
 {
-OMM_DIALOG_SPARKLY_STAR_18, 0, OMM_DIALOG_SPARKLY_MULTI(4, 4, 0),
-"The end in near. Here's\n"
-"your final task: All red\n"
-"coins without a single\n"
-"[A] button press."
+OMM_DIALOG_SPARKLY_STAR_17, 0, OMM_DIALOG_SPARKLY_MULTI(3, 4, 0),
+"This level has 7 1-up\n"
+"mushrooms. Some are\n"
+"visible, some are not.\n"
+
+"Find them all, but you\n"
+"can't collect them as\n"
+"Mario."
 OMM_DIALOG_SPARKLY_MULTI_END
 
-"Can you feel it?\n"
-"It's almost over.\n"
-"Here's your final task:\n"
-"Collect all red coins.\n"
+"Six secrets are spread\n"
+"across the fire sea:\n"
+"four on corners and\n"
+"two between pillars.\n"
 
-"But that would be too\n"
-"easy for a pro player\n"
-"like you. So I decided\n"
-"to add some constraints.\n"
+"During this challenge,\n"
+"Mario cannot have more\n"
+"than 3 Health (4 with\n"
+"Classic Moveset).\n"
 
-"You can't capture or\n"
-"collect anything else,\n"
-"and you must not press\n"
-"the [A], [B] or [Z] button."
+"Collect the secrets,\n"
+"survive the trials,\n"
+"and the Crystal Star\n"
+"will appear to you.\n"
+
+"Play fair. If you try\n"
+"to take shortcuts, it\n"
+"will end badly for you..."
+OMM_DIALOG_SPARKLY_MULTI_END
+
+""
+OMM_DIALOG_SPARKLY_MULTI_END
+},
+
+{
+OMM_DIALOG_SPARKLY_STAR_18, 0, OMM_DIALOG_SPARKLY_MULTI(3, 3, 0),
+"The end is near. Collect\n"
+"at least 75 coins to\n"
+"reveal the last Star.\n"
+
+"You have only 1 minute,\n"
+"but each coin collected\n"
+"increases the timer."
+OMM_DIALOG_SPARKLY_MULTI_END
+
+"Time for a big firework!\n"
+"Turn into a walking bomb\n"
+"and blow up your enemies!\n"
+
+"Defeat 15 of them as\n"
+"a Bob-omb to reveal\n"
+"the Crystal Star.\n"
+
+"Don't leave your capture\n"
+"until you're back at the\n"
+"starting area."
 OMM_DIALOG_SPARKLY_MULTI_END
 
 ""
@@ -887,7 +727,7 @@ OMM_DIALOG_SPARKLY_MULTI_END
 
 "Don't miss a single one,\n"
 "because you'll need some\n"
-"time to reach the star."
+"time to reach the Star."
 OMM_DIALOG_SPARKLY_MULTI_END
 
 ""
@@ -949,7 +789,7 @@ OMM_DIALOG_SPARKLY_MULTI_END
 "the cavern by jumping\n"
 "from a wall to another.\n"
 
-"Reach the star at the\n"
+"Reach the Star at the\n"
 "top of the waterfall\n"
 "without landing once."
 OMM_DIALOG_SPARKLY_MULTI_END
@@ -970,7 +810,7 @@ OMM_DIALOG_SPARKLY_STAR_22, 0, OMM_DIALOG_SPARKLY_MULTI(3, 3, 3),
 
 "Beat this time, even by\n"
 "a millisecond, and the\n"
-"Pink Gold Star is yours."
+"Pink-Gold Star is yours."
 OMM_DIALOG_SPARKLY_MULTI_END
 
 "Are you really good at\n"
@@ -986,17 +826,7 @@ OMM_DIALOG_SPARKLY_MULTI_END
 "Crystal Star is yours."
 OMM_DIALOG_SPARKLY_MULTI_END
 
-"Are you EXTREMELY good\n"
-"at sliding? Don't make\n"
-"me laugh!\n"
-
-"50 coins, in 21 seconds,\n"
-"without a single button\n"
-"press.\n"
-
-"Beat this time, even by\n"
-"a millisecond, and the\n"
-"Nebula Star is yours."
+""
 OMM_DIALOG_SPARKLY_MULTI_END
 },
 
@@ -1007,12 +837,12 @@ OMM_DIALOG_SPARKLY_STAR_23, 0, OMM_DIALOG_SPARKLY_MULTI(3, 3, 0),
 "without the Wing cap."
 OMM_DIALOG_SPARKLY_MULTI_END
 
-"True test of skill.\n"
+"Truer test of skill.\n"
 "All coins, no cannon,\n"
 "no Wing cap."
 OMM_DIALOG_SPARKLY_MULTI_END
 
-""
+"Truest test of skill.\n"
 OMM_DIALOG_SPARKLY_MULTI_END
 },
 
@@ -1024,7 +854,7 @@ OMM_DIALOG_SPARKLY_STAR_24, 0, OMM_DIALOG_SPARKLY_MULTI(3, 3, 0),
 
 "Collect the 8 red coins\n"
 "and survive until the\n"
-"Pink Gold Star appear."
+"Pink-Gold Star appear."
 OMM_DIALOG_SPARKLY_MULTI_END
 
 "You need all yellow and\n"
@@ -1051,10 +881,10 @@ OMM_DIALOG_SPARKLY_STAR_25, 0, OMM_DIALOG_SPARKLY_MULTI(4, 4, 4),
 "\n"
 "\n"
 
-"Do you see me?\n"
+"Do you see it?\n"
 "That sparkly object, far\n"
-"above the castle tower?\n"
-"I'm a Pink Gold Star.\n"
+"above the Castle tower?\n"
+"It's a Pink-Gold Star.\n"
 
 "You know the Princess\n"
 "is missing, right?\n"
@@ -1062,29 +892,29 @@ OMM_DIALOG_SPARKLY_STAR_25, 0, OMM_DIALOG_SPARKLY_MULTI(4, 4, 4),
 "couldn't free her...\n"
 
 "That's because Bowser\n"
-"stole us from her,\n"
-"and used us to make\n"
+"stole them from her,\n"
+"and used them to make\n"
 "mischief again...\n"
 
 "But thanks to you, the\n"
-"Pink Gold Star Block,\n"
-"in which we were held\n"
-"captive, is broken!\n"
+"Pink-Gold Star Block is\n"
+"broken, and its power\n"
+"has been released!\n"
 
-"From now on, Pink Gold\n"
+"From now on, Pink-Gold\n"
 "Stars will appear in\n"
 "every world, for a\n"
 "total of 30 Stars.\n"
 
-"But because we're not\n"
-"totally free, we still\n"
-"have to obey to some\n"
-"of Bowser's rules.\n"
+"But because Bowser's\n"
+"magic is still there,\n"
+"you can't collect\n"
+"them directly...\n"
 
-"That means we can't\n"
-"appear at will, you'll\n"
-"have to fulfill certain\n"
-"conditions first.\n"
+"You'll have to surpass\n"
+"yourself to be able to\n"
+"reach them or summon them\n"
+"by completing challenges.\n"
 
 "You can rely only on\n"
 "yourself. Cap power-ups\n"
@@ -1097,14 +927,9 @@ OMM_DIALOG_SPARKLY_STAR_25, 0, OMM_DIALOG_SPARKLY_MULTI(4, 4, 4),
 "feel free to use them.\n"
 
 "Anywhere in the Castle,\n"
-"you can see what Stars\n"
+"you can see which Stars\n"
 "you already collected\n"
-"by pausing the game.\n"
-
-"If you ever feel lost,\n"
-"remember to look around\n"
-"you with [C]^, especially\n"
-"in large areas."
+"by pausing the game."
 OMM_DIALOG_SPARKLY_MULTI_END
 
 "Look up.\n"
@@ -1112,10 +937,10 @@ OMM_DIALOG_SPARKLY_MULTI_END
 "\n"
 "\n"
 
-"Do you see me?\n"
+"Do you see it?\n"
 "That sparkly object, far\n"
-"above the castle tower?\n"
-"I'm a Crystal Star.\n"
+"above the Castle tower?\n"
+"It's a Crystal Star.\n"
 
 "But the Princess is\n"
 "already safe, right?\n"
@@ -1123,29 +948,29 @@ OMM_DIALOG_SPARKLY_MULTI_END
 "waiting for you?\n"
 
 "That's because Bowser\n"
-"found us, the Crystal\n"
-"Stars, and used us to\n"
-"make mischief... again.\n"
+"stole them from her,\n"
+"and used them to make\n"
+"mischief... again.\n"
 
 "But thanks to you, the\n"
-"Crystal Star Block,\n"
-"in which we were held\n"
-"captive, is broken!\n"
+"Crystal Star Block is\n"
+"broken, and its power\n"
+"has been released!\n"
 
 "From now on, Crystal\n"
 "Stars will appear in\n"
 "every world, for a\n"
-"total of 30 stars.\n"
+"total of 30 Stars.\n"
 
-"But because we're not\n"
-"totally free, we still\n"
-"have to obey to some\n"
-"of Bowser's rules.\n"
+"But because Bowser's\n"
+"magic is still there,\n"
+"you can't collect\n"
+"them directly...\n"
 
-"That means we can't\n"
-"appear at will, you'll\n"
-"have to fulfill certain\n"
-"conditions first.\n"
+"You'll have to surpass\n"
+"yourself to be able to\n"
+"reach them or summon them\n"
+"by completing challenges.\n"
 
 "You can rely only on\n"
 "yourself. No cannon,\n"
@@ -1158,19 +983,14 @@ OMM_DIALOG_SPARKLY_MULTI_END
 "free to use them.\n"
 
 "Anywhere in the Castle,\n"
-"you can see what stars\n"
+"you can see which Stars\n"
 "you already collected\n"
 "by pausing the game.\n"
 
-"If you ever feel lost,\n"
-"remember to look around\n"
-"you with [C]^, especially\n"
-"in large areas.\n"
-
-"Be careful. There is a\n"
-"world between the Pink\n"
-"Gold Stars and us, the\n"
-"Crystal Stars.\n"
+"Be careful.\n"
+"The Crystal Stars are\n"
+"on another level of\n"
+"difficulty.\n"
 
 "This time, Bowser learnt\n"
 "his lesson, and didn't\n"
@@ -1178,7 +998,7 @@ OMM_DIALOG_SPARKLY_MULTI_END
 "brand new powers.\n"
 
 "You'll have to do your\n"
-"best to catch us all.\n"
+"best to catch them all.\n"
 "If you don't feel ready\n"
 "enough, don't try this."
 OMM_DIALOG_SPARKLY_MULTI_END
@@ -1188,7 +1008,7 @@ OMM_DIALOG_SPARKLY_MULTI_END
 "\n"
 "\n"
 
-"Do you see me?\n"
+"Do you see it?\n"
 "...\n"
 "\n"
 "No, you don't.\n"
@@ -1196,7 +1016,7 @@ OMM_DIALOG_SPARKLY_MULTI_END
 "You're not going to\n"
 "like this.\n"
 "You shouldn't have\n"
-"broken that block.\n"
+"broken that Block.\n"
 
 "The Nebula Stars.\n"
 "The most powerful force\n"
@@ -1213,15 +1033,15 @@ OMM_DIALOG_SPARKLY_MULTI_END
 "Night of Doom?\n"
 "King Boo's Revenge?\n"
 
-"Us Nebula Stars built\n"
-"these wicked worlds.\n"
-"We drove crazy the fools\n"
-"who tried to challenge us.\n"
+"They drove crazy the\n"
+"fools who tried them.\n"
+"But Nebula Stars are\n"
+"an even worse evil.\n"
 
-"And now, you're about\n"
-"to face something even\n"
-"harder, something you\n"
-"can't even imagine.\n"
+"You're about to face\n"
+"something you can't\n"
+"imagine, even in your\n"
+"worst nightmares.\n"
 
 "But with the Odyssey\n"
 "Moveset and Peach,\n"
@@ -1233,45 +1053,35 @@ OMM_DIALOG_SPARKLY_MULTI_END
 "a VERY bad time.\n"
 "\n"
 
-"As usual, there are 30\n"
-"Nebula Stars, scattered\n"
-"across the same number\n"
-"of levels.\n"
+"To begin with, there\n"
+"are 90 Nebula Stars.\n"
+"Yes. NINETY.\n"
+"\n"
 
-"But to be able to catch\n"
-"all of us, you'll have\n"
-"to travel through time\n"
-"and space.\n"
-
-"The Original world.\n"
-"The Moon world.\n"
-"The Extreme world.\n"
-"The Star world.\n"
-
-"Collect 29 of us from\n"
-"these 4 worlds, then\n"
-"come back here, if\n"
-"you dare.\n"
+"Secondly, to be able\n"
+"to catch all of them,\n"
+"you'll have to travel\n"
+"through time and space.\n"
 
 "You can rely only on\n"
 "yourself. No cannon,\n"
 "no cap power-up, and\n"
 "no cheat.\n"
 
-"You have only 1 HP.\n"
-"No second chance.\n"
-"Get hit, and you're\n"
-"good to start over.\n"
+"The Nebula Stars curse\n"
+"reduces your health\n"
+"points to 1. Get hit,\n"
+"and it's over.\n"
 
-"Captures and Vibes are\n"
-"allowed, but sometimes,\n"
-"you won't be able to\n"
-"use them.\n"
+"If by any chance you\n"
+"manage to collect 89\n"
+"Nebula Stars, come back\n"
+"here, if you dare.\n"
 
 "Do you have the guts to\n"
-"confront us, are you ready\n"
-"to give up your sanity in\n"
-"this ultimate challenge?"
+"try this madness, are you\n"
+"ready to give up your\n"
+"sanity in this challenge?"
 OMM_DIALOG_SPARKLY_MULTI_END
 },
 
@@ -1309,6 +1119,10 @@ OMM_DIALOG_SPARKLY_STAR_26, 0, OMM_DIALOG_SPARKLY_MULTI(3, 3, 0),
 "Do not try to cheat.\n"
 "Never.\n"
 
+"\n"
+"    4. STAR SHARDS\n"
+"\n"
+
 "Sometimes, you'll see\n"
 "sparkling objects here\n"
 "and there.\n"
@@ -1330,7 +1144,7 @@ OMM_DIALOG_SPARKLY_MULTI_END
 "power-up, unless inside\n"
 "Cap courses.\n"
 
-"However, the star must be\n"
+"However, the Star must be\n"
 "found and collected before\n"
 "the power-up runs out.\n"
 
@@ -1366,25 +1180,21 @@ OMM_DIALOG_SPARKLY_MULTI_END
 "Do not try to cheat.\n"
 "Never.\n"
 
-"By the way, there is no\n"
-"Star shards inside the\n"
-"castle, this time.\n"
+"\n"
+"       5. TOADS?\n"
+"\n"
+
+"This time, there is no\n"
+"Star shard inside the\n"
+"Castle.\n"
 
 "The Toads managed to hide\n"
 "the Stars before Bowser\n"
-"could break them.\n"
+"could shatter them.\n"
 
 "So, to be able to get\n"
 "the Stars, you must\n"
-"find the Toads first.\n"
-
-"Here, the first one is\n"
-"very well hidden. You\n"
-"can only see his cap.\n"
-
-"The second one needs\n"
-"some Classic moves\n"
-"to be reached."
+"find the Toads first."
 OMM_DIALOG_SPARKLY_MULTI_END
 
 ""
@@ -1392,7 +1202,7 @@ OMM_DIALOG_SPARKLY_MULTI_END
 },
 
 {
-OMM_DIALOG_SPARKLY_STAR_27, 0, OMM_DIALOG_SPARKLY_MULTI(4, 0, 0),
+OMM_DIALOG_SPARKLY_STAR_27, 0, OMM_DIALOG_SPARKLY_MULTI(4, 4, 0),
 "Another tip: Use Cappy\n"
 "and its capture ability\n"
 "as much as you can.\n"
@@ -1409,7 +1219,10 @@ OMM_DIALOG_SPARKLY_STAR_27, 0, OMM_DIALOG_SPARKLY_MULTI(4, 0, 0),
 "some kind of pedestal..."
 OMM_DIALOG_SPARKLY_MULTI_END
 
-""
+"Mips the rabbit is back,\n"
+"faster than ever! But...\n"
+"what are those sparkles\n"
+"that come out of its body?"
 OMM_DIALOG_SPARKLY_MULTI_END
 
 ""
@@ -1417,8 +1230,16 @@ OMM_DIALOG_SPARKLY_MULTI_END
 },
 
 {
-OMM_DIALOG_SPARKLY_STAR_28, 0, OMM_DIALOG_SPARKLY_MULTI(0, 3, 0),
-""
+OMM_DIALOG_SPARKLY_STAR_28, 0, OMM_DIALOG_SPARKLY_MULTI(5, 3, 0),
+"Last but not least:\n"
+"some Stars can appear\n"
+"only if you enter a\n"
+"level after exiting a\n"
+"specific one.\n"
+
+"Did you read that sign\n"
+"next to a painting on\n"
+"the first floor?..."
 OMM_DIALOG_SPARKLY_MULTI_END
 
 "The Crystal Star is here,\n"
@@ -1427,15 +1248,7 @@ OMM_DIALOG_SPARKLY_MULTI_END
 
 "You'll probably need help\n"
 "from Toads to go through\n"
-"that wall of glass.\n"
-
-"The first one isn't easy\n"
-"to find, you can hardly\n"
-"spot his cap.\n"
-
-"To reach the second one,\n"
-"you need to go backwards\n"
-"at high speed."
+"that wall of glass."
 OMM_DIALOG_SPARKLY_MULTI_END
 
 ""
@@ -1466,7 +1279,7 @@ OMM_DIALOG_SPARKLY_BOWSER_4_UNLOCKED, 0, OMM_DIALOG_SPARKLY_MULTI(3, 3, 0),
 "strong energy coming\n"
 "from Castle Grounds...\n"
 
-"Gathering enough Pink\n"
+"Gathering enough Pink-\n"
 "Gold Stars opened a path\n"
 "leading to a new place.\n"
 
@@ -1499,7 +1312,7 @@ OMM_DIALOG_SPARKLY_MULTI_END
 OMM_DIALOG_SPARKLY_BOWSER_4_INTRO, SOUND_OBJ_BOWSER_LAUGH | 0xFF00, OMM_DIALOG_SPARKLY_MULTI(4, 4, 0),
 "Mario!... and Cappy!\n"
 "How did you get here?\n"
-"The Pink Gold Stars...\n"
+"The Pink-Gold Stars...\n"
 "You found 29 of them?!\n"
 
 "I can't stand this!\n"
@@ -1517,19 +1330,19 @@ OMM_DIALOG_SPARKLY_BOWSER_4_INTRO, SOUND_OBJ_BOWSER_LAUGH | 0xFF00, OMM_DIALOG_S
 "Something that could\n"
 "surpass the Power Stars!\n"
 
-"With the Pink Gold Stars,\n"
+"With the Pink-Gold Stars,\n"
 "I was able to lock the\n"
 "Princess away before you\n"
 "could even save her!\n"
 
 "I kept one for myself,\n"
-"and cast a spell on the\n"
-"other ones to make them\n"
-"impossible to collect!\n"
+"and used my magic to\n"
+"hide the other ones\n"
+"in each world...\n"
 
-"Hidden in every world,\n"
-"there was no way you\n"
-"could find them and\n"
+"There was no way you\n"
+"could find all the\n"
+"Pink-Gold Stars and\n"
 "use them against me!\n"
 
 "My plan was flawless!\n"
@@ -1548,7 +1361,7 @@ OMM_DIALOG_SPARKLY_BOWSER_4_INTRO, SOUND_OBJ_BOWSER_LAUGH | 0xFF00, OMM_DIALOG_S
 "duel of raw strength!\n"
 
 "With the full power of\n"
-"the last Pink Gold Star,\n"
+"the last Pink-Gold Star,\n"
 "I'll reduce you to ashes!\n"
 "It's showtime!"
 OMM_DIALOG_SPARKLY_MULTI_END
@@ -1564,7 +1377,7 @@ OMM_DIALOG_SPARKLY_MULTI_END
 "No, you don't!\n"
 
 "It turned out that the\n"
-"Pink Gold Stars weren't\n"
+"Pink-Gold Stars weren't\n"
 "powerful enough, so I had\n"
 "to rely on something else...\n"
 
@@ -1575,8 +1388,8 @@ OMM_DIALOG_SPARKLY_MULTI_END
 
 "With the Crystal Stars,\n"
 "I created the most evil,\n"
-"infuriating and mind\n"
-"breaking challenge!\n"
+"challenging and mind\n"
+"breaking experience!\n"
 
 "My plan was flawless!\n"
 "The Crystal Stars were\n"
@@ -1644,11 +1457,7 @@ OMM_DIALOG_SPARKLY_MIPS_1, 0, 3, 30, 200,
 "How long has it been\n"
 "since we last met?\n"
 
-"I kinda missed you,\n"
-"you know. Nobody else\n"
-"is able to catch me.\n"
-
-"What about you chasing\n"
+"How about you chasing\n"
 "me again, like the good\n"
 "old times?\n"
 
@@ -1680,7 +1489,7 @@ OMM_DIALOG_SPARKLY_MIPS_3, 0, 3, 30, 200,
 
 "But, hey, it was fun\n"
 "playing with you.\n"
-"Here, take your star."
+"Here, take your Star."
 },
 
 {

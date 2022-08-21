@@ -125,7 +125,7 @@ const GeoLayout omm_geo_peach_vibe_gloom_tear_small[] = {
 // Behavior
 //
 
-static void omm_bhv_peach_vibe_gloom_tear_small_update() {
+static void bhv_omm_peach_vibe_gloom_tear_small_update() {
     struct Object *o = gCurrentObject;
     o->oPosX += o->oVelX;
     o->oPosY += o->oVelY;
@@ -136,11 +136,11 @@ static void omm_bhv_peach_vibe_gloom_tear_small_update() {
     }
 }
 
-const BehaviorScript omm_bhv_peach_vibe_gloom_tear_small[] = {
+const BehaviorScript bhvOmmPeachVibeGloomTearSmall[] = {
     OBJ_TYPE_UNIMPORTANT,
     0x11010001,
     0x08000000,
-    0x0C000000, (uintptr_t) omm_bhv_peach_vibe_gloom_tear_small_update,
+    0x0C000000, (uintptr_t) bhv_omm_peach_vibe_gloom_tear_small_update,
     0x09000000,
 };
 
@@ -149,7 +149,7 @@ const BehaviorScript omm_bhv_peach_vibe_gloom_tear_small[] = {
 //
 
 struct Object *omm_spawn_peach_vibe_gloom_tear_small(struct Object *o, f32 x, f32 y, f32 z) {
-    struct Object *small = obj_spawn_from_geo(o, omm_geo_peach_vibe_gloom_tear_small, omm_bhv_peach_vibe_gloom_tear_small);
+    struct Object *small = obj_spawn_from_geo(o, omm_geo_peach_vibe_gloom_tear_small, bhvOmmPeachVibeGloomTearSmall);
     obj_scale(small, 0.1f + random_float() * 0.1f);
     obj_set_pos(small, x, y, z);
     obj_set_vel(small, random_f32_around_zero(16.f), 10.f + random_float() * 10.f, random_f32_around_zero(16.f));

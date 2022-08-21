@@ -4,10 +4,10 @@
 
 #define OMM_PERRY_SHOCKWAVE_WAVE_NUM_POINTS   16
 #define OMM_PERRY_SHOCKWAVE_WAVE_RADIUS       100.f
-#define OMM_PERRY_SHOCKWAVE_WAVE_SEGMENTS     (OMM_ARRAY_OF(f32) { 0.f, 0.9f, 1.f })
+#define OMM_PERRY_SHOCKWAVE_WAVE_SEGMENTS     (omm_static_array_of(f32) { 0.f, 0.9f, 1.f })
 #define OMM_PERRY_SHOCKWAVE_GLOW_NUM_POINTS   16
 #define OMM_PERRY_SHOCKWAVE_GLOW_RADIUS       128.f
-#define OMM_PERRY_SHOCKWAVE_GLOW_SEGMENTS     (OMM_ARRAY_OF(f32) { 0.f, 0.25f, 1.f })
+#define OMM_PERRY_SHOCKWAVE_GLOW_SEGMENTS     (omm_static_array_of(f32) { 0.f, 0.25f, 1.f })
 
 //
 // Gfx data
@@ -28,7 +28,7 @@ static const Gfx omm_perry_shockwave_gfx[] = {
 //
 
 typedef struct {
-    Gfx gfx[OMM_ARRAY_SIZE(omm_perry_shockwave_gfx)];
+    Gfx gfx[omm_static_array_length(omm_perry_shockwave_gfx)];
     Gfx tri[4 * (OMM_PERRY_SHOCKWAVE_WAVE_NUM_POINTS + OMM_PERRY_SHOCKWAVE_GLOW_NUM_POINTS) + 3];
     Vtx vtx[8 * (OMM_PERRY_SHOCKWAVE_WAVE_NUM_POINTS + OMM_PERRY_SHOCKWAVE_GLOW_NUM_POINTS)];
 } OmmPeachPerryShockwaveGeoData;
@@ -52,7 +52,7 @@ const GeoLayout omm_geo_perry_shockwave[] = {
 // Behavior
 //
 
-static void omm_bhv_perry_shockwave_explode(struct Object *o, f32 x, f32 y, f32 z) {
+static void bhv_omm_perry_shockwave_explode(struct Object *o, f32 x, f32 y, f32 z) {
     o->oPosX = x;
     o->oPosY = y;
     o->oPosZ = z;
@@ -65,7 +65,7 @@ static void omm_bhv_perry_shockwave_explode(struct Object *o, f32 x, f32 y, f32 
     }
 }
 
-static void omm_bhv_perry_shockwave_perform_step(struct Object *o) {
+static void bhv_omm_perry_shockwave_perform_step(struct Object *o) {
     f32 halfRadius = OMM_PERRY_SHOCKWAVE_RADIUS / 2.f;
     f32 halfHeight = OMM_PERRY_SHOCKWAVE_HEIGHT / 2.f;
     for (s32 i = 0; i != 8; ++i) {
@@ -76,7 +76,7 @@ static void omm_bhv_perry_shockwave_perform_step(struct Object *o) {
         // Wall collision
         struct WallCollisionData colData = { .x = o->oPosX, .y = o->oPosY, .z = o->oPosZ, .offsetY = 0, .radius = halfRadius };
         if (find_wall_collisions(&colData)) {
-            omm_bhv_perry_shockwave_explode(o, colData.x, colData.y, colData.z);
+            bhv_omm_perry_shockwave_explode(o, colData.x, colData.y, colData.z);
             return;
         }
 
@@ -88,7 +88,7 @@ static void omm_bhv_perry_shockwave_perform_step(struct Object *o) {
                 o->oPosY = floorY + halfHeight;
                 o->oFloor = floor;
             } else if (o->oPosY < floorY) {
-                omm_bhv_perry_shockwave_explode(o, o->oPosX, floorY + halfHeight, o->oPosZ);
+                bhv_omm_perry_shockwave_explode(o, o->oPosX, floorY + halfHeight, o->oPosZ);
                 return;
             }
         }
@@ -102,7 +102,7 @@ static void omm_bhv_perry_shockwave_perform_step(struct Object *o) {
                     o->oPosY = ceilY - halfHeight;
                     o->oFloor = ceil;
                 } else if (o->oPosY > ceilY) {
-                    omm_bhv_perry_shockwave_explode(o, o->oPosX, ceilY - halfHeight, o->oPosZ);
+                    bhv_omm_perry_shockwave_explode(o, o->oPosX, ceilY - halfHeight, o->oPosZ);
                     return;
                 }
             }
@@ -110,7 +110,7 @@ static void omm_bhv_perry_shockwave_perform_step(struct Object *o) {
     }
 }
 
-static void omm_bhv_perry_shockwave_process_interactions(struct Object *o) {
+static void bhv_omm_perry_shockwave_process_interactions(struct Object *o) {
 
     // Update hitbox
     f32 maxScale = OMM_PERRY_SHOCKWAVE_RADIUS / 100.f;
@@ -123,11 +123,11 @@ static void omm_bhv_perry_shockwave_process_interactions(struct Object *o) {
     // Handle interactions
     struct Object *interacted = omm_obj_process_interactions(o, OMM_PERRY_SHOCKWAVE_INT_FLAGS);
     if (interacted && !omm_obj_is_collectible(interacted) && (!o->oPerryShockwaveBlast || !omm_obj_is_weak(interacted))) {
-        omm_bhv_perry_shockwave_explode(o, o->oPosX, o->oPosY, o->oPosZ);
+        bhv_omm_perry_shockwave_explode(o, o->oPosX, o->oPosY, o->oPosZ);
     }
 }
 
-static void omm_bhv_perry_shockwave_update() {
+static void bhv_omm_perry_shockwave_update() {
     struct Object *o = gCurrentObject;
 
     // Actions
@@ -153,10 +153,10 @@ static void omm_bhv_perry_shockwave_update() {
         case 1: {
             obj_scale(o, OMM_PERRY_SHOCKWAVE_RADIUS / 100.f);
             o->oOpacity = 0xFF;
-            omm_bhv_perry_shockwave_perform_step(o);
-            omm_bhv_perry_shockwave_process_interactions(o);
+            bhv_omm_perry_shockwave_perform_step(o);
+            bhv_omm_perry_shockwave_process_interactions(o);
             if (o->oTimer >= OMM_PERRY_SHOCKWAVE_DURATION) {
-                omm_bhv_perry_shockwave_explode(o, o->oPosX, o->oPosY, o->oPosZ);
+                bhv_omm_perry_shockwave_explode(o, o->oPosX, o->oPosY, o->oPosZ);
             }
         } break;
 
@@ -302,11 +302,11 @@ static void omm_bhv_perry_shockwave_update() {
     gSPEndDisplayList(tri);
 }
 
-const BehaviorScript omm_bhv_perry_shockwave[] = {
+const BehaviorScript bhvOmmPerryShockwave[] = {
     OBJ_TYPE_SPECIAL,
     0x11010001,
     0x08000000,
-    0x0C000000, (uintptr_t) omm_bhv_perry_shockwave_update,
+    0x0C000000, (uintptr_t) bhv_omm_perry_shockwave_update,
     0x09000000,
 };
 
@@ -315,7 +315,7 @@ const BehaviorScript omm_bhv_perry_shockwave[] = {
 //
 
 struct Object *omm_spawn_perry_shockwave(struct Object *o, s32 delay, s32 type, bool clockwise) {
-    struct Object *wave = obj_spawn_from_geo(o, omm_geo_perry_shockwave, omm_bhv_perry_shockwave);
+    struct Object *wave = obj_spawn_from_geo(o, omm_geo_perry_shockwave, bhvOmmPerryShockwave);
     obj_set_always_rendered(wave, true);
     obj_set_angle(wave, 0, 0, 0);
     obj_set_params(wave, 0, 0, 0, 0, true);

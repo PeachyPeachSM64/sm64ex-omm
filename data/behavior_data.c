@@ -332,6 +332,7 @@
     BC_PTR(dropletParams)
 
 
+#include "data/omm/engine/behavior_commands.inl"
 const BehaviorScript bhvStarDoor[] = {
     BEGIN(OBJ_LIST_SURFACE),
     SET_INT(oInteractType, INTERACT_DOOR),

@@ -13,26 +13,26 @@ static const u32 sCappyToadParams[][4] = {
 // Init
 //
 
-bool cappy_toad_init(struct Object *o) {
-    if (o->oBehParams2ndByte) return false;
-    gOmmData->object->state.actionState = (o->oToadMessageRecentlyTalked ? 3 : 0);
-    gOmmData->object->state.actionTimer = (o->oToadMessageRecentlyTalked ? 0 : 15);
-    gOmmData->object->toad.dialogId = o->oToadMessageDialogId;
-    gOmmData->object->toad.spawnStar = -1;
+bool omm_cappy_toad_init(struct Object *o) {
+    if (o->oBhvArgs2ndByte) return false;
+    gOmmObject->state.actionState = (o->oToadMessageRecentlyTalked ? 3 : 0);
+    gOmmObject->state.actionTimer = (o->oToadMessageRecentlyTalked ? 0 : 15);
+    gOmmObject->toad.dialogId = o->oToadMessageDialogId;
+    gOmmObject->toad.spawnStar = -1;
     o->oOpacity = 255;
 
     // Toad dialog and star
     u32 saveFlags = save_file_get_flags();
     u32 starCount = save_file_get_total_star_count(gCurrSaveFileNum - 1, COURSE_MIN - 1, COURSE_MAX - 1);
     for (s8 i = 0; i != 3; ++i) {
-        if ((u32) gOmmData->object->toad.dialogId == sCappyToadParams[i][2]) {
+        if ((u32) gOmmObject->toad.dialogId == sCappyToadParams[i][2]) {
             if (starCount >= sCappyToadParams[i][0]) {
                 if (saveFlags & (1u << (24u + sCappyToadParams[i][1]))) {
-                    gOmmData->object->toad.dialogId = sCappyToadParams[i][3];
-                    gOmmData->object->toad.spawnStar = -1;
+                    gOmmObject->toad.dialogId = sCappyToadParams[i][3];
+                    gOmmObject->toad.spawnStar = -1;
                 } else {
-                    gOmmData->object->toad.dialogId = sCappyToadParams[i][2];
-                    gOmmData->object->toad.spawnStar = i;
+                    gOmmObject->toad.dialogId = sCappyToadParams[i][2];
+                    gOmmObject->toad.spawnStar = i;
                 }
             }
             break;
@@ -41,7 +41,7 @@ bool cappy_toad_init(struct Object *o) {
     return true;
 }
 
-void cappy_toad_end(struct Object *o) {
+void omm_cappy_toad_end(struct Object *o) {
     obj_anim_play(o, 6, 1.f);
     obj_reset_hitbox(o, 80, 100, 0, 0, 30, 0);
     obj_drop_to_floor(o);
@@ -51,10 +51,10 @@ void cappy_toad_end(struct Object *o) {
     o->oOpacity = 81;
     o->oToadMessageState = 0;
     o->oToadMessageRecentlyTalked = 1;
-    o->oToadMessageDialogId = gOmmData->object->toad.dialogId;
+    o->oToadMessageDialogId = gOmmObject->toad.dialogId;
 }
 
-f32 cappy_toad_get_top(struct Object *o) {
+f32 omm_cappy_toad_get_top(struct Object *o) {
     return 100.f * o->oScaleY;
 }
 
@@ -62,7 +62,7 @@ f32 cappy_toad_get_top(struct Object *o) {
 // Update
 //
 
-s32 cappy_toad_update(struct Object *o) {
+s32 omm_cappy_toad_update(struct Object *o) {
 
     // Hitbox
     o->hitboxRadius = omm_capture_get_hitbox_radius(o);
@@ -75,32 +75,32 @@ s32 cappy_toad_update(struct Object *o) {
     POBJ_SET_UNDER_WATER;
 
     // States
-    if (!obj_update_door(o) && gOmmData->object->state.actionTimer == 0) {
+    if (!obj_update_door(o) && gOmmObject->state.actionTimer == 0) {
 
         // Start dialog
-        if (gOmmData->object->state.actionState == 0) {
-            if (omm_mario_lock(gMarioState, -1) && obj_dialog_start(gOmmData->object->toad.dialogId)) {
+        if (gOmmObject->state.actionState == 0) {
+            if (omm_mario_lock(gMarioState, -1) && obj_dialog_start(gOmmObject->toad.dialogId)) {
                 audio_play_toads_jingle();
-                gOmmData->object->state.actionState = 1;
+                gOmmObject->state.actionState = 1;
             }
         }
 
         // Wait for the dialog to end
-        else if (gOmmData->object->state.actionState == 1) {
+        else if (gOmmObject->state.actionState == 1) {
             if (obj_dialog_update()) {
-                gOmmData->object->state.actionState = 2;
-                gOmmData->object->state.actionTimer = 5;
+                gOmmObject->state.actionState = 2;
+                gOmmObject->state.actionTimer = 5;
             }
         }
 
         // Spawn star
-        else if (gOmmData->object->state.actionState == 2) {
+        else if (gOmmObject->state.actionState == 2) {
             if (omm_mario_unlock(gMarioState)) {
-                if (gOmmData->object->toad.spawnStar != -1) {
-                    bhv_spawn_star_no_level_exit(gOmmData->object->toad.spawnStar);
-                    gOmmData->object->toad.dialogId = sCappyToadParams[gOmmData->object->toad.spawnStar][3];
+                if (gOmmObject->toad.spawnStar != -1) {
+                    bhv_spawn_star_no_level_exit(gOmmObject->toad.spawnStar);
+                    gOmmObject->toad.dialogId = sCappyToadParams[gOmmObject->toad.spawnStar][3];
                 }
-                gOmmData->object->state.actionState = 3;
+                gOmmObject->state.actionState = 3;
             }
         }
 
@@ -113,7 +113,7 @@ s32 cappy_toad_update(struct Object *o) {
         }
 
     } else {
-        gOmmData->object->state.actionTimer = max_s(0, gOmmData->object->state.actionTimer - 1);
+        gOmmObject->state.actionTimer = max_s(0, gOmmObject->state.actionTimer - 1);
     }
 
     // Movement
@@ -140,12 +140,12 @@ s32 cappy_toad_update(struct Object *o) {
         obj_anim_play(o, 0, 1.f);
         obj_anim_clamp_frame(o, 18, 24);
         o->oGfxAngle[1] += -0x1400;
-        gOmmData->object->cappy.offset[0] = +12.f;
-        gOmmData->object->cappy.offset[1] = 106.f;
-        gOmmData->object->cappy.offset[2] = -16.f;
-        gOmmData->object->cappy.angle[0]  = -0x1000;
-        gOmmData->object->cappy.angle[1]  = +0x1800;
-        gOmmData->object->cappy.scale     = 1.f;
+        gOmmObject->cappy.offset[0] = +12.f;
+        gOmmObject->cappy.offset[1] = 106.f;
+        gOmmObject->cappy.offset[2] = -16.f;
+        gOmmObject->cappy.angle[0]  = -0x1000;
+        gOmmObject->cappy.angle[1]  = +0x1800;
+        gOmmObject->cappy.scale     = 1.f;
     }
 
     // Run
@@ -156,21 +156,21 @@ s32 cappy_toad_update(struct Object *o) {
         o->oGfxAngle[1] += 0x8000;
         o->oGfxPos[0]   -= (o->oVelX / vn) * 9.78f * (16.36f + obj_anim_get_frame(o));
         o->oGfxPos[2]   -= (o->oVelZ / vn) * 9.78f * (16.36f + obj_anim_get_frame(o));
-        gOmmData->object->cappy.offset[0] = +8.f;
-        gOmmData->object->cappy.offset[1] = 98.f;
-        gOmmData->object->cappy.angle[0]  = -0x400;
-        gOmmData->object->cappy.angle[2]  = +0x400;
-        gOmmData->object->cappy.scale     = 1.f;
+        gOmmObject->cappy.offset[0] = +8.f;
+        gOmmObject->cappy.offset[1] = 98.f;
+        gOmmObject->cappy.angle[0]  = -0x400;
+        gOmmObject->cappy.angle[2]  = +0x400;
+        gOmmObject->cappy.scale     = 1.f;
     }
 
     // Idle
     else {
         obj_anim_play(o, 4, 1.f);
         o->oGfxAngle[1] += -0x1400;
-        gOmmData->object->cappy.offset[1] = 94.f;
-        gOmmData->object->cappy.offset[2] = -10.f;
-        gOmmData->object->cappy.angle[0]  = -0x800;
-        gOmmData->object->cappy.scale     = 1.f;
+        gOmmObject->cappy.offset[1] = 94.f;
+        gOmmObject->cappy.offset[2] = -10.f;
+        gOmmObject->cappy.angle[0]  = -0x800;
+        gOmmObject->cappy.scale     = 1.f;
     }
 
     // OK

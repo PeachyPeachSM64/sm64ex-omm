@@ -2,6 +2,9 @@
 #define RENDERING_GRAPH_NODE_H
 
 #include "graph_node.h"
+#ifdef DYNOS_CPP_H // for geo_rotate_3d_coin
+#include "graph_node_o.h"
+#endif
 
 f32 *geo_get_marios_forearm_pos(bool isLeft);
 f32 *geo_get_marios_hand_pos(bool isLeft);

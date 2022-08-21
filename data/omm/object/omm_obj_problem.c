@@ -106,7 +106,7 @@ const GeoLayout omm_geo_problem[] = {
 // Behavior
 //
 
-static void omm_bhv_problem_update() {
+static void bhv_omm_problem_update() {
     struct Object *o = gCurrentObject;
     f32 t = clamp_0_1_f(o->oTimer / 20.f);
     o->oOpacity = 255.f * sqr_f(1.f - t);
@@ -116,11 +116,11 @@ static void omm_bhv_problem_update() {
     }
 }
 
-const BehaviorScript omm_bhv_problem[] = {
+const BehaviorScript bhvOmmProblem[] = {
     OBJ_TYPE_UNIMPORTANT,
     0x11010001,
     0x08000000,
-    0x0C000000, (uintptr_t) omm_bhv_problem_update,
+    0x0C000000, (uintptr_t) bhv_omm_problem_update,
     0x09000000,
 };
 
@@ -129,7 +129,7 @@ const BehaviorScript omm_bhv_problem[] = {
 //
 
 struct Object *omm_spawn_problem(struct Object *o) {
-    struct Object *problem = obj_spawn_from_geo(o, omm_geo_problem, omm_bhv_problem);
+    struct Object *problem = obj_spawn_from_geo(o, omm_geo_problem, bhvOmmProblem);
     obj_spawn_from_geo(problem, explosion_geo, bhvExplosion)->oGraphYOffset += 100.f;
     problem->oGraphYOffset += 100.f;
     obj_set_params(problem, INTERACT_DAMAGE, 30, 0, 0, true);

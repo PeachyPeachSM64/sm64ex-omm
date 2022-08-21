@@ -6,7 +6,7 @@
 // Behavior
 //
 
-static void omm_bhv_damage_mario_update() {
+static void bhv_omm_damage_mario_update() {
     struct Object *o = gCurrentObject;
     if (o->oAction++ == 0) {
         obj_set_pos(o, gMarioState->pos[0], gMarioState->pos[1], gMarioState->pos[2]);
@@ -16,10 +16,10 @@ static void omm_bhv_damage_mario_update() {
     }
 }
 
-const BehaviorScript omm_bhv_damage_mario[] = {
+const BehaviorScript bhvOmmDamageMario[] = {
     OBJ_TYPE_GENACTOR,
     0x08000000,
-    0x0C000000, (uintptr_t) omm_bhv_damage_mario_update,
+    0x0C000000, (uintptr_t) bhv_omm_damage_mario_update,
     0x09000000
 };
 
@@ -28,7 +28,7 @@ const BehaviorScript omm_bhv_damage_mario[] = {
 //
 
 struct Object *omm_spawn_damage_mario(struct Object *o, s32 interactType, s32 damage) {
-    struct Object *dmg = spawn_object(o, MODEL_NONE, omm_bhv_damage_mario);
+    struct Object *dmg = spawn_object(o, MODEL_NONE, bhvOmmDamageMario);
     obj_set_pos(o, gMarioState->pos[0], gMarioState->pos[1], gMarioState->pos[2]);
     obj_set_home(o, gMarioState->pos[0], gMarioState->pos[1], gMarioState->pos[2]);
     obj_set_params(dmg, interactType, damage, 0, 0, true);

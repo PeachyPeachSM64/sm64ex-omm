@@ -14,7 +14,7 @@ const GeoLayout omm_geo_mr_i_beam[] = {
 // Behavior
 //
 
-static void omm_bhv_mr_i_beam_delete(struct Object *o) {
+static void bhv_omm_mr_i_beam_delete(struct Object *o) {
     for (s32 i = 0; i != 10; ++i) {
         struct Object *p = spawn_object(o, MODEL_PURPLE_MARBLE, bhvPurpleParticle);
         obj_scale(p, 0.5f);
@@ -23,11 +23,11 @@ static void omm_bhv_mr_i_beam_delete(struct Object *o) {
     obj_mark_for_deletion(o);
 }
 
-static void omm_bhv_mr_i_beam_loop() {
+static void bhv_omm_mr_i_beam_loop() {
     struct Object *o = gCurrentObject;
     perform_object_step(o, OBJ_STEP_UPDATE_HOME);
     if (o->oTimer > 60 || o->oWall || o->oCeil || o->oDistToFloor <= 0.f) {
-        omm_bhv_mr_i_beam_delete(o);
+        bhv_omm_mr_i_beam_delete(o);
         return;
     }
     obj_reset_hitbox(o, 20, 30, 0, 0, 15, 0);
@@ -39,15 +39,15 @@ static void omm_bhv_mr_i_beam_loop() {
         interacted = omm_obj_process_interactions(o, OBJ_INT_PRESET_BEAM_SMALL);
     }
     if (interacted && !omm_obj_is_collectible(interacted)) {
-        omm_bhv_mr_i_beam_delete(o);
+        bhv_omm_mr_i_beam_delete(o);
     }
 }
 
-const BehaviorScript omm_bhv_mr_i_beam[] = {
+const BehaviorScript bhvOmmMrIBeam[] = {
     OBJ_TYPE_GENACTOR,
     0x11010001,
     0x08000000,
-    0x0C000000, (uintptr_t) omm_bhv_mr_i_beam_loop,
+    0x0C000000, (uintptr_t) bhv_omm_mr_i_beam_loop,
     0x09000000,
 };
 
@@ -56,7 +56,7 @@ const BehaviorScript omm_bhv_mr_i_beam[] = {
 //
 
 struct Object *omm_spawn_mr_i_beam(struct Object *o, f32 power) {
-    struct Object *beam = obj_spawn_from_geo(o, omm_geo_mr_i_beam, omm_bhv_mr_i_beam);
+    struct Object *beam = obj_spawn_from_geo(o, omm_geo_mr_i_beam, bhvOmmMrIBeam);
     beam->oPosX += o->hitboxRadius * 1.1f * sins(o->oMoveAngleYaw);
     beam->oPosY += o->hitboxHeight * 0.5f - 30.f * power;
     beam->oPosZ += o->hitboxRadius * 1.1f * coss(o->oMoveAngleYaw);

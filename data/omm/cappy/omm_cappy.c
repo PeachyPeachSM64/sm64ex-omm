@@ -7,7 +7,7 @@
 //
 
 struct Object *omm_cappy_get_object() {
-    if (gOmmCappy && gOmmCappy->activeFlags && gOmmCappy->behavior == omm_bhv_cappy) {
+    if (gOmmCappy && gOmmCappy->activeFlags && gOmmCappy->behavior == bhvOmmCappy) {
         return gOmmCappy;
     }
     return NULL;
@@ -15,7 +15,7 @@ struct Object *omm_cappy_get_object() {
 
 struct Object *omm_cappy_get_object_play_as() {
     struct Object *cappy = omm_cappy_get_object();
-    if (cappy && (cappy->oCappyFlags & CAPPY_FLAG_PLAY_AS)) {
+    if (cappy && (cappy->oCappyFlags & OMM_CAPPY_FLAG_PLAY_AS)) {
         return cappy;
     }
     return NULL;
@@ -28,13 +28,14 @@ struct Object *omm_cappy_get_object_play_as() {
 static s16 omm_cappy_get_behavior(struct MarioState *m) {
     bool air = (m->action & (ACT_FLAG_AIR | ACT_FLAG_SWIMMING)) != 0;
     if (m->action == ACT_FLYING)                 return OMM_CAPPY_BHV_FLYING;
+    if (m->action & ACT_FLAG_RIDING_SHELL)       return OMM_CAPPY_BHV_SPIN_GROUND + air;
     if (m->controller->buttonDown & U_JPAD)      return OMM_CAPPY_BHV_UPWARDS_GROUND + air;
     if (m->controller->buttonDown & D_JPAD)      return OMM_CAPPY_BHV_DOWNWARDS_GROUND + air;
     if (m->controller->buttonDown & L_JPAD)      return OMM_CAPPY_BHV_SPIN_GROUND + air;
     if (m->controller->buttonDown & R_JPAD)      return OMM_CAPPY_BHV_SPIN_GROUND + air;
     if (m->controller->buttonPressed & A_BUTTON) return OMM_CAPPY_BHV_UPWARDS_GROUND + air;
     if (omm_mario_is_ground_pound_landing(m))    return OMM_CAPPY_BHV_DOWNWARDS_GROUND;
-    if (gOmmData->mario->spin.timer != 0)        return OMM_CAPPY_BHV_SPIN_GROUND + air;
+    if (gOmmMario->spin.timer != 0)              return OMM_CAPPY_BHV_SPIN_GROUND + air;
     else                                         return OMM_CAPPY_BHV_DEFAULT_GROUND + air;
 }
 
@@ -50,10 +51,10 @@ struct Object *omm_cappy_spawn(struct MarioState *m) {
     bool metal = ((m->flags & MARIO_METAL_CAP) != 0);
 
     // Spawn Cappy, but set it dormant
-    struct Object *cappy       = spawn_object(m->marioObj, omm_player_get_selected_cap(wing, metal), omm_bhv_cappy);
+    struct Object *cappy       = spawn_object(m->marioObj, omm_player_graphics_get_selected_cap(wing, metal), bhvOmmCappy);
     cappy->oCappyBehavior      = omm_cappy_get_behavior(m);
     cappy->oCappyLifeTimer     = -255;
-    cappy->oCappyFlags         = CAPPY_FLAG_START_ANIM;
+    cappy->oCappyFlags         = OMM_CAPPY_FLAG_START_ANIM;
     cappy->oCappyThrowStrength = 0;
     cappy->oIntangibleTimer    = 0;
     obj_set_dormant(cappy, true);
@@ -106,23 +107,23 @@ void omm_cappy_update(struct MarioState *m) {
 
         // Update Cappy's hitbox
         if (awaken) {
-            cappy->hitboxRadius = CAPPY_HITBOX_RADIUS;
-            cappy->hitboxHeight = CAPPY_HITBOX_HEIGHT;
-            cappy->hitboxDownOffset = CAPPY_HITBOX_OFFSET;
-            cappy->oWallHitboxRadius = CAPPY_WALL_RADIUS;
+            cappy->hitboxRadius = OMM_CAPPY_HITBOX_RADIUS;
+            cappy->hitboxHeight = OMM_CAPPY_HITBOX_HEIGHT;
+            cappy->hitboxDownOffset = OMM_CAPPY_HITBOX_OFFSET;
+            cappy->oWallHitboxRadius = OMM_CAPPY_WALL_RADIUS;
         }
 
         // Update Cappy's behavior
         // Does not update during Time Stop
         bool advance = !(gTimeStopState & TIME_STOP_ENABLED);
         if (awaken && advance) {
-            if (cappy->oCappyLifeTimer < CAPPY_LIFETIME) {
+            if (cappy->oCappyLifeTimer < OMM_CAPPY_LIFETIME) {
                 omm_cappy_update_behavior(cappy, m);
                 omm_cappy_process_interactions(cappy, m);
             } else if (omm_cappy_perform_step_return_to_mario(cappy, m)) {
                 sReturnedToMario = true;
             }
-            cappy->oGfxAngle[1] += CAPPY_GFX_ANGLE_VEL;
+            cappy->oGfxAngle[1] += OMM_CAPPY_GFX_ANGLE_VEL;
         }
 
         // Update Cappy's Gfx
@@ -132,9 +133,9 @@ void omm_cappy_update(struct MarioState *m) {
             cappy->oGfxPos[2] = cappy->oPosZ;
             cappy->oGfxAngle[0] = 0;
             cappy->oGfxAngle[2] = 0;
-            cappy->oGfxScale[0] = CAPPY_GFX_SCALE_X;
-            cappy->oGfxScale[1] = CAPPY_GFX_SCALE_Y;
-            cappy->oGfxScale[2] = CAPPY_GFX_SCALE_Z;
+            cappy->oGfxScale[0] = OMM_CAPPY_GFX_SCALE_X;
+            cappy->oGfxScale[1] = OMM_CAPPY_GFX_SCALE_Y;
+            cappy->oGfxScale[2] = OMM_CAPPY_GFX_SCALE_Z;
             cappy->oNodeFlags |= GRAPH_RENDER_ACTIVE;
             cappy->oNodeFlags &= ~GRAPH_RENDER_INVISIBLE;
             cappy->oOpacity = (m->flags & MARIO_VANISH_CAP ? 0x80 : 0xFF);

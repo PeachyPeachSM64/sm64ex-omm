@@ -179,7 +179,7 @@ static void bhv_omm_bowser_flame_loop() {
     }
 }
 
-const BehaviorScript omm_bhv_bowser_flame[] = {
+const BehaviorScript bhvOmmBowserFlame[] = {
     OBJ_TYPE_GENACTOR,
     0x11010001,
     0x08000000,
@@ -193,7 +193,7 @@ const BehaviorScript omm_bhv_bowser_flame[] = {
 //
 
 struct Object *omm_spawn_bowser_flame(struct Object *o, f32 x, f32 y, f32 z, s32 duration) {
-    struct Object *flame = obj_spawn_from_geo(o, omm_geo_bowser_flame, omm_bhv_bowser_flame);
+    struct Object *flame = obj_spawn_from_geo(o, omm_geo_bowser_flame, bhvOmmBowserFlame);
     obj_set_pos(flame, x, y, z);
     flame->oAction = 0;
     flame->oAnimState = random_u16() % 4;

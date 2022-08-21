@@ -2,8 +2,8 @@
 #include "data/omm/omm_includes.h"
 #undef OMM_ALL_HEADERS
 
-#if OMM_GAME_IS_R96A
-#define cappy_mad_piano_play_song(...)
+#if OMM_GAME_IS_R96X
+#define omm_cappy_mad_piano_play_song(...)
 #else
 
 static s32 sSeqCurrentId = -1;
@@ -11,7 +11,7 @@ OMM_ROUTINE_LEVEL_ENTRY(cappy_mad_piano_reset_seq_current_id) {
     sSeqCurrentId = -1;
 }
 
-static void cappy_mad_piano_play_song(bool aPress, bool bPress) {
+static void omm_cappy_mad_piano_play_song(bool aPress, bool bPress) {
     if (aPress && bPress) {
         music_fade_out(SEQ_PLAYER_LEVEL, 60);
         play_sequence(SEQ_PLAYER_LEVEL, SEQ_LEVEL_SPOOKY, 60);
@@ -32,14 +32,14 @@ static void cappy_mad_piano_play_song(bool aPress, bool bPress) {
 // Init
 //
 
-bool cappy_mad_piano_init(struct Object *o) {
+bool omm_cappy_mad_piano_init(struct Object *o) {
     o->oFaceAngleYaw += 0x4000;
-    gOmmData->object->state.actionTimer = 0;
-    gOmmData->object->state.actionState = 0;
+    gOmmObject->state.actionTimer = 0;
+    gOmmObject->state.actionState = 0;
     return true;
 }
 
-void cappy_mad_piano_end(struct Object *o) {
+void omm_cappy_mad_piano_end(struct Object *o) {
     obj_anim_play(o, 0, 1.f);
     obj_drop_to_floor(o);
     o->oHomeX = o->oPosX;
@@ -47,7 +47,7 @@ void cappy_mad_piano_end(struct Object *o) {
     o->oHomeZ = o->oPosZ;
 }
 
-f32 cappy_mad_piano_get_top(struct Object *o) {
+f32 omm_cappy_mad_piano_get_top(struct Object *o) {
     return 150.f * o->oScaleY;
 }
 
@@ -55,7 +55,7 @@ f32 cappy_mad_piano_get_top(struct Object *o) {
 // Update
 //
 
-s32 cappy_mad_piano_update(struct Object *o) {
+s32 omm_cappy_mad_piano_update(struct Object *o) {
 
     // Hitbox
     o->hitboxRadius = omm_capture_get_hitbox_radius(o);
@@ -78,7 +78,7 @@ s32 cappy_mad_piano_update(struct Object *o) {
         if (pobj_jump(o, 1.f, 1) != POBJ_RESULT_NONE) {
             obj_play_sound(o, SOUND_OBJ_MAD_PIANO_CHOMPING);
         }
-        cappy_mad_piano_play_song(POBJ_A_BUTTON_PRESSED, POBJ_B_BUTTON_PRESSED);
+        omm_cappy_mad_piano_play_song(POBJ_A_BUTTON_PRESSED, POBJ_B_BUTTON_PRESSED);
     }
 
     // Movement
@@ -94,20 +94,20 @@ s32 cappy_mad_piano_update(struct Object *o) {
 
     // Gfx
     if (!obj_is_on_ground(o)) {
-        gOmmData->object->state.actionState = 1;
-        gOmmData->object->state.actionTimer = 1;
-    } else if (gOmmData->object->state.actionTimer == 0) {
-        gOmmData->object->state.actionState = 0;
+        gOmmObject->state.actionState = 1;
+        gOmmObject->state.actionTimer = 1;
+    } else if (gOmmObject->state.actionTimer == 0) {
+        gOmmObject->state.actionState = 0;
     } else {
-        gOmmData->object->state.actionTimer--;
+        gOmmObject->state.actionTimer--;
     }
     obj_update_gfx(o);
-    obj_anim_play(o, gOmmData->object->state.actionState, 1.f);
+    obj_anim_play(o, gOmmObject->state.actionState, 1.f);
     o->oGfxAngle[1] -= 0x4000;
 
     // Cappy values
-    gOmmData->object->cappy.offset[1] = 150.f;
-    gOmmData->object->cappy.scale     = 1.5f;
+    gOmmObject->cappy.offset[1] = 150.f;
+    gOmmObject->cappy.scale     = 1.5f;
 
     // OK
     POBJ_RETURN_OK;

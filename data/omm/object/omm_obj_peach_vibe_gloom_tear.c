@@ -43,7 +43,7 @@ typedef struct OmmPeachVibeGloomTearPoint {
 } Tpt;
 
 typedef struct {
-    Gfx gfx[OMM_ARRAY_SIZE(omm_peach_vibe_gloom_tear_gfx)];
+    Gfx gfx[omm_static_array_length(omm_peach_vibe_gloom_tear_gfx)];
     Gfx tri[2 * OMM_PEACH_VIBE_GLOOM_TEAR_MAX_POINTS * OMM_PEACH_VIBE_GLOOM_TEAR_NUM_INTERPOLATED_POINTS * (OMM_PEACH_VIBE_GLOOM_TEAR_NUM_VERTICES_PER_POINT + 1) + 1];
     Vtx vtx[2 * OMM_PEACH_VIBE_GLOOM_TEAR_MAX_POINTS * OMM_PEACH_VIBE_GLOOM_TEAR_NUM_INTERPOLATED_POINTS * OMM_PEACH_VIBE_GLOOM_TEAR_NUM_VERTICES_PER_POINT];
     Tpt pts[2][OMM_PEACH_VIBE_GLOOM_TEAR_MAX_POINTS];
@@ -66,11 +66,11 @@ const GeoLayout omm_geo_peach_vibe_gloom_tear[] = {
 // Behavior
 //
 
-static void omm_bhv_peach_vibe_gloom_tear_update() {
+static void bhv_omm_peach_vibe_gloom_tear_update() {
     struct Object *o = gCurrentObject;
     OmmPeachVibeGloomTearGeoData *data = geo_get_geo_data(o, sizeof(OmmPeachVibeGloomTearGeoData), omm_peach_vibe_gloom_tear_gfx, sizeof(omm_peach_vibe_gloom_tear_gfx));
     Vec3f mp; vec3f_copy(mp, gMarioState->pos);
-    Vec3f dp; vec3f_dif(dp, mp, gOmmData->mario->state.previous.pos);
+    Vec3f dp; vec3f_dif(dp, mp, gOmmMario->state.previous.pos);
 
     // Update current points
     for (s32 side = 0; side != 2; ++side) {
@@ -165,7 +165,7 @@ static void omm_bhv_peach_vibe_gloom_tear_update() {
 
         // Add a new point for both sides
         for (s32 side = 0; side != 2; ++side) {
-            OMM_MEMMOV(data->pts[side] + 1, data->pts[side], (OMM_PEACH_VIBE_GLOOM_TEAR_MAX_POINTS - 1) * sizeof(Tpt));
+            omm_move(data->pts[side] + 1, data->pts[side], (OMM_PEACH_VIBE_GLOOM_TEAR_MAX_POINTS - 1) * sizeof(Tpt));
             f32 sr = (side == 0 ? +1.f : -1.f);
             data->pts[side][0].pos[0] = p[0] + du * u[0] + df * f[0] + dr * sr * r[0];
             data->pts[side][0].pos[1] = p[1] + du * u[1] + df * f[1] + dr * sr * r[1];
@@ -187,7 +187,7 @@ static void omm_bhv_peach_vibe_gloom_tear_update() {
     else {
         for (s32 side = 0; side != 2; ++side) {
             if (data->pts[side][0].active) {
-                OMM_MEMMOV(data->pts[side] + 1, data->pts[side], (OMM_PEACH_VIBE_GLOOM_TEAR_MAX_POINTS - 1) * sizeof(Tpt));
+                omm_move(data->pts[side] + 1, data->pts[side], (OMM_PEACH_VIBE_GLOOM_TEAR_MAX_POINTS - 1) * sizeof(Tpt));
                 data->pts[side][0].active = false;
             }
         }
@@ -316,11 +316,11 @@ static void omm_bhv_peach_vibe_gloom_tear_update() {
     obj_set_angle(o, 0, 0, 0);
 }
 
-const BehaviorScript omm_bhv_peach_vibe_gloom_tear[] = {
+const BehaviorScript bhvOmmPeachVibeGloomTear[] = {
     OBJ_TYPE_UNIMPORTANT,
     0x11010001,
     0x08000000,
-    0x0C000000, (uintptr_t) omm_bhv_peach_vibe_gloom_tear_update,
+    0x0C000000, (uintptr_t) bhv_omm_peach_vibe_gloom_tear_update,
     0x09000000,
 };
 
@@ -329,9 +329,9 @@ const BehaviorScript omm_bhv_peach_vibe_gloom_tear[] = {
 //
 
 struct Object *omm_spawn_peach_vibe_gloom_tear(struct Object *o) {
-    struct Object *tear = obj_get_first_with_behavior(omm_bhv_peach_vibe_gloom_tear);
-    if (tear == NULL) {
-        tear = obj_spawn_from_geo(o, omm_geo_peach_vibe_gloom_tear, omm_bhv_peach_vibe_gloom_tear);
+    struct Object *tear = obj_get_first_with_behavior(bhvOmmPeachVibeGloomTear);
+    if (!tear) {
+        tear = obj_spawn_from_geo(o, omm_geo_peach_vibe_gloom_tear, bhvOmmPeachVibeGloomTear);
         obj_set_always_rendered(tear, true);
         obj_scale(tear, 1.f);
     }

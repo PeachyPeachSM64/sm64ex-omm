@@ -43,7 +43,7 @@ struct Object *obj_get_next(struct Object *o, s32 list) {
 struct Object *obj_get_first_with_behavior(const BehaviorScript *behavior) {
     if (OMM_LIKELY(behavior)) {
         for_each_object_in_list(obj, obj_get_list_index_from_behavior(behavior)) {
-            if (obj->behavior == behavior && obj->activeFlags != ACTIVE_FLAG_DEACTIVATED) {
+            if (obj->behavior == behavior && obj->activeFlags) {
                 return obj;
             }
         }
@@ -54,8 +54,8 @@ struct Object *obj_get_first_with_behavior(const BehaviorScript *behavior) {
 struct Object *obj_get_next_with_behavior(struct Object *o, const BehaviorScript *behavior) {
     if (OMM_LIKELY(o && behavior)) {
         s32 list = obj_get_list_index_from_behavior(behavior);
-        for (struct Object *obj = obj_get_next(o, list); obj != NULL; obj = obj_get_next(obj, list)) {
-            if (obj->behavior == behavior && obj->activeFlags != ACTIVE_FLAG_DEACTIVATED) {
+        for (struct Object *obj = obj_get_next(o, list); obj; obj = obj_get_next(obj, list)) {
+            if (obj->behavior == behavior && obj->activeFlags) {
                 return obj;
             }
         }
@@ -66,7 +66,7 @@ struct Object *obj_get_next_with_behavior(struct Object *o, const BehaviorScript
 struct Object *obj_get_first_with_behavior_and_field_s32(const BehaviorScript *behavior, s32 fieldIndex, s32 value) {
     if (OMM_LIKELY(behavior)) {
         for_each_object_in_list(obj, obj_get_list_index_from_behavior(behavior)) {
-            if (obj->behavior == behavior && obj->activeFlags != ACTIVE_FLAG_DEACTIVATED && obj->OBJECT_FIELD_S32(fieldIndex) == value) {
+            if (obj->behavior == behavior && obj->activeFlags && obj->OBJECT_FIELD_S32(fieldIndex) == value) {
                 return obj;
             }
         }
@@ -77,7 +77,7 @@ struct Object *obj_get_first_with_behavior_and_field_s32(const BehaviorScript *b
 struct Object *obj_get_first_with_behavior_and_field_f32(const BehaviorScript *behavior, s32 fieldIndex, f32 value) {
     if (OMM_LIKELY(behavior)) {
         for_each_object_in_list(obj, obj_get_list_index_from_behavior(behavior)) {
-            if (obj->behavior == behavior && obj->activeFlags != ACTIVE_FLAG_DEACTIVATED && obj->OBJECT_FIELD_F32(fieldIndex) == value) {
+            if (obj->behavior == behavior && obj->activeFlags && obj->OBJECT_FIELD_F32(fieldIndex) == value) {
                 return obj;
             }
         }
@@ -119,6 +119,13 @@ struct Object *obj_get_nearest_with_behavior_and_radius(struct Object *o, const 
         return nearest;
     }
     return NULL;
+}
+
+s32 obj_get_slot_index(struct Object *o) {
+    if (o >= gObjectPool && o < gObjectPool + OBJECT_POOL_CAPACITY) {
+        return (s32) (o - gObjectPool);
+    }
+    return -1;
 }
 
 s32 obj_get_list_index(struct Object *o) {

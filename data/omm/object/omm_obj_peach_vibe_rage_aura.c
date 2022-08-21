@@ -33,7 +33,7 @@ static const Gfx omm_peach_vibe_rage_aura_gfx[] = {
 //
 
 typedef struct {
-    Gfx gfx[OMM_ARRAY_SIZE(omm_peach_vibe_rage_aura_gfx)];
+    Gfx gfx[omm_static_array_length(omm_peach_vibe_rage_aura_gfx)];
     Gfx tri[(OMM_PEACH_VIBE_RAGE_AURA_NUM_SEGMENTS + 0) * (OMM_PEACH_VIBE_RAGE_AURA_POINTS_PER_SEGMENT + 1) + 1];
     Vtx vtx[(OMM_PEACH_VIBE_RAGE_AURA_NUM_SEGMENTS + 1) * (OMM_PEACH_VIBE_RAGE_AURA_POINTS_PER_SEGMENT + 1)];
 } OmmPeachVibeRageAuraGeoData;
@@ -68,7 +68,7 @@ static f32 oscillate_min_mid_max(f32 t,
         lerp_f(0.f - coss(t * 0x8000), oscillate(baseMid, gapMid, freqMid), oscillate(baseMax, gapMax, freqMax));
 }
 
-static void omm_bhv_peach_vibe_rage_aura_update() {
+static void bhv_omm_peach_vibe_rage_aura_update() {
     struct Object *o = gCurrentObject;
     OmmPeachVibeRageAuraGeoData *data = geo_get_geo_data(o, sizeof(OmmPeachVibeRageAuraGeoData), omm_peach_vibe_rage_aura_gfx, sizeof(omm_peach_vibe_rage_aura_gfx));
 
@@ -143,11 +143,11 @@ static void omm_bhv_peach_vibe_rage_aura_update() {
     omm_obj_process_interactions(o, OBJ_INT_PRESET_PEACH_VIBE_RAGE_AURA);
 }
 
-const BehaviorScript omm_bhv_peach_vibe_rage_aura[] = {
+const BehaviorScript bhvOmmPeachVibeRageAura[] = {
     OBJ_TYPE_SPECIAL,
     0x11010001,
     0x08000000,
-    0x0C000000, (uintptr_t) omm_bhv_peach_vibe_rage_aura_update,
+    0x0C000000, (uintptr_t) bhv_omm_peach_vibe_rage_aura_update,
     0x09000000
 };
 
@@ -156,9 +156,9 @@ const BehaviorScript omm_bhv_peach_vibe_rage_aura[] = {
 //
 
 struct Object *omm_spawn_peach_vibe_rage_aura(struct Object *o) {
-    struct Object *aura = obj_get_first_with_behavior(omm_bhv_peach_vibe_rage_aura);
-    if (aura == NULL) {
-        aura = obj_spawn_from_geo(o, omm_geo_peach_vibe_rage_aura, omm_bhv_peach_vibe_rage_aura);
+    struct Object *aura = obj_get_first_with_behavior(bhvOmmPeachVibeRageAura);
+    if (!aura) {
+        aura = obj_spawn_from_geo(o, omm_geo_peach_vibe_rage_aura, bhvOmmPeachVibeRageAura);
         obj_set_always_rendered(aura, true);
         obj_set_angle(aura, 0, 0, 0);
         obj_scale(aura, 1.f);

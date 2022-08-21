@@ -27,7 +27,7 @@ static const Gfx omm_perry_charge_gfx[] = {
 //
 
 typedef struct {
-    Gfx gfx[OMM_ARRAY_SIZE(omm_perry_charge_gfx)];
+    Gfx gfx[omm_static_array_length(omm_perry_charge_gfx)];
     Gfx tri[(1 + OMM_PERRY_CHARGE_NUM_FRAMES + OMM_PERRY_CHARGE_NUM_POINTS) * 2 + 22];
     Vtx vtx[(1 + OMM_PERRY_CHARGE_NUM_FRAMES + OMM_PERRY_CHARGE_NUM_POINTS) * 4];
     Vec3f pos[OMM_PERRY_CHARGE_NUM_POINTS];
@@ -50,7 +50,7 @@ const GeoLayout omm_geo_perry_charge[] = {
 // Behavior
 //
 
-static void omm_bhv_perry_charge_draw_billboard(Vtx **vtx, Gfx **tri, Vec3f pos0, Vec3f pos3d, f32 camOffset, s16 angle, f32 scale, f32 opacity) {
+static void bhv_omm_perry_charge_draw_billboard(Vtx **vtx, Gfx **tri, Vec3f pos0, Vec3f pos3d, f32 camOffset, s16 angle, f32 scale, f32 opacity) {
 
     // Billboard plane
     Vec3f camN, camE1, camE2;
@@ -95,9 +95,9 @@ static void omm_bhv_perry_charge_draw_billboard(Vtx **vtx, Gfx **tri, Vec3f pos0
     (*vtx) += 4;
 }
 
-static void omm_bhv_perry_charge_update() {
+static void bhv_omm_perry_charge_update() {
     struct Object *o = gCurrentObject;
-    struct Object *p = omm_peach_get_perry_object();
+    struct Object *p = omm_perry_get_object();
     struct MarioState *m = gMarioState;
     OmmPerryChargeGeoData *data = NULL;
     if (!p || !OMM_PLAYER_IS_PEACH) {
@@ -122,7 +122,7 @@ static void omm_bhv_perry_charge_update() {
 
     // Update position
     data = geo_get_geo_data(o, sizeof(OmmPerryChargeGeoData), omm_perry_charge_gfx, sizeof(omm_perry_charge_gfx));
-    OMM_MEMMOV(data->pos + OMM_PERRY_CHARGE_NUM_POINTS_PER_FRAME, data->pos, sizeof(Vec3f) * OMM_PERRY_CHARGE_NUM_POINTS_PER_FRAME * (OMM_PERRY_CHARGE_NUM_FRAMES - 1));
+    omm_move(data->pos + OMM_PERRY_CHARGE_NUM_POINTS_PER_FRAME, data->pos, sizeof(Vec3f) * OMM_PERRY_CHARGE_NUM_POINTS_PER_FRAME * (OMM_PERRY_CHARGE_NUM_FRAMES - 1));
     vec3f_copy(data->pos[0], pos0);
     Vtx *vtx = data->vtx;
     Gfx *tri = data->tri;
@@ -157,10 +157,10 @@ static void omm_bhv_perry_charge_update() {
     gDPLoadTextureBlock(tri++, OMM_TEXTURE_EFFECT_PERRY_CHARGE_GLOW, G_IM_FMT_RGBA, G_IM_SIZ_32b, 128, 128, 0, 0, 0, 0, 0, 0, 0);
     if (o->oPerryChargeSwordTimer >= OMM_PERRY_CHARGE_FULL) {
         f32 t = invlerp_0_1_f(o->oPerryChargeSwordTimer, OMM_PERRY_CHARGE_FULL, OMM_PERRY_CHARGE_END);
-        omm_bhv_perry_charge_draw_billboard(&vtx, &tri, pos0, posSwordGlow, 0.f, 0, 4.f * t * scale[0], 1.f - t);
+        bhv_omm_perry_charge_draw_billboard(&vtx, &tri, pos0, posSwordGlow, 0.f, 0, 4.f * t * scale[0], 1.f - t);
     } else if (o->oPerryChargeSwordTimer >= OMM_PERRY_CHARGE_START) {
         f32 t = invlerp_0_1_f(o->oPerryChargeSwordTimer, OMM_PERRY_CHARGE_FULL, OMM_PERRY_CHARGE_START);
-        omm_bhv_perry_charge_draw_billboard(&vtx, &tri, pos0, posSwordGlow, 0.f, 0, 3.f * t * scale[0], 1.f - t);
+        bhv_omm_perry_charge_draw_billboard(&vtx, &tri, pos0, posSwordGlow, 0.f, 0, 3.f * t * scale[0], 1.f - t);
     }
     
     // Sword sparkles
@@ -175,7 +175,7 @@ static void omm_bhv_perry_charge_update() {
                 lerp_f(lerp_f(t, 0.1f, 1.0f), pos0[1], pos1[1]),
                 lerp_f(lerp_f(t, 0.1f, 1.0f), pos0[2], pos1[2]),
             };
-            omm_bhv_perry_charge_draw_billboard(&vtx, &tri, pos0, posSwordSparkle, scale[2] * 20.f, random_u16(), 1.f * k * scale[0], i == 1 ? 0.8f : 0.5f);
+            bhv_omm_perry_charge_draw_billboard(&vtx, &tri, pos0, posSwordSparkle, scale[2] * 20.f, random_u16(), 1.f * k * scale[0], i == 1 ? 0.8f : 0.5f);
         }
     }
 
@@ -192,7 +192,7 @@ static void omm_bhv_perry_charge_update() {
             data->pos[i][1],
             data->pos[i][2],
         };
-        omm_bhv_perry_charge_draw_billboard(&vtx, &tri, pos0, posHandSparkle, scale[2] * 10.f, random_u16(), s, a);
+        bhv_omm_perry_charge_draw_billboard(&vtx, &tri, pos0, posHandSparkle, scale[2] * 10.f, random_u16(), s, a);
     }
     gSPEndDisplayList(tri);
     
@@ -202,11 +202,11 @@ static void omm_bhv_perry_charge_update() {
     obj_set_scale(o, 1.f, 1.f, 1.f);
 }
 
-const BehaviorScript omm_bhv_perry_charge[] = {
+const BehaviorScript bhvOmmPerryCharge[] = {
     OBJ_TYPE_UNIMPORTANT,
     0x11010001,
     0x08000000,
-    0x0C000000, (uintptr_t) omm_bhv_perry_charge_update,
+    0x0C000000, (uintptr_t) bhv_omm_perry_charge_update,
     0x09000000,
 };
 
@@ -216,9 +216,9 @@ const BehaviorScript omm_bhv_perry_charge[] = {
 
 OMM_ROUTINE_UPDATE(omm_spawn_perry_charge) {
     if (gMarioObject && OMM_PLAYER_IS_PEACH) {
-        struct Object *charge = obj_get_first_with_behavior(omm_bhv_perry_charge);
+        struct Object *charge = obj_get_first_with_behavior(bhvOmmPerryCharge);
         if (!charge) {
-            charge = obj_spawn_from_geo(gMarioObject, omm_geo_perry_charge, omm_bhv_perry_charge);
+            charge = obj_spawn_from_geo(gMarioObject, omm_geo_perry_charge, bhvOmmPerryCharge);
             obj_set_always_rendered(charge, true);
             obj_set_pos(charge, 0, 0, 0);
             obj_set_angle(charge, 0, 0, 0);

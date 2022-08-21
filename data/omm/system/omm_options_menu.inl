@@ -16,83 +16,147 @@ void omm_opt_init_main_menu() {
 #if OMM_GAME_IS_SM74
     sNumOpts += 1;
 #endif
-    struct Option *opts = (struct Option *) OMM_MEMNEW(struct Option, sNumOpts);
+    struct Option *opts = (struct Option *) omm_new(struct Option, sNumOpts);
     struct Option *head = opts;
 
     // OMM sub-menu
     head->type = OPT_SUBMENU;
-    head->label = gOmmOptMenu;
-    head->nextMenu = (struct SubMenu *) (gOmmOptMenu + 0x100);
+    head->label = gOmmOptMenu.label;
+    head->nextMenu = (struct SubMenu *) gOmmOptMenu.subMenu;
     head++;
 
 #if !OMM_CODE_DYNOS
     // Warp to level sub-menu
     head->type = OPT_SUBMENU;
-    head->label = gOmmOptWarpToLevel;
-    head->nextMenu = (struct SubMenu *) (gOmmOptWarpToLevel + 0x100);
+    head->label = gOmmOptWarpToLevel.label;
+    head->nextMenu = (struct SubMenu *) gOmmOptWarpToLevel.subMenu;
     head++;
 #endif
 
     // Other options
     for (s32 i = 0; i != menuMain.numOpts; ++i) {
 
+#if OMM_GAME_IS_R96X
+        // Game sub-menu (Render96)
+        if (menuMain.opts[i].type == OPT_SUBMENU && menuMain.opts[i].nextMenu == &menuGame) {
+            struct SubMenu *subMenu = menuMain.opts[i].nextMenu;
+            struct Option *newOpts = omm_new(struct Option, subMenu->numOpts);
+            for (s32 j = 0, k = 0, n = subMenu->numOpts; j != n; ++j) {
+                struct Option *opt = subMenu->opts + j;
+
+                // Skip Precache textures toggle
+                if (opt->type == OPT_TOGGLE && opt->bval == &configPrecacheRes) {
+                    subMenu->numOpts--;
+                    continue;
+                }
+
+                // Copy option
+                omm_copy(newOpts + k++, opt, sizeof(struct Option));
+            }
+            subMenu->opts = newOpts;
+        }
+#endif
+
         // Display sub-menu
         if (menuMain.opts[i].type == OPT_SUBMENU && menuMain.opts[i].nextMenu == &menuVideo) {
             struct SubMenu *subMenu = menuMain.opts[i].nextMenu;
-            struct Option *newOpts = OMM_MEMNEW(struct Option, subMenu->numOpts + 1);
-            OMM_MEMCPY(newOpts + 1, subMenu->opts, sizeof(struct Option) * subMenu->numOpts);
-            newOpts->type = OPT_CHOICE;
-            newOpts->choices = OMM_MEMNEW(u8 *, 12);
-            newOpts->numChoices = 12;
-            newOpts->uval = &gOmmFPS;
-#if OMM_GAME_IS_R96A
-            newOpts->label = (const u8 *) OMM_TEXT_OPT_FPS;
-            newOpts->choices[0] = (const u8 *) OMM_TEXT_OPT_FPS_30;
-            newOpts->choices[1] = (const u8 *) OMM_TEXT_OPT_FPS_60;
-            newOpts->choices[2] = (const u8 *) OMM_TEXT_OPT_FPS_90;
-            newOpts->choices[3] = (const u8 *) OMM_TEXT_OPT_FPS_120;
-            newOpts->choices[4] = (const u8 *) OMM_TEXT_OPT_FPS_150;
-            newOpts->choices[5] = (const u8 *) OMM_TEXT_OPT_FPS_180;
-            newOpts->choices[6] = (const u8 *) OMM_TEXT_OPT_FPS_210;
-            newOpts->choices[7] = (const u8 *) OMM_TEXT_OPT_FPS_240;
-            newOpts->choices[8] = (const u8 *) OMM_TEXT_OPT_FPS_270;
-            newOpts->choices[9] = (const u8 *) OMM_TEXT_OPT_FPS_300;
-            newOpts->choices[10] = (const u8 *) OMM_TEXT_OPT_FPS_330;
-            newOpts->choices[11] = (const u8 *) OMM_TEXT_OPT_FPS_360;
+            struct Option *newOpts = omm_new(struct Option, subMenu->numOpts + 3);
+
+            // Frame rate
+            newOpts[0].type = OPT_CHOICE;
+            newOpts[0].choices = omm_new(u8 *, 4);
+            newOpts[0].numChoices = 4;
+            newOpts[0].uval = &gOmmFrameRate;
+#if OMM_GAME_IS_R96X
+            newOpts[0].label = (const u8 *) OMM_TEXT_OPT_FRAME_RATE;
+            newOpts[0].choices[OMM_FPS_30] = (const u8 *) OMM_TEXT_OPT_FRAME_RATE_30;
+            newOpts[0].choices[OMM_FPS_60] = (const u8 *) OMM_TEXT_OPT_FRAME_RATE_60;
+            newOpts[0].choices[OMM_FPS_AUTO] = (const u8 *) OMM_TEXT_OPT_FRAME_RATE_AUTO;
+            newOpts[0].choices[OMM_FPS_INF] = (const u8 *) OMM_TEXT_OPT_FRAME_RATE_UNLIMITED;
 #else
-            newOpts->label = omm_text_convert(OMM_TEXT_OPT_FPS, true);
-            newOpts->choices[0] = omm_text_convert(OMM_TEXT_OPT_FPS_30, true);
-            newOpts->choices[1] = omm_text_convert(OMM_TEXT_OPT_FPS_60, true);
-            newOpts->choices[2] = omm_text_convert(OMM_TEXT_OPT_FPS_90, true);
-            newOpts->choices[3] = omm_text_convert(OMM_TEXT_OPT_FPS_120, true);
-            newOpts->choices[4] = omm_text_convert(OMM_TEXT_OPT_FPS_150, true);
-            newOpts->choices[5] = omm_text_convert(OMM_TEXT_OPT_FPS_180, true);
-            newOpts->choices[6] = omm_text_convert(OMM_TEXT_OPT_FPS_210, true);
-            newOpts->choices[7] = omm_text_convert(OMM_TEXT_OPT_FPS_240, true);
-            newOpts->choices[8] = omm_text_convert(OMM_TEXT_OPT_FPS_270, true);
-            newOpts->choices[9] = omm_text_convert(OMM_TEXT_OPT_FPS_300, true);
-            newOpts->choices[10] = omm_text_convert(OMM_TEXT_OPT_FPS_330, true);
-            newOpts->choices[11] = omm_text_convert(OMM_TEXT_OPT_FPS_360, true);
+            newOpts[0].label = omm_text_convert(OMM_TEXT_OPT_FRAME_RATE, true);
+            newOpts[0].choices[OMM_FPS_30] = omm_text_convert(OMM_TEXT_OPT_FRAME_RATE_30, true);
+            newOpts[0].choices[OMM_FPS_60] = omm_text_convert(OMM_TEXT_OPT_FRAME_RATE_60, true);
+            newOpts[0].choices[OMM_FPS_AUTO] = omm_text_convert(OMM_TEXT_OPT_FRAME_RATE_AUTO, true);
+            newOpts[0].choices[OMM_FPS_INF] = omm_text_convert(OMM_TEXT_OPT_FRAME_RATE_UNLIMITED, true);
 #endif
+
+            // Show FPS
+            newOpts[1].type = OPT_TOGGLE;
+            newOpts[1].bval = &gOmmShowFPS;
+#if OMM_GAME_IS_R96X
+            newOpts[1].label = (const u8 *) OMM_TEXT_OPT_SHOW_FPS;
+#else
+            newOpts[1].label = omm_text_convert(OMM_TEXT_OPT_SHOW_FPS, true);
+#endif
+
+            // Other options
+            // Remove Apply button and 60 FPS option (Render96)
+            for (s32 j = 0, k = 2, n = subMenu->numOpts; j != n; ++j) {
+                struct Option *opt = subMenu->opts + j;
+
+                // Preload Textures
+                if (opt->type == OPT_CHOICE && opt->uval == &configFiltering) {
+                    newOpts[k].type = OPT_CHOICE;
+                    newOpts[k].choices = omm_new(u8 *, 3);
+                    newOpts[k].numChoices = 3;
+                    newOpts[k].uval = &gOmmPreloadTextures;
+#if OMM_GAME_IS_R96X
+                    newOpts[k].label = (const u8 *) OMM_TEXT_OPT_PRELOAD_TEXTURES;
+                    newOpts[k].choices[0] = (const u8 *) OMM_TEXT_OPT_PRELOAD_TEXTURES_NEVER;
+                    newOpts[k].choices[1] = (const u8 *) OMM_TEXT_OPT_PRELOAD_TEXTURES_FROM_RAM;
+                    newOpts[k].choices[2] = (const u8 *) OMM_TEXT_OPT_PRELOAD_TEXTURES_FROM_DISK;
+#else
+                    newOpts[k].label = omm_text_convert(OMM_TEXT_OPT_PRELOAD_TEXTURES, true);
+                    newOpts[k].choices[0] = omm_text_convert(OMM_TEXT_OPT_PRELOAD_TEXTURES_NEVER, true);
+                    newOpts[k].choices[1] = omm_text_convert(OMM_TEXT_OPT_PRELOAD_TEXTURES_FROM_RAM, true);
+                    newOpts[k].choices[2] = omm_text_convert(OMM_TEXT_OPT_PRELOAD_TEXTURES_FROM_DISK, true);
+#endif
+                    k++;
+                }
+
+                // Skip Apply button
+                if (opt->type == OPT_BUTTON && opt->actionFn == optvideo_apply) {
+                    subMenu->numOpts--;
+                    continue;
+                }
+
+#if OMM_GAME_IS_R96X
+                // Skip 60 FPS toggle (Render96)
+                if (opt->type == OPT_TOGGLE && opt->bval == &config60FPS) {
+                    subMenu->numOpts--;
+                    continue;
+                }
+#endif
+
+                // Texture filtering: remove three-point
+                if (opt->type == OPT_CHOICE && opt->uval == &configFiltering) {
+                    opt->numChoices = 2;
+                    configFiltering &= 1;
+                }
+
+                // Copy option
+                omm_copy(newOpts + k++, opt, sizeof(struct Option));
+            }
             subMenu->opts = newOpts;
-            subMenu->numOpts++;
+            subMenu->numOpts += 3;
         }
 
         // Custom Controls sub-menu
         if (menuMain.opts[i].type == OPT_SUBMENU && menuMain.opts[i].nextMenu == &menuControls) {
             head->type = OPT_SUBMENU;
-            head->label = gOmmOptControls;
-            head->nextMenu = (struct SubMenu *) (gOmmOptControls + 0x100);
+            head->label = gOmmOptControls.label;
+            head->nextMenu = (struct SubMenu *) gOmmOptControls.subMenu;
             head++;
             continue;
         }
 
-#if !OMM_GAME_IS_R96A
+#if !OMM_GAME_IS_R96X
         // Custom Cheats sub-menu
         if (menuMain.opts[i].type == OPT_SUBMENU && menuMain.opts[i].nextMenu == &menuCheats) {
             head->type = OPT_SUBMENU;
-            head->label = gOmmOptCheats;
-            head->nextMenu = (struct SubMenu *) (gOmmOptCheats + 0x100);
+            head->label = gOmmOptCheats.label;
+            head->nextMenu = (struct SubMenu *) gOmmOptCheats.subMenu;
             head++;
             continue;
         }
@@ -112,14 +176,14 @@ void omm_opt_init_main_menu() {
         // Return to main menu button
         if (menuMain.opts[i].type == OPT_BUTTON && menuMain.opts[i].actionFn == optmenu_act_exit) {
             head->type = OPT_BUTTON;
-            head->label = gOmmOptReturnToMainMenu;
+            head->label = gOmmOptReturnToMainMenu.label;
             head->actionFn = (void (*)(struct Option *, s32)) omm_opt_return_to_main_menu;
             head++;
         }
 #endif
 
         // Add options
-        OMM_MEMCPY(head++, &menuMain.opts[i], sizeof(struct Option));
+        omm_copy(head++, &menuMain.opts[i], sizeof(struct Option));
     }
 
     // Update main menu
@@ -166,15 +230,6 @@ static const char *omm_opt_int_to_string(const char *fmt, s32 x) {
 
 static void omm_opt_print_string(const void *p, bool convert, s32 x, s32 y, u32 color, bool alignLeft) {
     u8 *str64 = (convert ? omm_text_convert((const char *) p, false) : omm_text_copy((const u8 *) p, false));
-    omm_text_replace_char(str64, 0x52, 0xFF);
-    omm_text_replace_char(str64, 0x53, 0xFF);
-    omm_text_replace_char(str64, 0x54, 0x0A);
-    omm_text_replace_char(str64, 0x55, 0x0B);
-    omm_text_replace_char(str64, 0x56, 0x0C);
-    omm_text_replace_char(str64, 0x57, 0x23);
-    omm_text_replace_char(str64, 0x58, 0x1B);
-    omm_text_replace_char(str64, 0xE1, 0x9F);
-    omm_text_replace_char(str64, 0xE3, 0x9F);
     if (color & 0xFF) {
         x = (alignLeft ? GFX_DIMENSIONS_FROM_LEFT_EDGE(x) : GFX_DIMENSIONS_FROM_RIGHT_EDGE(x + omm_render_get_string_width(str64)));
         omm_render_string(x, y, ((color >> 24) & 0xFF), ((color >> 16) & 0xFF), ((color >> 8) & 0xFF), ((color >> 0) & 0xFF), str64, true);
@@ -201,7 +256,7 @@ static struct Option **omm_opt_get_current_options(struct SubMenu *subMenu) {
     for (s32 i = 0; i != OMM_OPT_LIST_SIZE; ++i) {
         s32 j = (i + 1 - OMM_OPT_COUNT);
         sOptionList[i] = OMM_OPT_REL(j);
-        if (sOptionList[i] != NULL) {
+        if (sOptionList[i]) {
             start = min_s(start, i);
             end = max_s(end, i);
         }
@@ -219,7 +274,7 @@ static struct Option **omm_opt_get_current_options(struct SubMenu *subMenu) {
 }
 
 static void omm_opt_draw_option(struct Option *opt, bool selected, s32 y) {
-    if (opt == NULL) {
+    if (!opt) {
         return;
     }
 
@@ -318,7 +373,7 @@ void optmenu_draw(void) {
 
         // Check if the A, R and Start buttons have binds
         // If not, reset binds to default
-        for_each_(u32 *, binds, 3, OMM_ARRAY_OF(u32 *) {
+        for_each_(u32 *, binds, 3, omm_static_array_of(u32 *) {
             gOmmControlsButtonA,
             gOmmControlsTriggerR,
             gOmmControlsButtonStart }) {
@@ -335,7 +390,7 @@ void optmenu_draw(void) {
         // still access to the 'Reset Controls' button
         for (s32 i = 0; i != MAX_BINDS; ++i) {
             if (gOmmControlsButtonA[i] != VK_INVALID) {
-                for_each_(u32*, binds, 19, OMM_ARRAY_OF(u32*) {
+                for_each_(u32*, binds, 19, omm_static_array_of(u32*) {
                     gOmmControlsButtonB,
                     gOmmControlsButtonX,
                     gOmmControlsButtonY,

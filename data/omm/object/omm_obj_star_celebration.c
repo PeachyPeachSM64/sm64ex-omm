@@ -6,7 +6,7 @@
 // Behavior
 //
 
-static void omm_bhv_star_celebration_update() {
+static void bhv_omm_star_celebration_update() {
     struct MarioState *m = gMarioState;
     struct Object *o = gCurrentObject;
     s32 frame = (m->actionTimer - 1);
@@ -55,13 +55,13 @@ static void omm_bhv_star_celebration_update() {
     }
 }
 
-const BehaviorScript omm_bhv_star_celebration[] = {
+const BehaviorScript bhvOmmStarCelebration[] = {
     OBJ_TYPE_LEVEL,
     0x11010001,
     0x10120000,
     0x10140000,
     0x08000000,
-    0x0C000000, (uintptr_t) omm_bhv_star_celebration_update,
+    0x0C000000, (uintptr_t) bhv_omm_star_celebration_update,
     0x09000000,
 };
 
@@ -70,7 +70,7 @@ const BehaviorScript omm_bhv_star_celebration[] = {
 //
 
 struct Object *omm_spawn_star_celebration(struct Object *o, f32 radius, f32 height) {
-    struct Object *star = spawn_object(o, MODEL_STAR, omm_bhv_star_celebration);
+    struct Object *star = spawn_object(o, MODEL_STAR, bhvOmmStarCelebration);
     star->activeFlags |= ACTIVE_FLAG_INITIATED_TIME_STOP;
     star->oHomeX = o->oPosX;
     star->oHomeY = o->oPosY;

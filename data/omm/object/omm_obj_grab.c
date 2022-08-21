@@ -7,11 +7,12 @@ static const u32 sOmmGrabActions[][2] = {
     { ACT_MOVE_PUNCHING, 5 },
     { ACT_DIVE, 0xFF },
     { ACT_DIVE_SLIDE, 0xFF },
-    { ACT_OMM_PEACH_ATTACK_GROUND, 3 }
+    { ACT_WATER_PUNCH, 0xFF },
+    { ACT_OMM_PEACH_ATTACK_GROUND, 3 },
 };
 
 OMM_INLINE bool is_grab_action(struct MarioState *m) {
-    for (s32 i = 0; i != OMM_ARRAY_SIZE(sOmmGrabActions); ++i) {
+    for (s32 i = 0; i != omm_static_array_length(sOmmGrabActions); ++i) {
         if (m->action == sOmmGrabActions[i][0] && m->actionArg <= sOmmGrabActions[i][1]) {
             return true;
         }
@@ -23,7 +24,7 @@ OMM_INLINE bool is_grab_action(struct MarioState *m) {
 // Behavior
 //
 
-static void omm_bhv_grab_update() {
+static void bhv_omm_grab_update() {
     struct MarioState *m = gMarioState;
     struct Object *o = gCurrentObject;
     if (OMM_MOVESET_CLASSIC || !m->marioObj || m->heldObj || !is_grab_action(m)) {
@@ -49,10 +50,10 @@ static void omm_bhv_grab_update() {
     }
 }
 
-const BehaviorScript omm_bhv_grab[] = {
+const BehaviorScript bhvOmmGrab[] = {
     OBJ_TYPE_DEFAULT, // Needs to be updated after other objects
     0x08000000,
-    0x0C000000, (uintptr_t) omm_bhv_grab_update,
+    0x0C000000, (uintptr_t) bhv_omm_grab_update,
     0x09000000
 };
 
@@ -62,8 +63,8 @@ const BehaviorScript omm_bhv_grab[] = {
 
 OMM_ROUTINE_UPDATE(omm_spawn_grab) {
     struct MarioState *m = gMarioState;
-    struct Object *o = obj_get_first_with_behavior(omm_bhv_grab);
+    struct Object *o = obj_get_first_with_behavior(bhvOmmGrab);
     if (!o && OMM_MOVESET_ODYSSEY && m->marioObj && !m->heldObj && is_grab_action(m)) {
-        spawn_object(m->marioObj, MODEL_NONE, omm_bhv_grab);
+        spawn_object(m->marioObj, MODEL_NONE, bhvOmmGrab);
     }
 }

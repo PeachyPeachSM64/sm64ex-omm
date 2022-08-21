@@ -2,13 +2,21 @@
 #include "data/omm/omm_includes.h"
 #undef OMM_ALL_HEADERS
 
-//
-// Actions
-//
+//////////
+// SM64 //
+//////////
 
 static s32 omm_act_punching(struct MarioState *m) {
     action_condition(OMM_MOVESET_ODYSSEY && OMM_PLAYER_IS_PEACH, ACT_OMM_PEACH_ATTACK_GROUND, ((m->prevAction == ACT_OMM_SPIN_GROUND) ? 4 : 0), RETURN_CANCEL);
     action_zb_pressed(OMM_MOVESET_ODYSSEY, ACT_OMM_ROLL, 0, RETURN_CANCEL);
+    return OMM_MARIO_ACTION_RESULT_CONTINUE;
+}
+
+static s32 omm_act_stomach_slide_stop(struct MarioState *m) {
+    if (!m->heldObj && !(m->input & INPUT_ABOVE_SLIDE)) {
+        action_a_pressed(OMM_MOVESET_ODYSSEY, m->forwardVel > 0 ? ACT_FORWARD_ROLLOUT : ACT_BACKWARD_ROLLOUT, 0, RETURN_CANCEL);
+        action_b_pressed(OMM_MOVESET_ODYSSEY, m->forwardVel > 0 ? ACT_FORWARD_ROLLOUT : ACT_BACKWARD_ROLLOUT, 0, RETURN_CANCEL);
+    }
     return OMM_MARIO_ACTION_RESULT_CONTINUE;
 }
 
@@ -19,7 +27,7 @@ static s32 omm_act_holding_bowser(struct MarioState *m) {
 
     // If A is down, B is pressed and Mario spins fast enough, try to locate the nearest bomb
     if (!m->actionState && aDown && bPressed && abs_s(m->angleVel[1]) >= 0xE00) {
-        f32 distTarget = LEVEL_BOUNDS;
+        f32 distTarget = LEVEL_BOUNDARY_MAX;
         sTargetBomb = NULL;
         for_each_object_with_behavior(obj, bhvBowserBomb) {
             f32 distToObj = obj_get_horizontal_distance(m->marioObj, obj);
@@ -51,7 +59,7 @@ static s32 omm_act_holding_bowser(struct MarioState *m) {
     return OMM_MARIO_ACTION_RESULT_CONTINUE;
 }
 
-#if OMM_GAME_IS_R96A
+#if OMM_GAME_IS_R96X
 static s32 omm_act_wario_pile_driver_land(struct MarioState *m) {
     action_cappy(1, ACT_OMM_CAPPY_THROW_GROUND, 0, RETURN_CANCEL);
     action_a_pressed(OMM_MOVESET_ODYSSEY, ACT_OMM_GROUND_POUND_JUMP, 0, RETURN_CANCEL);
@@ -59,9 +67,9 @@ static s32 omm_act_wario_pile_driver_land(struct MarioState *m) {
 }
 #endif
 
-//
-// Object
-//
+////////////
+// Object //
+////////////
 
 static bool omm_check_common_object_cancels(struct MarioState *m) {
 
@@ -78,7 +86,7 @@ static bool omm_check_common_object_cancels(struct MarioState *m) {
     }
 
     // Dead
-    if (m->health <= OMM_HEALTH_DEAD) {
+    if (omm_mario_is_dead(m)) {
         drop_and_set_mario_action(m, ACT_STANDING_DEATH, 0);
         return true;
     }
@@ -87,11 +95,11 @@ static bool omm_check_common_object_cancels(struct MarioState *m) {
 }
 
 s32 omm_mario_execute_object_action(struct MarioState *m) {
-    gOmmData->mario->wallSlide.jumped = false;
-    gOmmData->mario->peach.floated = false;
-    gOmmData->mario->cappy.bounced = false;
-    gOmmData->mario->state.airCombo = 0;
-    gOmmData->mario->midairSpin.counter = 0;
+    gOmmMario->wallSlide.jumped = false;
+    gOmmMario->peach.floated = false;
+    gOmmMario->cappy.bounced = false;
+    gOmmMario->state.airCombo = 0;
+    gOmmMario->midairSpin.counter = 0;
 
     // Cancels
     if (omm_check_common_object_cancels(m)) {
@@ -106,9 +114,19 @@ s32 omm_mario_execute_object_action(struct MarioState *m) {
 
     // Actions
     switch (m->action) {
+
+        // SM64
         case ACT_PUNCHING:                  return omm_act_punching(m);
+        case ACT_PICKING_UP:                return OMM_MARIO_ACTION_RESULT_CONTINUE;
+        case ACT_DIVE_PICKING_UP:           return OMM_MARIO_ACTION_RESULT_CONTINUE;
+        case ACT_STOMACH_SLIDE_STOP:        return omm_act_stomach_slide_stop(m);
+        case ACT_PLACING_DOWN:              return OMM_MARIO_ACTION_RESULT_CONTINUE;
+        case ACT_THROWING:                  return OMM_MARIO_ACTION_RESULT_CONTINUE;
+        case ACT_HEAVY_THROW:               return OMM_MARIO_ACTION_RESULT_CONTINUE;
+        case ACT_PICKING_UP_BOWSER:         return OMM_MARIO_ACTION_RESULT_CONTINUE;
         case ACT_HOLDING_BOWSER:            return omm_act_holding_bowser(m);
-#if OMM_GAME_IS_R96A
+        case ACT_RELEASING_BOWSER:          return OMM_MARIO_ACTION_RESULT_CONTINUE;
+#if OMM_GAME_IS_R96X
         case ACT_WARIO_PILE_DRIVER_LAND:    return omm_act_wario_pile_driver_land(m);
 #endif
     }

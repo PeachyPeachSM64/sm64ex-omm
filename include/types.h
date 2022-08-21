@@ -139,6 +139,7 @@ struct GraphNodeObject
     Vec3s_ts _angle;
     Vec3f_ts _pos;
     Vec3f_ts _scale;
+    Vec3f_ts _objPos;
     Vec3f_ts _shadowPos;
     f32_ts _shadowScale;
     Mat4_ts _throwMatrix;

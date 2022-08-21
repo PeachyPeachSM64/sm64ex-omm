@@ -15,7 +15,14 @@
 #define OMM_MARIO_SPIN_DURATION                     (30)
 #define OMM_MARIO_SPIN_BUFFER_DURATION              (6)
 #define OMM_MARIO_SPIN_MIN_HIT_CHECKPOINTS          (5)
-#define OMM_MARIO_METAL_WATER_MAX_WALKING_SPEED		(24.f)
+#define OMM_MARIO_SPIN_JUMP_DECEL_INC               (10)
+#define OMM_MARIO_SPIN_JUMP_DECEL_DEC               (1)
+#define OMM_MARIO_SPIN_JUMP_DECEL_MAX               (40)
+#define OMM_MARIO_SHELL_RIDE_MIN_SPEED              (24.f)
+#define OMM_MARIO_SHELL_RIDE_BONK_SPEED             (36.f)
+#define OMM_MARIO_SHELL_RIDE_MAX_SPEED              (72.f)
+#define OMM_MARIO_WING_FLYING_MAX_SPEED             (56.f)
+#define OMM_MARIO_METAL_WATER_WALKING_MAX_SPEED		(24.f)
 
 //
 // Attacks
@@ -41,14 +48,14 @@
 
 #define OMM_HEALTH_CLASSIC_MAX                      (0x880)
 #define OMM_HEALTH_CLASSIC_DEAD                     (0xFF)
-#define OMM_HEALTH_CLASSIC_1_HP                     (0x180)
+#define OMM_HEALTH_CLASSIC_1_SEGMENT                (0x180)
 #define OMM_HEALTH_CLASSIC_NUM_SEGMENTS             (8)
 #define OMM_HEALTH_CLASSIC_PER_SEGMENT              ((OMM_HEALTH_CLASSIC_MAX - OMM_HEALTH_CLASSIC_DEAD) / OMM_HEALTH_CLASSIC_NUM_SEGMENTS)
 
 #define OMM_HEALTH_ODYSSEY_MAX                      (0x87F)
 #define OMM_HEALTH_ODYSSEY_DEAD                     (0xFF)
-#define OMM_HEALTH_ODYSSEY_1_HP                     (OMM_HEALTH_ODYSSEY_DEAD + OMM_HEALTH_ODYSSEY_PER_SEGMENT)
-#define OMM_HEALTH_ODYSSEY_3_HP                     (OMM_HEALTH_ODYSSEY_DEAD + (OMM_HEALTH_ODYSSEY_PER_SEGMENT * OMM_HEALTH_ODYSSEY_NUM_SEGMENTS_HALF))
+#define OMM_HEALTH_ODYSSEY_1_SEGMENT                (OMM_HEALTH_ODYSSEY_DEAD + OMM_HEALTH_ODYSSEY_PER_SEGMENT)
+#define OMM_HEALTH_ODYSSEY_3_SEGMENTS               (OMM_HEALTH_ODYSSEY_DEAD + (OMM_HEALTH_ODYSSEY_PER_SEGMENT * OMM_HEALTH_ODYSSEY_NUM_SEGMENTS_HALF))
 #define OMM_HEALTH_ODYSSEY_NUM_SEGMENTS             (6)
 #define OMM_HEALTH_ODYSSEY_NUM_SEGMENTS_HALF        (OMM_HEALTH_ODYSSEY_NUM_SEGMENTS / 2)
 #define OMM_HEALTH_ODYSSEY_NUM_TICKS_PER_SEGMENT    (0xA)
@@ -56,9 +63,13 @@
 #define OMM_HEALTH_ODYSSEY_PER_TICK                 (OMM_HEALTH_ODYSSEY_PER_SEGMENT / OMM_HEALTH_ODYSSEY_NUM_TICKS_PER_SEGMENT)
 #define OMM_HEALTH_ODYSSEY_NUM_COINS_PER_HEAL       (10)
 
+#define OMM_HEALTH_ODYSSEY_LIFE_UP_HEAL_END         (OMM_HEALTH_ODYSSEY_NUM_TICKS_PER_SEGMENT * 3)
+#define OMM_HEALTH_ODYSSEY_LIFE_UP_POS_END          (OMM_HEALTH_ODYSSEY_LIFE_UP_HEAL_END + 15)
+#define OMM_HEALTH_ODYSSEY_LIFE_UP_CUTSCENE_END     (OMM_HEALTH_ODYSSEY_LIFE_UP_POS_END + 15)
+
 #define OMM_HEALTH_MAX                              (OMM_MOVESET_ODYSSEY ? OMM_HEALTH_ODYSSEY_MAX : OMM_HEALTH_CLASSIC_MAX)
 #define OMM_HEALTH_DEAD                             (OMM_MOVESET_ODYSSEY ? OMM_HEALTH_ODYSSEY_DEAD : OMM_HEALTH_CLASSIC_DEAD)
-#define OMM_HEALTH_1_HP                             (OMM_MOVESET_ODYSSEY ? OMM_HEALTH_ODYSSEY_1_HP : OMM_HEALTH_CLASSIC_1_HP)
+#define OMM_HEALTH_1_SEGMENT                        (OMM_MOVESET_ODYSSEY ? OMM_HEALTH_ODYSSEY_1_SEGMENT : OMM_HEALTH_CLASSIC_1_SEGMENT)
 #define OMM_HEALTH_PER_SEGMENT                      (OMM_MOVESET_ODYSSEY ? OMM_HEALTH_ODYSSEY_PER_SEGMENT : OMM_HEALTH_CLASSIC_PER_SEGMENT)
 
 //
@@ -113,7 +124,7 @@
 if (m->actionState == 0) { \
     __VA_ARGS__ \
     mario_set_forward_vel(m, forwardVel); \
-    m->vel[1] = upwardsVel * omm_player_get_selected_jump_multiplier(); \
+    m->vel[1] = upwardsVel * omm_player_physics_get_selected_jump(); \
     m->particleFlags |= particles; \
     obj_play_sound(m->marioObj, soundBits); \
     m->actionState = 1; \
@@ -176,20 +187,20 @@ if (BUTTONS_PRESSED(Z_TRIG) && (cond)) { \
 if (BUTTONS_PRESSED(A_BUTTON) && (m->vel[1] <= 0.f) && (cond)) { \
     if (OMM_PLAYER_IS_PEACH) { \
         action_set(omm_mario_set_action, ACT_OMM_PEACH_FLOAT, actionArg, 0, result, __VA_ARGS__); \
-    } else if (gOmmData->mario->midairSpin.timer == 0) { \
+    } else if (gOmmMario->midairSpin.timer == 0) { \
         action_set(omm_mario_set_action, action, actionArg, A_BUTTON, result, __VA_ARGS__); \
     } \
 }
 
 // Trigger an action change if an air spin is performed
 #define action_air_spin(cond, action, actionArg, result, ...) \
-if ((gOmmData->mario->spin.timer != 0) && (m->vel[1] <= 12.f) && (cond)) { \
+if ((gOmmMario->spin.timer != 0) && (m->vel[1] <= 12.f) && (cond)) { \
     action_set(omm_mario_set_action, action, actionArg, 0, result, __VA_ARGS__); \
 }
 
 // Trigger an action change if a spin is performed
 #define action_spin(cond, action, actionArg, result, ...) \
-if ((gOmmData->mario->spin.timer != 0) && (cond)) { \
+if ((gOmmMario->spin.timer != 0) && (cond)) { \
     action_set(omm_mario_set_action, action, actionArg, 0, result, __VA_ARGS__); \
 }
 
@@ -232,7 +243,7 @@ if ((m->input & INPUT_NONZERO_ANALOG) && (cond)) { \
 //
 
 #define ACT_OMM_CAPPY_BOUNCE                        (0x00 | ACT_GROUP_AIRBORNE | ACT_FLAG_OMM_ACTION | ACT_FLAG_AIR | ACT_FLAG_ALLOW_VERTICAL_WIND_ACTION)
-#define ACT_OMM_GROUND_CAPPY_BOUNCE                 (0x01 | ACT_GROUP_AIRBORNE | ACT_FLAG_OMM_ACTION | ACT_FLAG_AIR | ACT_FLAG_ALLOW_VERTICAL_WIND_ACTION)
+#define ACT_OMM_CAPPY_VAULT                         (0x01 | ACT_GROUP_AIRBORNE | ACT_FLAG_OMM_ACTION | ACT_FLAG_AIR | ACT_FLAG_ALLOW_VERTICAL_WIND_ACTION)
 #define ACT_OMM_GROUND_POUND_JUMP                   (0x02 | ACT_GROUP_AIRBORNE | ACT_FLAG_OMM_ACTION | ACT_FLAG_AIR | ACT_FLAG_ALLOW_VERTICAL_WIND_ACTION)
 #define ACT_OMM_LEAVE_OBJECT_JUMP                   (0x03 | ACT_GROUP_AIRBORNE | ACT_FLAG_OMM_ACTION | ACT_FLAG_AIR | ACT_FLAG_ALLOW_VERTICAL_WIND_ACTION)
 #define ACT_OMM_WALL_SLIDE                          (0x04 | ACT_GROUP_AIRBORNE | ACT_FLAG_OMM_ACTION | ACT_FLAG_AIR)
@@ -324,9 +335,15 @@ if ((m->input & INPUT_NONZERO_ANALOG) && (cond)) { \
 #define ACT_OMM_METAL_WATER_SPIN_JUMP               (0x26 | ACT_GROUP_METAL_WATER | ACT_FLAG_OMM_ACTION | ACT_FLAG_METAL_WATER | ACT_FLAG_AIR | ACT_FLAG_ALLOW_VERTICAL_WIND_ACTION)
 #define ACT_OMM_METAL_WATER_SPIN_POUND              (0x27 | ACT_GROUP_METAL_WATER | ACT_FLAG_OMM_ACTION | ACT_FLAG_METAL_WATER | ACT_FLAG_AIR | ACT_FLAG_ATTACKING)
 #define ACT_OMM_METAL_WATER_SPIN_POUND_LAND         (0x28 | ACT_GROUP_METAL_WATER | ACT_FLAG_OMM_ACTION | ACT_FLAG_METAL_WATER | ACT_FLAG_STATIONARY)
-#if OMM_GAME_IS_R96A
-#define ACT_OMM_METAL_WATER_WARIO_CHARGE            (0x29 | ACT_GROUP_METAL_WATER | ACT_FLAG_OMM_ACTION | ACT_FLAG_METAL_WATER | ACT_FLAG_MOVING | ACT_FLAG_ATTACKING | ACT_FLAG_INVULNERABLE)
-#define ACT_OMM_METAL_WATER_WARIO_TRIPLE_JUMP       (0x2A | ACT_GROUP_METAL_WATER | ACT_FLAG_OMM_ACTION | ACT_FLAG_METAL_WATER | ACT_FLAG_AIR)
+#define ACT_OMM_METAL_WATER_HOLD_IDLE               (0x29 | ACT_GROUP_METAL_WATER | ACT_FLAG_OMM_ACTION | ACT_FLAG_METAL_WATER | ACT_FLAG_IDLE | ACT_FLAG_PAUSE_EXIT)
+#define ACT_OMM_METAL_WATER_HOLD_WALKING            (0x2A | ACT_GROUP_METAL_WATER | ACT_FLAG_OMM_ACTION | ACT_FLAG_METAL_WATER | ACT_FLAG_MOVING)
+#define ACT_OMM_METAL_WATER_HOLD_JUMP               (0x2B | ACT_GROUP_METAL_WATER | ACT_FLAG_OMM_ACTION | ACT_FLAG_METAL_WATER | ACT_FLAG_AIR)
+#define ACT_OMM_METAL_WATER_HOLD_JUMP_LAND          (0x2C | ACT_GROUP_METAL_WATER | ACT_FLAG_OMM_ACTION | ACT_FLAG_METAL_WATER | ACT_FLAG_PAUSE_EXIT)
+#define ACT_OMM_METAL_WATER_HOLD_FREEFALL           (0x2D | ACT_GROUP_METAL_WATER | ACT_FLAG_OMM_ACTION | ACT_FLAG_METAL_WATER | ACT_FLAG_AIR)
+#define ACT_OMM_METAL_WATER_HOLD_FREEFALL_LAND      (0x2E | ACT_GROUP_METAL_WATER | ACT_FLAG_OMM_ACTION | ACT_FLAG_METAL_WATER | ACT_FLAG_PAUSE_EXIT)
+#if OMM_GAME_IS_R96X
+#define ACT_OMM_METAL_WATER_WARIO_CHARGE            (0x2F | ACT_GROUP_METAL_WATER | ACT_FLAG_OMM_ACTION | ACT_FLAG_METAL_WATER | ACT_FLAG_MOVING | ACT_FLAG_ATTACKING | ACT_FLAG_INVULNERABLE)
+#define ACT_OMM_METAL_WATER_WARIO_TRIPLE_JUMP       (0x30 | ACT_GROUP_METAL_WATER | ACT_FLAG_OMM_ACTION | ACT_FLAG_METAL_WATER | ACT_FLAG_AIR)
 #endif
 
 //

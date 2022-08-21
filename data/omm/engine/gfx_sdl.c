@@ -121,6 +121,7 @@ static void gfx_sdl_init(const char *title) {
     SDL_Init(SDL_INIT_VIDEO);
     SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+    SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
 #ifdef USE_GLES
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);  // These attributes allow for hardware acceleration on RPis.
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
@@ -228,17 +229,6 @@ static void gfx_sdl_swap_buffers_begin(void) {
 }
 
 static void gfx_sdl_swap_buffers_end(void) {
-    static f64 prev = 0;
-    f64 curr = SDL_GetPerformanceCounter();
-    f64 freq = SDL_GetPerformanceFrequency();
-    f64 rate = freq / (30.0 * gNumInterpolatedFrames);
-    f64 diff = curr - prev;
-    if (diff < rate) {
-        usleep((1000000.0 * (rate - diff)) / freq);
-        prev += rate;
-    } else {
-        prev = curr;
-    }
 }
 
 static double gfx_sdl_get_time(void) {

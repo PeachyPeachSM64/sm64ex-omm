@@ -37,6 +37,34 @@ static void omm_mario_destroy_or_push_away_object(struct MarioState *m, struct O
     }
 }
 
+void push_mario_out_of_object(struct MarioState *m, struct Object *o, f32 padding) {
+    if (m->action != ACT_GETTING_BLOWN &&
+        m->action != ACT_THROWN_FORWARD &&
+        m->action != ACT_THROWN_BACKWARD) {
+        f32 dx = m->pos[0] - o->oPosX;
+        f32 dz = m->pos[2] - o->oPosZ;
+        f32 dv = sqrtf(dx * dx + dz * dz);
+        f32 dm = o->hitboxRadius + m->marioObj->hitboxRadius + padding;
+        if (dv < dm) {
+            s16 pushAngle = (dv ? atan2s(dz, dx) : m->faceAngle[1]);
+            f32 mx = o->oPosX + dm * sins(pushAngle);
+            f32 my = m->pos[1];
+            f32 mz = o->oPosZ + dm * coss(pushAngle);
+            f32_find_wall_collision(&mx, &my, &mz, 60.f, 50.f);
+            struct Surface *floor = NULL;
+            f32 fy = find_floor(mx, my, mz, &floor);
+            if (floor) {
+                vec3f_set(m->pos, mx, max_f(my, fy), mz);
+                m->floor = floor;
+                m->floorHeight = fy;
+                if (my > fy + 100.f) {
+                    m->input |= INPUT_OFF_FLOOR;
+                }
+            }
+        }
+    }
+}
+
 //
 // Preprocess interactions
 // Interactions types that are preprocessed here are not processed in mario_process_interactions
@@ -108,25 +136,25 @@ u32 determine_interaction(struct MarioState *m, struct Object *o) {
 }
 
 bool omm_mario_interact_coin(struct MarioState *m, struct Object *o) {
-    if (o->respawnInfoType == OMM_OBJECT_LOST_COIN) omm_ssc_inc(OMM_SSC_C_COIN_L, 1);
-    else if (o->oDamageOrCoinValue == 1) omm_ssc_inc(OMM_SSC_C_COIN_Y, 1);
-    else if (o->oDamageOrCoinValue == 2) omm_ssc_inc(OMM_SSC_C_COIN_R, 1);
-    else if (o->oDamageOrCoinValue == 5) omm_ssc_inc(OMM_SSC_C_COIN_B, 1);
+    if (o->respawnInfoType == OMM_OBJECT_LOST_COIN) gOmmSparklyContext->coinsLost++;
+    else if (o->oDamageOrCoinValue == 1) gOmmSparklyContext->coinsYellow++;
+    else if (o->oDamageOrCoinValue == 2) gOmmSparklyContext->coinsRed++;
+    else if (o->oDamageOrCoinValue == 5) gOmmSparklyContext->coinsBlue++;
     interact_coin(m, INTERACT_COIN, o);
     return true;
 }
 
 bool omm_mario_interact_star_or_key(struct MarioState *m, struct Object *o) {
-    if (m->health > OMM_HEALTH_DEAD && o != NULL) {
+    if (!omm_mario_is_dead(m) && o) {
 
         // Sparkly star
-        if (omm_ssi_star(m, o)) {
+        if (omm_sparkly_interact_star(m, o)) {
             return true;
         }
         
         // Collect star or key
-        omm_ssi_grand_star(m, o);
-        save_file_collect_star_or_key(m->numCoins, (o->oBehParams >> 24) & 0x1F);
+        omm_sparkly_interact_grand_star(m, o);
+        save_file_collect_star_or_key(m->numCoins, (o->oBhvArgs >> 24) & 0x1F);
         m->numStars = save_file_get_total_star_count(gCurrSaveFileNum - 1, COURSE_MIN - 1, COURSE_MAX - 1);
 
         // Update Mario
@@ -177,7 +205,7 @@ bool omm_mario_interact_star_or_key(struct MarioState *m, struct Object *o) {
 }
 
 bool omm_mario_interact_warp(struct MarioState *m, struct Object *o) {
-#if OMM_GAME_IS_R96A
+#if OMM_GAME_IS_R96X
     if (!(o->oInteractionSubtype & INT_SUBTYPE_FADING_WARP) && (m->action != ACT_EMERGE_FROM_PIPE) && (o->oObjectID == 1)) {
         o->oInteractStatus = INT_STATUS_INTERACTED;
         m->interactObj = o;
@@ -188,7 +216,7 @@ bool omm_mario_interact_warp(struct MarioState *m, struct Object *o) {
         
         // Left to right: Luigi, Mario, Wario
         s32 target = OMM_PLAYER_MARIO;
-        switch (o->oBehParams) {
+        switch (o->oBhvArgs) {
             case 0: target = OMM_PLAYER_LUIGI; break;
             case 1: target = OMM_PLAYER_MARIO; break;
             case 2: target = OMM_PLAYER_WARIO; break;
@@ -236,8 +264,8 @@ static bool omm_mario_interact_flame(struct MarioState *m, struct Object *o) {
         obj_mark_for_deletion(o);
         return true;
     }
-#if OMM_GAME_IS_R96A
-    if (OMM_SSM_IS_ENABLED && omm_ssd_is_bowser_4() && m->action == ACT_WARIO_CHARGE) {
+#if OMM_GAME_IS_R96X
+    if (OMM_SPARKLY_MODE_IS_ENABLED && omm_sparkly_is_bowser_4_battle() && m->action == ACT_WARIO_CHARGE) {
         o->oInteractStatus = INT_STATUS_INTERACTED;
         m->interactObj = o;
         m->marioObj->oMarioBurnTimer = 0;
@@ -323,8 +351,8 @@ bool omm_mario_interact_cap(struct MarioState *m, struct Object *o) {
     return false;
 }
 
-static bool omm_mario_interact_pole(UNUSED struct MarioState *m, UNUSED struct Object *o) {
-    return (gOmmData->mario->state.poleTimer-- > 0);
+static bool omm_mario_interact_pole(struct MarioState *m, struct Object *o) {
+    return (m->action & ACT_FLAG_RIDING_SHELL) || o == gOmmMario->state.poleObject;
 }
 
 static bool omm_mario_interact_grabbable(struct MarioState *m, struct Object *o) {
@@ -354,6 +382,13 @@ static const struct OmmInteractionHandler sOmmInteractionHandlers[] = {
 static const s32 sOmmInteractionHandlerCount = sizeof(sOmmInteractionHandlers) / sizeof(sOmmInteractionHandlers[0]);
 
 void omm_mario_preprocess_interactions(struct MarioState *m) {
+
+    // Unset pole object if no pole interaction
+    if (!(m->collidedObjInteractTypes & INTERACT_POLE)) {
+        gOmmData->mario->state.poleObject = NULL;
+    }
+
+    // Preprocess interactions
     if (!(m->action & ACT_FLAG_INTANGIBLE)) {
         for (s32 i = 0; i < sOmmInteractionHandlerCount; i++) {
             u32 interactType = sOmmInteractionHandlers[i].interactType;

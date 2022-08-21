@@ -1,0 +1,8 @@
+OMM_PALETTE_      (PEACH_TIARA,       "peach/omm_texture_peach_tiara")
+OMM_PALETTE_LEVEL_(LEVELS_JRB,        "levels/jrb")
+OMM_PALETTE_LEVEL_(LEVELS_BITS,       "levels/bits")
+OMM_PALETTE_LEVEL_(LEVELS_SA,         "levels/sa")
+OMM_PALETTE_LEVEL_(TEXTURES_WATER,    "textures/water")
+OMM_PALETTE_LEVEL_(TEXTURES_SKY,      "textures/sky")
+OMM_PALETTE_LEVEL_(TEXTURES_INSIDE,   "textures/inside")
+OMM_PALETTE_LEVEL_(TEXTURES_SKYBOX,   "textures/skybox")

@@ -46,11 +46,11 @@ extern const OmmPerryModifiers gOmmPerryModifiers[5];
 #define OMM_PERRY_CHARGE_END                    (60)
 #define OMM_PERRY_CHARGED                       (gOmmPerryCharge > OMM_PERRY_CHARGE_FULL)
 #define OMM_PERRY_CHARGING                      (gMarioState->action == ACT_OMM_PEACH_PERRY_CHARGE_GROUND || gMarioState->action == ACT_OMM_PEACH_PERRY_CHARGE_AIR)
-#define gOmmPerryCharge                         gOmmData->mario->peach.perryCharge
-#define gOmmPerryBlast                          gOmmData->mario->peach.perryBlast
+#define gOmmPerryCharge                         gOmmPeach->perryCharge
+#define gOmmPerryBlast                          gOmmPeach->perryBlast
 
-struct Object *omm_peach_get_perry_object();
-s32 omm_peach_get_perry_type(struct MarioState *m);
-void omm_peach_update_perry_graphics(struct MarioState *m, Mat4 transform, Vec3f translation, Vec3s rotation);
+struct Object *omm_perry_get_object();
+s32 omm_perry_get_type(struct MarioState *m);
+void omm_perry_update_graphics(struct MarioState *m, Mat4 transform, Vec3f translation, Vec3s rotation);
 
 #endif

@@ -14,7 +14,7 @@ const GeoLayout omm_geo_blargg_fire_ball[] = {
 // Behavior (fire drop)
 //
 
-static void omm_bhv_blargg_fire_drop_update() {
+static void bhv_omm_blargg_fire_drop_update() {
     struct Object *o = gCurrentObject;
     if (o->oTimer >= 90) {
         obj_mark_for_deletion(o);
@@ -38,11 +38,11 @@ static void omm_bhv_blargg_fire_drop_update() {
     o->oAnimState++;
 }
 
-const BehaviorScript omm_bhv_blargg_fire_drop[] = {
+const BehaviorScript bhvOmmBlarggFireDrop[] = {
     OBJ_TYPE_SPECIAL,
     0x11010001,
     0x08000000,
-    0x0C000000, (uintptr_t) omm_bhv_blargg_fire_drop_update,
+    0x0C000000, (uintptr_t) bhv_omm_blargg_fire_drop_update,
     0x09000000,
 };
 
@@ -50,7 +50,7 @@ const BehaviorScript omm_bhv_blargg_fire_drop[] = {
 // Behavior (fire trail)
 //
 
-static void omm_bhv_blargg_fire_trail_update() {
+static void bhv_omm_blargg_fire_trail_update() {
     struct Object *o = gCurrentObject;
     if (o->oTimer >= 15) {
         obj_mark_for_deletion(o);
@@ -63,11 +63,11 @@ static void omm_bhv_blargg_fire_trail_update() {
     o->oAnimState++;
 }
 
-const BehaviorScript omm_bhv_blargg_fire_trail[] = {
+const BehaviorScript bhvOmmBlarggFireTrail[] = {
     OBJ_TYPE_UNIMPORTANT,
     0x11010001,
     0x08000000,
-    0x0C000000, (uintptr_t) omm_bhv_blargg_fire_trail_update,
+    0x0C000000, (uintptr_t) bhv_omm_blargg_fire_trail_update,
     0x09000000,
 };
 
@@ -75,9 +75,9 @@ const BehaviorScript omm_bhv_blargg_fire_trail[] = {
 // Behavior (fire ball)
 //
 
-static void omm_bhv_blargg_fire_ball_delete(struct Object *o) {
+static void bhv_omm_blargg_fire_ball_delete(struct Object *o) {
     for (s32 i = 0; i != 10; ++i) {
-        struct Object *drop = obj_spawn_from_geo(o, omm_geo_fire_smoke_red, omm_bhv_blargg_fire_drop);
+        struct Object *drop = obj_spawn_from_geo(o, omm_geo_fire_smoke_red, bhvOmmBlarggFireDrop);
         s16 angle = (s16) random_u16();
         f32 velXZ = lerp_f(random_float(), 0.f, 8.f);
         f32 velY = lerp_f(random_float(), 30.f, 40.f);
@@ -90,14 +90,14 @@ static void omm_bhv_blargg_fire_ball_delete(struct Object *o) {
     obj_mark_for_deletion(o);
 }
 
-static void omm_bhv_blargg_fire_ball_update() {
+static void bhv_omm_blargg_fire_ball_update() {
     struct Object *o = gCurrentObject;
     perform_object_step(o, OBJ_STEP_UPDATE_HOME);
     o->oVelY -= 1.f;
 
     // Collided with a floor
     if (o->oDistToFloor <= 0.f) {
-        omm_bhv_blargg_fire_ball_delete(o);
+        bhv_omm_blargg_fire_ball_delete(o);
         return;
     }
 
@@ -109,17 +109,17 @@ static void omm_bhv_blargg_fire_ball_update() {
     o->oAnimState++;
 
     // Spawn fire trail
-    struct Object *trail = obj_spawn_from_geo(o, omm_geo_fire_smoke_red, omm_bhv_blargg_fire_trail);
+    struct Object *trail = obj_spawn_from_geo(o, omm_geo_fire_smoke_red, bhvOmmBlarggFireTrail);
     obj_scale(trail, o->oScaleX);
     trail->oAction = (s32) (100.f * trail->oScaleX);
     trail->oAnimState = (random_u16() & 7);
 }
 
-const BehaviorScript omm_bhv_blargg_fire_ball[] = {
+const BehaviorScript bhvOmmBlarggFireBall[] = {
     OBJ_TYPE_SPECIAL,
     0x11010001,
     0x08000000,
-    0x0C000000, (uintptr_t) omm_bhv_blargg_fire_ball_update,
+    0x0C000000, (uintptr_t) bhv_omm_blargg_fire_ball_update,
     0x09000000,
 };
 
@@ -128,7 +128,7 @@ const BehaviorScript omm_bhv_blargg_fire_ball[] = {
 //
 
 struct Object *omm_spawn_blargg_fire_ball(struct Object *o) {
-    struct Object *fireball = obj_spawn_from_geo(o, omm_geo_blargg_fire_ball, omm_bhv_blargg_fire_ball);
+    struct Object *fireball = obj_spawn_from_geo(o, omm_geo_blargg_fire_ball, bhvOmmBlarggFireBall);
     f32 dx = 88.f * o->oScaleX * sins(o->oFaceAngleYaw);
     f32 dy = 96.f * o->oScaleY;
     f32 dz = 88.f * o->oScaleX * coss(o->oFaceAngleYaw);

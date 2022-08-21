@@ -1,9 +1,7 @@
 #ifndef OMM_OBJECT_H
 #define OMM_OBJECT_H
 
-#include "data/omm/omm_includes.h"
-#include "omm_object_data.h"
-#include "omm_object_fields.h"
+#include "types.h"
 
 //
 // Flags
@@ -21,11 +19,11 @@ extern s32 gOmmCappyObjectLists[];
 extern s32 gOmmInteractionObjectLists[];
 
 #define for_each_(__type__, __item__, __size__, ...)            s32 index_##__item__ = 0; for (__type__ *__item__ = __VA_ARGS__; index_##__item__ != __size__; ++index_##__item__, ++__item__)
-#define for_each_until_null(__type__, __item__, ...)            for (__type__ *__item__ = __VA_ARGS__; *__item__ != NULL; ++__item__)
-#define for_each_object_in_list(__obj__, __list__)              for (struct Object* __obj__ = obj_get_first(__list__); __obj__ != NULL; __obj__ = obj_get_next(__obj__, __list__))
-#define for_each_object_in_cappy_lists(__obj__)                 for (s32 *__list__ = gOmmCappyObjectLists; *__list__ != -1; ++__list__) for (struct Object* __obj__ = obj_get_first(*__list__); __obj__ != NULL; __obj__ = obj_get_next(__obj__, *__list__))
-#define for_each_object_in_interaction_lists(__obj__)           for (s32 *__list__ = gOmmInteractionObjectLists; *__list__ != -1; ++__list__) for (struct Object* __obj__ = obj_get_first(*__list__); __obj__ != NULL; __obj__ = obj_get_next(__obj__, *__list__))
-#define for_each_object_with_behavior(__obj__, __behavior__)    for (struct Object* __obj__ = obj_get_first_with_behavior(__behavior__); __obj__ != NULL; __obj__ = obj_get_next_with_behavior(__obj__, __behavior__))
+#define for_each_until_null(__type__, __item__, ...)            for (__type__ *__item__ = __VA_ARGS__; *__item__; ++__item__)
+#define for_each_object_in_list(__obj__, __list__)              for (struct Object* __obj__ = obj_get_first(__list__); __obj__; __obj__ = obj_get_next(__obj__, __list__))
+#define for_each_object_in_cappy_lists(__obj__)                 for (s32 *__list__ = gOmmCappyObjectLists; *__list__ != -1; ++__list__) for (struct Object* __obj__ = obj_get_first(*__list__); __obj__; __obj__ = obj_get_next(__obj__, *__list__))
+#define for_each_object_in_interaction_lists(__obj__)           for (s32 *__list__ = gOmmInteractionObjectLists; *__list__ != -1; ++__list__) for (struct Object* __obj__ = obj_get_first(*__list__); __obj__; __obj__ = obj_get_next(__obj__, *__list__))
+#define for_each_object_with_behavior(__obj__, __behavior__)    for (struct Object* __obj__ = obj_get_first_with_behavior(__behavior__); __obj__; __obj__ = obj_get_next_with_behavior(__obj__, __behavior__))
 
 //
 // Objects
@@ -40,6 +38,7 @@ struct Object *obj_get_first_with_behavior_and_field_s32(const BehaviorScript *b
 struct Object *obj_get_first_with_behavior_and_field_f32(const BehaviorScript *behavior, s32 fieldIndex, f32 value);
 struct Object *obj_get_nearest_with_behavior(struct Object *o, const BehaviorScript *behavior);
 struct Object *obj_get_nearest_with_behavior_and_radius(struct Object *o, const BehaviorScript *behavior, f32 distMax);
+s32            obj_get_slot_index(struct Object *o);
 s32            obj_get_list_index(struct Object *o);
 s32            obj_get_count_with_behavior(const BehaviorScript *behavior);
 s32            obj_get_count_with_behavior_and_field_s32(const BehaviorScript *behavior, s32 fieldIndex, s32 value);
@@ -72,7 +71,7 @@ void obj_set_forward_vel(struct Object *o, s16 yaw, f32 mag, f32 velMax);
 void obj_set_forward_and_y_vel(struct Object *o, f32 forwardVel, f32 yVel);
 void obj_set_angle_vel(struct Object *o, s16 pitch, s16 yaw, s16 roll);
 void obj_set_scale(struct Object *o, f32 x, f32 y, f32 z);
-void obj_safe_step(struct Object *o, s32 update);
+void obj_safe_step(struct Object *o, bool afterUpdate);
 void obj_update_blink_state(struct Object *o, s32 *timer, s16 base, s16 range, s16 length);
 void obj_random_blink(struct Object *o, s32 *timer);
 void obj_make_step_sound_and_particle(struct Object *o, f32 *dist, f32 distMin, f32 distInc, s32 soundBits, u32 particles);
@@ -121,6 +120,7 @@ void obj_anim_play_with_sound(struct Object *o, s32 animID, f32 animAccel, s32 s
 void obj_anim_loop(struct Object *o);
 void obj_anim_extend(struct Object *o);
 void obj_anim_advance(struct Object *o, f32 frames);
+void obj_anim_set_speed(struct Object *o, f32 animAccel);
 void obj_anim_set_frame(struct Object *o, f32 frame);
 void obj_anim_clamp_frame(struct Object *o, f32 frameMin, f32 frameMax);
 bool obj_anim_is_past_frame(struct Object *o, f32 frame);
@@ -182,6 +182,7 @@ OmmArray omm_obj_get_goomba_behaviors();
 OmmArray omm_obj_get_player_behaviors();
 OmmArray omm_obj_get_bowser_behaviors();
 OmmArray omm_obj_get_holdable_behaviors();
+OmmArray omm_obj_get_sparkly_enemy_behaviors();
 
 //
 // Spawners
@@ -210,6 +211,7 @@ struct Object *omm_spawn_shockwave_spindrift(struct Object *o);
 struct Object *omm_spawn_shockwave_fire(struct Object *o, f32 radius, f32 width, f32 height, f32 speed, f32 distMax, const void *textureWave, const void *textureFire);
 struct Object *omm_spawn_rising_lava(struct Object *o, f32 x, f32 y, f32 z, f32 yMin, f32 yMax, f32 yVel, f32 radius, f32 rotVel, s32 shakeEnv);
 struct Object *omm_spawn_star_ring(struct Object *o, f32 x, f32 y, f32 z, bool vertical, s32 yaw);
+struct Object *omm_spawn_big_flame(struct Object *o, f32 x, f32 y, f32 z);
 struct Object *omm_spawn_bitfs_pillar(struct Object *o, f32 x, f32 y, f32 z);
 struct Object *omm_spawn_bowser_mine(struct Object *o, f32 x, f32 y, f32 z, s16 yaw);
 struct Object *omm_spawn_bowser_flame(struct Object *o, f32 x, f32 y, f32 z, s32 duration);
@@ -244,9 +246,10 @@ struct Object *omm_spawn_problem(struct Object *o);
 //
 
 void omm_world_update(struct MarioState *m);
+bool omm_world_is_cold();
 bool omm_world_is_frozen();
 bool omm_world_is_flooded();
-bool omm_world_is_vanished();
+bool omm_world_is_shadow();
 
 //
 // Stars
@@ -258,6 +261,6 @@ u32 omm_stars_get_color(s32 level);
 bool omm_stars_is_collected(s32 index);
 bool omm_stars_all_collected(s32 level);
 void omm_stars_set_bits(u8 bits);
-#define OMM_ALL_STARS (omm_stars_all_collected(gCurrLevelNum) && !OMM_SSM_IS_LUNATIC)
+#define OMM_ALL_STARS (omm_stars_all_collected(gCurrLevelNum) && !OMM_SPARKLY_MODE_IS_LUNATIC)
 
 #endif // OMM_OBJECT_H

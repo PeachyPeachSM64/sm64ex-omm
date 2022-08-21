@@ -47,7 +47,7 @@ static const Gfx omm_perry_blast_gfx[] = {
 //
 
 typedef struct {
-    Gfx gfx[OMM_ARRAY_SIZE(omm_perry_blast_gfx)];
+    Gfx gfx[omm_static_array_length(omm_perry_blast_gfx)];
     Gfx tri[(OMM_PERRY_BLAST_NUM_SEGMENTS + 0) * (OMM_PERRY_BLAST_POINTS_PER_SEGMENT + 1) + 1];
     Vtx vtx[(OMM_PERRY_BLAST_NUM_SEGMENTS + 1) * (OMM_PERRY_BLAST_POINTS_PER_SEGMENT + 1)];
 } OmmPerryBigShotGeoData;
@@ -80,7 +80,7 @@ const GeoLayout omm_geo_perry_blast[] = {
 // Behavior
 //
 
-static void omm_bhv_perry_blast_update() {
+static void bhv_omm_perry_blast_update() {
     struct Object *o = gCurrentObject;
     if (o->oTimer >= OMM_PERRY_BLAST_DURATION) {
         obj_mark_for_deletion(o);
@@ -145,11 +145,11 @@ static void omm_bhv_perry_blast_update() {
     omm_obj_process_interactions(o, OMM_PERRY_BLAST_INT_FLAGS);
 }
 
-const BehaviorScript omm_bhv_perry_blast[] = {
+const BehaviorScript bhvOmmPerryBlast[] = {
     OBJ_TYPE_SPECIAL,
     0x11010001,
     0x08000000,
-    0x0C000000, (uintptr_t) omm_bhv_perry_blast_update,
+    0x0C000000, (uintptr_t) bhv_omm_perry_blast_update,
     0x09000000
 };
 
@@ -158,7 +158,7 @@ const BehaviorScript omm_bhv_perry_blast[] = {
 //
 
 struct Object *omm_spawn_perry_blast(struct Object *o, s32 type) {
-    struct Object *blast = obj_spawn_from_geo(o, omm_geo_perry_blast, omm_bhv_perry_blast);
+    struct Object *blast = obj_spawn_from_geo(o, omm_geo_perry_blast, bhvOmmPerryBlast);
     obj_set_always_rendered(blast, true);
     blast->oPerryType = type;
     blast->oAction = random_u16();

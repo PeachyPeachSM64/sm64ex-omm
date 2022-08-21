@@ -283,7 +283,8 @@ static const Gfx omm_level_bowser_4_tri[] = {
     gsSPEndDisplayList(),
 };
 
-static const Gfx omm_level_bowser_4_gfx[] = {
+static const Gfx omm_level_bowser_4_gfx[4][128] = {
+{
     gsDPSetCycleType(G_CYC_2CYCLE),
     gsDPSetRenderMode(G_RM_AA_ZB_OPA_SURF2, G_RM_AA_ZB_OPA_SURF2),
     gsDPSetDepthSource(G_ZS_PIXEL),
@@ -323,11 +324,143 @@ static const Gfx omm_level_bowser_4_gfx[] = {
     gsDPSetCombineLERP(0, 0, 0, SHADE, 0, 0, 0, SHADE, 0, 0, 0, SHADE, 0, 0, 0, SHADE),
     gsSPSetGeometryMode(G_LIGHTING),
     gsSPEndDisplayList(),
+},
+{
+    gsDPSetCycleType(G_CYC_2CYCLE),
+    gsDPSetRenderMode(G_RM_AA_ZB_OPA_SURF2, G_RM_AA_ZB_OPA_SURF2),
+    gsDPSetDepthSource(G_ZS_PIXEL),
+    gsDPSetCombineLERP(TEXEL0, 0, SHADE, 0, 0, 0, 0, SHADE, 0, 0, 0, COMBINED, 0, 0, 0, COMBINED),
+    gsSPClearGeometryMode(G_LIGHTING),
+    gsSPTexture(0xFFFF, 0xFFFF, 0, G_TX_RENDERTILE, G_ON),
+    gsDPLoadTextureBlock(OMM_TEXTURE_BOWSER_4_0, G_IM_FMT_RGBA, G_IM_SIZ_32b, 32, 32, 0, 0, 0, 0, 0, 0, 0),
+    gsSPDisplayList(omm_level_bowser_4_tri + 0),
+    gsDPLoadTextureBlock(OMM_TEXTURE_BOWSER_4_1, G_IM_FMT_RGBA, G_IM_SIZ_32b, 32, 32, 0, 0, 0, 0, 0, 0, 0),
+    gsSPDisplayList(omm_level_bowser_4_tri + 16),
+    gsSPTexture(0xFFFF, 0xFFFF, 0, G_TX_RENDERTILE, G_OFF),
+    gsDPSetCycleType(G_CYC_1CYCLE),
+    gsDPSetRenderMode(G_RM_AA_ZB_OPA_SURF, G_RM_NOOP2),
+    gsSPClearGeometryMode(G_FOG),
+    gsDPSetCombineLERP(0, 0, 0, SHADE, 0, 0, 0, SHADE, 0, 0, 0, SHADE, 0, 0, 0, SHADE),
+    gsSPSetGeometryMode(G_LIGHTING),
+    gsSPEndDisplayList(),
+
+    gsDPSetCycleType(G_CYC_2CYCLE),
+    gsDPSetRenderMode(G_RM_AA_ZB_OPA_SURF2, G_RM_AA_ZB_OPA_SURF2),
+    gsDPSetDepthSource(G_ZS_PIXEL),
+    gsDPSetCombineLERP(TEXEL0, 0, SHADE, 0, 0, 0, 0, SHADE, 0, 0, 0, COMBINED, 0, 0, 0, COMBINED),
+    gsSPClearGeometryMode(G_LIGHTING),
+    gsSPTexture(0xFFFF, 0xFFFF, 0, G_TX_RENDERTILE, G_ON),
+    gsDPLoadTextureBlock(OMM_TEXTURE_BOWSER_4_2, G_IM_FMT_RGBA, G_IM_SIZ_32b, 32, 32, 0, 0, 0, 0, 0, 0, 0),
+    gsSPDisplayList(omm_level_bowser_4_tri + 44),
+    gsDPLoadTextureBlock(OMM_TEXTURE_BOWSER_4_3, G_IM_FMT_RGBA, G_IM_SIZ_32b, 32, 32, 0, 0, 0, 0, 0, 0, 0),
+    gsSPDisplayList(omm_level_bowser_4_tri + 60),
+    gsDPLoadTextureBlock(OMM_TEXTURE_BOWSER_4_4, G_IM_FMT_RGBA, G_IM_SIZ_32b, 32, 32, 0, 0, 0, 0, 0, 0, 0),
+    gsSPDisplayList(omm_level_bowser_4_tri + 70),
+    gsDPLoadTextureBlock(OMM_TEXTURE_BOWSER_4_5, G_IM_FMT_RGBA, G_IM_SIZ_32b, 32, 32, 0, 0, 0, 0, 0, 0, 0),
+    gsSPDisplayList(omm_level_bowser_4_tri + 76),
+    gsSPTexture(0xFFFF, 0xFFFF, 0, G_TX_RENDERTILE, G_OFF),
+    gsDPSetCycleType(G_CYC_1CYCLE),
+    gsDPSetRenderMode(G_RM_AA_ZB_OPA_SURF, G_RM_NOOP2),
+    gsSPClearGeometryMode(G_FOG),
+    gsDPSetCombineLERP(0, 0, 0, SHADE, 0, 0, 0, SHADE, 0, 0, 0, SHADE, 0, 0, 0, SHADE),
+    gsSPSetGeometryMode(G_LIGHTING),
+    gsSPEndDisplayList(),
+},
+{
+    gsDPSetCycleType(G_CYC_2CYCLE),
+    gsDPSetRenderMode(G_RM_AA_ZB_OPA_SURF2, G_RM_AA_ZB_OPA_SURF2),
+    gsDPSetDepthSource(G_ZS_PIXEL),
+    gsDPSetCombineLERP(TEXEL0, 0, SHADE, 0, 0, 0, 0, SHADE, 0, 0, 0, COMBINED, 0, 0, 0, COMBINED),
+    gsSPClearGeometryMode(G_LIGHTING),
+    gsSPTexture(0xFFFF, 0xFFFF, 0, G_TX_RENDERTILE, G_ON),
+    gsDPLoadTextureBlock(OMM_TEXTURE_BOWSER_5_0, G_IM_FMT_RGBA, G_IM_SIZ_32b, 32, 32, 0, 0, 0, 0, 0, 0, 0),
+    gsSPDisplayList(omm_level_bowser_4_tri + 0),
+    gsDPLoadTextureBlock(OMM_TEXTURE_BOWSER_5_1, G_IM_FMT_RGBA, G_IM_SIZ_32b, 32, 32, 0, 0, 0, 0, 0, 0, 0),
+    gsSPDisplayList(omm_level_bowser_4_tri + 16),
+    gsSPTexture(0xFFFF, 0xFFFF, 0, G_TX_RENDERTILE, G_OFF),
+    gsDPSetCycleType(G_CYC_1CYCLE),
+    gsDPSetRenderMode(G_RM_AA_ZB_OPA_SURF, G_RM_NOOP2),
+    gsSPClearGeometryMode(G_FOG),
+    gsDPSetCombineLERP(0, 0, 0, SHADE, 0, 0, 0, SHADE, 0, 0, 0, SHADE, 0, 0, 0, SHADE),
+    gsSPSetGeometryMode(G_LIGHTING),
+    gsSPEndDisplayList(),
+
+    gsDPSetCycleType(G_CYC_2CYCLE),
+    gsDPSetRenderMode(G_RM_AA_ZB_OPA_SURF2, G_RM_AA_ZB_OPA_SURF2),
+    gsDPSetDepthSource(G_ZS_PIXEL),
+    gsDPSetCombineLERP(TEXEL0, 0, SHADE, 0, 0, 0, 0, SHADE, 0, 0, 0, COMBINED, 0, 0, 0, COMBINED),
+    gsSPClearGeometryMode(G_LIGHTING),
+    gsSPTexture(0xFFFF, 0xFFFF, 0, G_TX_RENDERTILE, G_ON),
+    gsDPLoadTextureBlock(OMM_TEXTURE_BOWSER_5_2, G_IM_FMT_RGBA, G_IM_SIZ_32b, 32, 32, 0, 0, 0, 0, 0, 0, 0),
+    gsSPDisplayList(omm_level_bowser_4_tri + 44),
+    gsDPLoadTextureBlock(OMM_TEXTURE_BOWSER_5_3, G_IM_FMT_RGBA, G_IM_SIZ_32b, 32, 32, 0, 0, 0, 0, 0, 0, 0),
+    gsSPDisplayList(omm_level_bowser_4_tri + 60),
+    gsDPLoadTextureBlock(OMM_TEXTURE_BOWSER_5_4, G_IM_FMT_RGBA, G_IM_SIZ_32b, 32, 32, 0, 0, 0, 0, 0, 0, 0),
+    gsSPDisplayList(omm_level_bowser_4_tri + 70),
+    gsDPLoadTextureBlock(OMM_TEXTURE_BOWSER_5_5, G_IM_FMT_RGBA, G_IM_SIZ_32b, 32, 32, 0, 0, 0, 0, 0, 0, 0),
+    gsSPDisplayList(omm_level_bowser_4_tri + 76),
+    gsSPTexture(0xFFFF, 0xFFFF, 0, G_TX_RENDERTILE, G_OFF),
+    gsDPSetCycleType(G_CYC_1CYCLE),
+    gsDPSetRenderMode(G_RM_AA_ZB_OPA_SURF, G_RM_NOOP2),
+    gsSPClearGeometryMode(G_FOG),
+    gsDPSetCombineLERP(0, 0, 0, SHADE, 0, 0, 0, SHADE, 0, 0, 0, SHADE, 0, 0, 0, SHADE),
+    gsSPSetGeometryMode(G_LIGHTING),
+    gsSPEndDisplayList(),
+},
+{
+    gsDPSetCycleType(G_CYC_2CYCLE),
+    gsDPSetRenderMode(G_RM_AA_ZB_OPA_SURF2, G_RM_AA_ZB_OPA_SURF2),
+    gsDPSetDepthSource(G_ZS_PIXEL),
+    gsDPSetCombineLERP(TEXEL0, 0, SHADE, 0, 0, 0, 0, SHADE, 0, 0, 0, COMBINED, 0, 0, 0, COMBINED),
+    gsSPClearGeometryMode(G_LIGHTING),
+    gsSPTexture(0xFFFF, 0xFFFF, 0, G_TX_RENDERTILE, G_ON),
+    gsDPLoadTextureBlock(OMM_TEXTURE_BOWSER_4_0, G_IM_FMT_RGBA, G_IM_SIZ_32b, 32, 32, 0, 0, 0, 0, 0, 0, 0),
+    gsSPDisplayList(omm_level_bowser_4_tri + 0),
+    gsDPLoadTextureBlock(OMM_TEXTURE_BOWSER_4_1, G_IM_FMT_RGBA, G_IM_SIZ_32b, 32, 32, 0, 0, 0, 0, 0, 0, 0),
+    gsSPDisplayList(omm_level_bowser_4_tri + 16),
+    gsSPTexture(0xFFFF, 0xFFFF, 0, G_TX_RENDERTILE, G_OFF),
+    gsDPSetCycleType(G_CYC_1CYCLE),
+    gsDPSetRenderMode(G_RM_AA_ZB_OPA_SURF, G_RM_NOOP2),
+    gsSPClearGeometryMode(G_FOG),
+    gsDPSetCombineLERP(0, 0, 0, SHADE, 0, 0, 0, SHADE, 0, 0, 0, SHADE, 0, 0, 0, SHADE),
+    gsSPSetGeometryMode(G_LIGHTING),
+    gsSPEndDisplayList(),
+
+    gsDPSetCycleType(G_CYC_2CYCLE),
+    gsDPSetRenderMode(G_RM_AA_ZB_OPA_SURF2, G_RM_AA_ZB_OPA_SURF2),
+    gsDPSetDepthSource(G_ZS_PIXEL),
+    gsDPSetCombineLERP(TEXEL0, 0, SHADE, 0, 0, 0, 0, SHADE, 0, 0, 0, COMBINED, 0, 0, 0, COMBINED),
+    gsSPClearGeometryMode(G_LIGHTING),
+    gsSPTexture(0xFFFF, 0xFFFF, 0, G_TX_RENDERTILE, G_ON),
+    gsDPLoadTextureBlock(OMM_TEXTURE_BOWSER_4_2, G_IM_FMT_RGBA, G_IM_SIZ_32b, 32, 32, 0, 0, 0, 0, 0, 0, 0),
+    gsSPDisplayList(omm_level_bowser_4_tri + 44),
+    gsDPLoadTextureBlock(OMM_TEXTURE_BOWSER_4_3, G_IM_FMT_RGBA, G_IM_SIZ_32b, 32, 32, 0, 0, 0, 0, 0, 0, 0),
+    gsSPDisplayList(omm_level_bowser_4_tri + 60),
+    gsDPLoadTextureBlock(OMM_TEXTURE_BOWSER_4_4, G_IM_FMT_RGBA, G_IM_SIZ_32b, 32, 32, 0, 0, 0, 0, 0, 0, 0),
+    gsSPDisplayList(omm_level_bowser_4_tri + 70),
+    gsDPLoadTextureBlock(OMM_TEXTURE_BOWSER_4_5, G_IM_FMT_RGBA, G_IM_SIZ_32b, 32, 32, 0, 0, 0, 0, 0, 0, 0),
+    gsSPDisplayList(omm_level_bowser_4_tri + 76),
+    gsSPTexture(0xFFFF, 0xFFFF, 0, G_TX_RENDERTILE, G_OFF),
+    gsDPSetCycleType(G_CYC_1CYCLE),
+    gsDPSetRenderMode(G_RM_AA_ZB_OPA_SURF, G_RM_NOOP2),
+    gsSPClearGeometryMode(G_FOG),
+    gsDPSetCombineLERP(0, 0, 0, SHADE, 0, 0, 0, SHADE, 0, 0, 0, SHADE, 0, 0, 0, SHADE),
+    gsSPSetGeometryMode(G_LIGHTING),
+    gsSPEndDisplayList(),
+},
 };
 
 //
 // Geo layouts
 //
+
+static Gfx *omm_level_bowser_4_switch_mode(s32 callContext, struct GraphNode *node, UNUSED void *context) {
+    if (callContext == GEO_CONTEXT_RENDER) {
+        struct GraphNodeSwitchCase *sc = (struct GraphNodeSwitchCase *) node;
+        sc->selectedCase = gOmmSparklyMode;
+    }
+    return NULL;
+}
 
 static const GeoLayout omm_level_bowser_4_geo[] = {
     GEO_NODE_SCREEN_AREA(10, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2),
@@ -336,7 +469,13 @@ static const GeoLayout omm_level_bowser_4_geo[] = {
         GEO_OPEN_NODE(),
             GEO_NODE_ORTHO(100),
             GEO_OPEN_NODE(),
-                GEO_BACKGROUND(BACKGROUND_PURPLE_SKY, geo_skybox_main),
+                GEO_SWITCH_CASE(4, omm_level_bowser_4_switch_mode),
+                GEO_OPEN_NODE(),
+                    GEO_BACKGROUND(BACKGROUND_PURPLE_SKY, geo_skybox_main),
+                    GEO_BACKGROUND(BACKGROUND_FLAMING_SKY, geo_skybox_main),
+                    GEO_BACKGROUND(BACKGROUND_PURPLE_SKY, geo_skybox_main),
+                    GEO_BACKGROUND(BACKGROUND_PURPLE_SKY, geo_skybox_main),
+                GEO_CLOSE_NODE(),
             GEO_CLOSE_NODE(),
         GEO_CLOSE_NODE(),
         GEO_ZBUFFER(1),
@@ -345,7 +484,13 @@ static const GeoLayout omm_level_bowser_4_geo[] = {
             GEO_OPEN_NODE(),
                 GEO_CAMERA(11, 0, 2000, 6000, 0, 0, 0, geo_camera_main),
                 GEO_OPEN_NODE(),
-                    GEO_DISPLAY_LIST(LAYER_OPAQUE, omm_level_bowser_4_gfx),
+                    GEO_SWITCH_CASE(4, omm_level_bowser_4_switch_mode),
+                    GEO_OPEN_NODE(),
+                        GEO_DISPLAY_LIST(LAYER_OPAQUE, omm_level_bowser_4_gfx[0]),
+                        GEO_DISPLAY_LIST(LAYER_OPAQUE, omm_level_bowser_4_gfx[1]),
+                        GEO_DISPLAY_LIST(LAYER_OPAQUE, omm_level_bowser_4_gfx[2]),
+                        GEO_DISPLAY_LIST(LAYER_OPAQUE, omm_level_bowser_4_gfx[3]),
+                    GEO_CLOSE_NODE(),
                     GEO_RENDER_OBJ(),
                     GEO_ASM(0, geo_envfx_main),
                 GEO_CLOSE_NODE(),
@@ -358,7 +503,13 @@ static const GeoLayout omm_level_bowser_4_geo[] = {
 static const GeoLayout omm_level_bowser_4_platform_geo[] = {
     GEO_CULLING_RADIUS(5000),
     GEO_OPEN_NODE(),
-        GEO_DISPLAY_LIST(LAYER_OPAQUE, omm_level_bowser_4_gfx + 31),
+        GEO_SWITCH_CASE(4, omm_level_bowser_4_switch_mode),
+        GEO_OPEN_NODE(),
+            GEO_DISPLAY_LIST(LAYER_OPAQUE, omm_level_bowser_4_gfx[0] + 31),
+            GEO_DISPLAY_LIST(LAYER_OPAQUE, omm_level_bowser_4_gfx[1] + 31),
+            GEO_DISPLAY_LIST(LAYER_OPAQUE, omm_level_bowser_4_gfx[2] + 31),
+            GEO_DISPLAY_LIST(LAYER_OPAQUE, omm_level_bowser_4_gfx[3] + 31),
+        GEO_CLOSE_NODE(),
     GEO_CLOSE_NODE(),
     GEO_END(),
 };
@@ -418,7 +569,7 @@ static const BehaviorScript omm_level_bowser_4_bhv[] = {
 
 OMM_ROUTINE_UPDATE(omm_level_bowser_4_entry) {
     static bool sCutsceneStarted = false;
-    if (omm_ssd_is_bowser_4()) {
+    if (omm_sparkly_is_bowser_4_battle()) {
         if (gCamera && !sCutsceneStarted) {
             gCamera->cutscene = 0;
             start_cutscene(gCamera, CUTSCENE_ENTER_BOWSER_ARENA);
@@ -458,8 +609,8 @@ static const LevelScript omm_level_bowser_4[] = {
 };
 
 LEVEL_CMD_BRANCH(
-    level_script_find(level_castle_grounds_entry, OMM_ARRAY_OF(LevelScript) { END_AREA() }, 1),
-    level_script_find(level_castle_grounds_entry, OMM_ARRAY_OF(LevelScript) { FREE_LEVEL_POOL() }, 1),
+    level_script_find(level_castle_grounds_entry, omm_static_array_of(LevelScript) { END_AREA() }, 1),
+    level_script_find(level_castle_grounds_entry, omm_static_array_of(LevelScript) { FREE_LEVEL_POOL() }, 1),
     omm_level_bowser_4
 );
 

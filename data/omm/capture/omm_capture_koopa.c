@@ -3,14 +3,14 @@
 #undef OMM_ALL_HEADERS
 
 enum {
-    CAPPY_KOOPA_STATE_SHELLED_IDLE,
-    CAPPY_KOOPA_STATE_SHELLED_WALKING,
-    CAPPY_KOOPA_STATE_SHELLED_SLIDING,
-    CAPPY_KOOPA_STATE_SHELLED_JUMPING,
-    CAPPY_KOOPA_STATE_UNSHELLED_IDLE,
-    CAPPY_KOOPA_STATE_UNSHELLED_WALKING,
-    CAPPY_KOOPA_STATE_UNSHELLED_RUNNING,
-    CAPPY_KOOPA_STATE_UNSHELLED_JUMPING,
+    OMM_CAPPY_KOOPA_STATE_SHELLED_IDLE,
+    OMM_CAPPY_KOOPA_STATE_SHELLED_WALKING,
+    OMM_CAPPY_KOOPA_STATE_SHELLED_SLIDING,
+    OMM_CAPPY_KOOPA_STATE_SHELLED_JUMPING,
+    OMM_CAPPY_KOOPA_STATE_UNSHELLED_IDLE,
+    OMM_CAPPY_KOOPA_STATE_UNSHELLED_WALKING,
+    OMM_CAPPY_KOOPA_STATE_UNSHELLED_RUNNING,
+    OMM_CAPPY_KOOPA_STATE_UNSHELLED_JUMPING,
 };
 
 /* AnimIndex, Accel, Sfx, Model */
@@ -41,20 +41,20 @@ static s32 sCappyKoopaCappyParams[][7] = {
 // Init
 //
 
-bool cappy_koopa_init(struct Object *o) {
+bool omm_cappy_koopa_init(struct Object *o) {
 
     // Can't possess KTQ
-    if (o->oBehParams2ndByte == KOOPA_BP_KOOPA_THE_QUICK_BOB ||
-        o->oBehParams2ndByte == KOOPA_BP_KOOPA_THE_QUICK_THI) {
+    if (o->oBhvArgs2ndByte == KOOPA_BP_KOOPA_THE_QUICK_BOB ||
+        o->oBhvArgs2ndByte == KOOPA_BP_KOOPA_THE_QUICK_THI) {
         return false;
     }
 
-    gOmmData->object->koopa.scale = o->oScaleY;
+    gOmmObject->koopa.scale = o->oScaleY;
     return true;
 }
 
-void cappy_koopa_end(struct Object *o) {
-    if (gOmmData->object->state.actionState < CAPPY_KOOPA_STATE_UNSHELLED_IDLE) {
+void omm_cappy_koopa_end(struct Object *o) {
+    if (gOmmObject->state.actionState < OMM_CAPPY_KOOPA_STATE_UNSHELLED_IDLE) {
         o->oKoopaMovementType = KOOPA_BP_NORMAL;
         o->oGraphNode = gLoadedGraphNodes[MODEL_KOOPA_WITH_SHELL];
     } else {
@@ -63,7 +63,7 @@ void cappy_koopa_end(struct Object *o) {
     }
 }
 
-f32 cappy_koopa_get_top(struct Object *o) {
+f32 omm_cappy_koopa_get_top(struct Object *o) {
     return 70.f * o->oScaleY;
 }
 
@@ -71,8 +71,8 @@ f32 cappy_koopa_get_top(struct Object *o) {
 // Update
 //
 
-s32 cappy_koopa_update(struct Object *o) {
-    obj_scale(o, gOmmData->object->koopa.scale);
+s32 omm_cappy_koopa_update(struct Object *o) {
+    obj_scale(o, gOmmObject->koopa.scale);
 
     // Inputs
     if (!obj_update_door(o) && !omm_mario_is_locked(gMarioState)) {
@@ -86,27 +86,27 @@ s32 cappy_koopa_update(struct Object *o) {
     // States
     if (o->oKoopaMovementType != KOOPA_BP_UNSHELLED) {
         if (POBJ_B_BUTTON_DOWN) {
-            gOmmData->object->state.actionState = CAPPY_KOOPA_STATE_SHELLED_SLIDING;
+            gOmmObject->state.actionState = OMM_CAPPY_KOOPA_STATE_SHELLED_SLIDING;
         } else if (obj_is_on_ground(o)) {
             if (o->oForwardVel > 1.f) {
-                gOmmData->object->state.actionState = CAPPY_KOOPA_STATE_SHELLED_WALKING;
+                gOmmObject->state.actionState = OMM_CAPPY_KOOPA_STATE_SHELLED_WALKING;
             } else {
-                gOmmData->object->state.actionState = CAPPY_KOOPA_STATE_SHELLED_IDLE;
+                gOmmObject->state.actionState = OMM_CAPPY_KOOPA_STATE_SHELLED_IDLE;
             }
         } else {
-            gOmmData->object->state.actionState = CAPPY_KOOPA_STATE_SHELLED_JUMPING;
+            gOmmObject->state.actionState = OMM_CAPPY_KOOPA_STATE_SHELLED_JUMPING;
         }
     } else {
         if (obj_is_on_ground(o)) {
             if (o->oForwardVel > omm_capture_get_walk_speed(o)) {
-                gOmmData->object->state.actionState = CAPPY_KOOPA_STATE_UNSHELLED_RUNNING;
+                gOmmObject->state.actionState = OMM_CAPPY_KOOPA_STATE_UNSHELLED_RUNNING;
             } else if (o->oForwardVel > 1.f) {
-                gOmmData->object->state.actionState = CAPPY_KOOPA_STATE_UNSHELLED_WALKING;
+                gOmmObject->state.actionState = OMM_CAPPY_KOOPA_STATE_UNSHELLED_WALKING;
             } else {
-                gOmmData->object->state.actionState = CAPPY_KOOPA_STATE_UNSHELLED_IDLE;
+                gOmmObject->state.actionState = OMM_CAPPY_KOOPA_STATE_UNSHELLED_IDLE;
             }
         } else {
-            gOmmData->object->state.actionState = CAPPY_KOOPA_STATE_UNSHELLED_JUMPING;
+            gOmmObject->state.actionState = OMM_CAPPY_KOOPA_STATE_UNSHELLED_JUMPING;
         }
     }
 
@@ -117,7 +117,7 @@ s32 cappy_koopa_update(struct Object *o) {
     o->oWallHitboxRadius = omm_capture_get_wall_hitbox_radius(o);
 
     // Properties
-    bool shellSlide = (gOmmData->object->state.actionState == CAPPY_KOOPA_STATE_SHELLED_SLIDING);
+    bool shellSlide = (gOmmObject->state.actionState == OMM_CAPPY_KOOPA_STATE_SHELLED_SLIDING);
     POBJ_SET_ABOVE_WATER;
     POBJ_SET_IMMUNE_TO_LAVA * shellSlide;
     POBJ_SET_IMMUNE_TO_SAND * shellSlide;
@@ -153,17 +153,17 @@ s32 cappy_koopa_update(struct Object *o) {
 
     // Gfx
     obj_update_gfx(o);
-    if (gOmmData->object->state.actionState == CAPPY_KOOPA_STATE_SHELLED_SLIDING) {
-        obj_scale(o, gOmmData->object->koopa.scale / 1.5f);
+    if (gOmmObject->state.actionState == OMM_CAPPY_KOOPA_STATE_SHELLED_SLIDING) {
+        obj_scale(o, gOmmObject->koopa.scale / 1.5f);
         o->oGfxAngle[0] = 0;
         o->oGfxAngle[1] = o->oTimer * 0x2000;
         o->oGfxAngle[2] = 0;
     } else {
-        obj_scale(o, gOmmData->object->koopa.scale);
+        obj_scale(o, gOmmObject->koopa.scale);
     }
 
     // Animation
-    s32 *animData = sCappyKoopaStateData[gOmmData->object->state.actionState];
+    s32 *animData = sCappyKoopaStateData[gOmmObject->state.actionState];
     o->oGraphNode = gLoadedGraphNodes[animData[3]];
     obj_anim_play(o, animData[0], max_f(1.f, animData[1] * max_f(1.f, o->oForwardVel * 2.f / (omm_capture_get_walk_speed(o)))));
     obj_update_blink_state(o, &o->oKoopaBlinkTimer, 20, 50, 4);
@@ -173,7 +173,7 @@ s32 cappy_koopa_update(struct Object *o) {
         case 1:
             if (obj_is_on_ground(o)) {
                 obj_make_step_sound_and_particle(o,
-                    &gOmmData->object->state.walkDistance,
+                    &gOmmObject->state.walkDistance,
                     omm_capture_get_walk_speed(o) * 8.f, o->oForwardVel,
                     SOUND_OBJ_KOOPA_WALK, OBJ_PARTICLE_NONE
                 );
@@ -184,7 +184,7 @@ s32 cappy_koopa_update(struct Object *o) {
             switch (o->oFloorType) {
                 case OBJ_FLOOR_TYPE_GROUND:
                     obj_make_step_sound_and_particle(o,
-                        &gOmmData->object->state.walkDistance, 0.f, 0.f,
+                        &gOmmObject->state.walkDistance, 0.f, 0.f,
                         SOUND_MOVING_TERRAIN_RIDING_SHELL + gMarioState->terrainSoundAddend,
                         OBJ_PARTICLE_MIST
                     );
@@ -192,7 +192,7 @@ s32 cappy_koopa_update(struct Object *o) {
 
                 case OBJ_FLOOR_TYPE_WATER:
                     obj_make_step_sound_and_particle(o,
-                        &gOmmData->object->state.walkDistance, 0.f, 0.f,
+                        &gOmmObject->state.walkDistance, 0.f, 0.f,
                         SOUND_MOVING_TERRAIN_RIDING_SHELL + SOUND_TERRAIN_WATER,
                         OBJ_PARTICLE_WATER_TRAIL | OBJ_PARTICLE_WATER_DROPLET
                     );
@@ -200,7 +200,7 @@ s32 cappy_koopa_update(struct Object *o) {
 
                 case OBJ_FLOOR_TYPE_LAVA:
                     obj_make_step_sound_and_particle(o,
-                        &gOmmData->object->state.walkDistance, 0.f, 0.f,
+                        &gOmmObject->state.walkDistance, 0.f, 0.f,
                         SOUND_MOVING_RIDING_SHELL_LAVA,
                         OBJ_PARTICLE_FLAME
                     );
@@ -210,14 +210,14 @@ s32 cappy_koopa_update(struct Object *o) {
     }
 
     // Cappy values
-    s32 *cappyParams = sCappyKoopaCappyParams[gOmmData->object->state.actionState];
-    gOmmData->object->cappy.offset[0] = (f32) cappyParams[1];
-    gOmmData->object->cappy.offset[1] = (f32) cappyParams[2];
-    gOmmData->object->cappy.offset[2] = (f32) cappyParams[0];
-    gOmmData->object->cappy.angle[0]  = (s16) cappyParams[3];
-    gOmmData->object->cappy.angle[1]  = (s16) cappyParams[4];
-    gOmmData->object->cappy.angle[2]  = (s16) cappyParams[5];
-    gOmmData->object->cappy.scale     = (f32) cappyParams[6] / 100.f;
+    s32 *cappyParams = sCappyKoopaCappyParams[gOmmObject->state.actionState];
+    gOmmObject->cappy.offset[0] = (f32) cappyParams[1];
+    gOmmObject->cappy.offset[1] = (f32) cappyParams[2];
+    gOmmObject->cappy.offset[2] = (f32) cappyParams[0];
+    gOmmObject->cappy.angle[0]  = (s16) cappyParams[3];
+    gOmmObject->cappy.angle[1]  = (s16) cappyParams[4];
+    gOmmObject->cappy.angle[2]  = (s16) cappyParams[5];
+    gOmmObject->cappy.scale     = (f32) cappyParams[6] / 100.f;
 
     // OK
     POBJ_RETURN_OK;

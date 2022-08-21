@@ -14,13 +14,13 @@ const GeoLayout omm_geo_peachs_cap[] = {
                 GEO_OPEN_NODE(),
                     GEO_TRANSLATE_NODE(LAYER_OPAQUE, 0, 0, 0),
                     GEO_OPEN_NODE(),
-                        GEO_CULLING_RADIUS(13), // Switch between Peach's crown and Tiara
+                        GEO_PREPROCESS_PEACH_CROWN_TIARA, // Switch between Peach's crown and Tiara
                         GEO_DISPLAY_LIST(LAYER_OPAQUE, omm_peachs_cap_crown_gfx),
                         GEO_DISPLAY_LIST(LAYER_OPAQUE, omm_peachs_cap_tiara_gfx),
                     GEO_CLOSE_NODE(),
                     GEO_TRANSLATE_NODE(LAYER_TRANSPARENT, 0, 0, 0),
                     GEO_OPEN_NODE(),
-                        GEO_CULLING_RADIUS(13), // Switch between Peach's crown and Tiara
+                        GEO_PREPROCESS_PEACH_CROWN_TIARA, // Switch between Peach's crown and Tiara
                         GEO_DISPLAY_LIST(LAYER_TRANSPARENT, omm_peachs_cap_crown_gfx),
                         GEO_DISPLAY_LIST(LAYER_TRANSPARENT, omm_peachs_cap_tiara_gfx),
                     GEO_CLOSE_NODE(),
@@ -43,13 +43,13 @@ const GeoLayout omm_geo_peachs_metal_cap[] = {
                 GEO_OPEN_NODE(),
                     GEO_TRANSLATE_NODE(LAYER_OPAQUE, 0, 0, 0),
                     GEO_OPEN_NODE(),
-                        GEO_CULLING_RADIUS(13), // Switch between Peach's crown and Tiara
+                        GEO_PREPROCESS_PEACH_CROWN_TIARA, // Switch between Peach's crown and Tiara
                         GEO_DISPLAY_LIST(LAYER_OPAQUE, omm_peachs_metal_cap_crown_gfx),
                         GEO_DISPLAY_LIST(LAYER_OPAQUE, omm_peachs_metal_cap_tiara_gfx),
                     GEO_CLOSE_NODE(),
                     GEO_TRANSLATE_NODE(LAYER_TRANSPARENT, 0, 0, 0),
                     GEO_OPEN_NODE(),
-                        GEO_CULLING_RADIUS(13), // Switch between Peach's crown and Tiara
+                        GEO_PREPROCESS_PEACH_CROWN_TIARA, // Switch between Peach's crown and Tiara
                         GEO_DISPLAY_LIST(LAYER_TRANSPARENT, omm_peachs_metal_cap_crown_gfx),
                         GEO_DISPLAY_LIST(LAYER_TRANSPARENT, omm_peachs_metal_cap_tiara_gfx),
                     GEO_CLOSE_NODE(),

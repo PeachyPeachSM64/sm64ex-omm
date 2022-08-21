@@ -6,36 +6,36 @@
 // Init
 //
 
-bool cappy_bullet_bill_init(struct Object *o) {
+bool omm_cappy_bullet_bill_init(struct Object *o) {
     if (o->oAction != 2 || o->oTimer < 50) {
         return false;
     }
 
-    gOmmData->object->state.initialPos[0] = o->oHomeX;
-    gOmmData->object->state.initialPos[1] = o->oHomeY;
-    gOmmData->object->state.initialPos[2] = o->oHomeZ;
-    gOmmData->object->bullet_bill.scale   = o->oScaleY;
-    gOmmData->object->state.actionState   = 0;
-    gOmmData->object->state.actionTimer   = 0;
+    gOmmObject->state.initialPos[0] = o->oHomeX;
+    gOmmObject->state.initialPos[1] = o->oHomeY;
+    gOmmObject->state.initialPos[2] = o->oHomeZ;
+    gOmmObject->bullet_bill.scale   = o->oScaleY;
+    gOmmObject->state.actionState   = 0;
+    gOmmObject->state.actionTimer   = 0;
     return true;
 }
 
-void cappy_bullet_bill_end(struct Object *o) {
-    if (gOmmData->object->state.actionState) {
+void omm_cappy_bullet_bill_end(struct Object *o) {
+    if (gOmmObject->state.actionState) {
         o->oAction = 0;
         o->oTimer = 0;
     }
-    o->oHomeX = gOmmData->object->state.initialPos[0];
-    o->oHomeY = gOmmData->object->state.initialPos[1];
-    o->oHomeZ = gOmmData->object->state.initialPos[2];
-    o->oScaleX = gOmmData->object->bullet_bill.scale;
-    o->oScaleY = gOmmData->object->bullet_bill.scale;
-    o->oScaleZ = gOmmData->object->bullet_bill.scale;
+    o->oHomeX = gOmmObject->state.initialPos[0];
+    o->oHomeY = gOmmObject->state.initialPos[1];
+    o->oHomeZ = gOmmObject->state.initialPos[2];
+    o->oScaleX = gOmmObject->bullet_bill.scale;
+    o->oScaleY = gOmmObject->bullet_bill.scale;
+    o->oScaleZ = gOmmObject->bullet_bill.scale;
     o->oFaceAnglePitch = 0;
     o->oMoveAnglePitch = 0;
 }
 
-f32 cappy_bullet_bill_get_top(struct Object *o) {
+f32 omm_cappy_bullet_bill_get_top(struct Object *o) {
     return 200.f * o->oScaleY;
 }
 
@@ -43,7 +43,7 @@ f32 cappy_bullet_bill_get_top(struct Object *o) {
 // Update
 //
 
-s32 cappy_bullet_bill_update(struct Object *o) {
+s32 omm_cappy_bullet_bill_update(struct Object *o) {
 
     // Hitbox
     o->hitboxRadius = omm_capture_get_hitbox_radius(o);
@@ -63,21 +63,21 @@ s32 cappy_bullet_bill_update(struct Object *o) {
     omm_capture_set_camera_behind_mario();
     if (!omm_mario_is_locked(gMarioState)) {
         pobj_move_3d(o, false, POBJ_B_BUTTON_DOWN);
-        gOmmData->object->state.actionTimer += (POBJ_B_BUTTON_DOWN ? 2 : 1);
+        gOmmObject->state.actionTimer += (POBJ_B_BUTTON_DOWN ? 2 : 1);
 
         // The bullet bill explodes after a while
-        if (gOmmData->object->state.actionTimer >= 300) {
+        if (gOmmObject->state.actionTimer >= 300) {
             omm_spawn_explosion(o);
             obj_spawn_white_puff(o, 0);
-            gOmmData->object->state.actionState = 1;
+            gOmmObject->state.actionState = 1;
             omm_mario_unpossess_object(gMarioState, OMM_MARIO_UNPOSSESS_ACT_JUMP_OUT, false, 6);
         }
         
         // Starts inflating after 8 seconds
-        else if (gOmmData->object->state.actionTimer >= 240) {
-            f32 t = invlerp_0_1_s(gOmmData->object->state.actionTimer, 240, 300);
+        else if (gOmmObject->state.actionTimer >= 240) {
+            f32 t = invlerp_0_1_s(gOmmObject->state.actionTimer, 240, 300);
             f32 s = relerp_0_1_f(sins(0x10000 / (1.f - t)), -1.f, +1.f, 0.75f, 1.25f);
-            obj_scale(o, gOmmData->object->bullet_bill.scale * s);
+            obj_scale(o, gOmmObject->bullet_bill.scale * s);
         }
     }
     POBJ_STOP_IF_UNPOSSESSED;
@@ -95,19 +95,19 @@ s32 cappy_bullet_bill_update(struct Object *o) {
     if (o->oWall) {
         omm_spawn_explosion(o);
         obj_spawn_white_puff(o, 0);
-        gOmmData->object->state.actionState = 1;
+        gOmmObject->state.actionState = 1;
         omm_mario_unpossess_object(gMarioState, OMM_MARIO_UNPOSSESS_ACT_JUMP_OUT, false, 6);
     }
     POBJ_STOP_IF_UNPOSSESSED;
 
     // Gfx
     obj_update_gfx(o);
-    obj_make_step_sound_and_particle(o, &gOmmData->object->state.walkDistance, 0.f, 0.f, -1, (POBJ_B_BUTTON_DOWN ? OBJ_PARTICLE_FIRE : OBJ_PARTICLE_SMOKE));
+    obj_make_step_sound_and_particle(o, &gOmmObject->state.walkDistance, 0.f, 0.f, -1, (POBJ_B_BUTTON_DOWN ? OBJ_PARTICLE_FIRE : OBJ_PARTICLE_SMOKE));
 
     // Cappy values
-    gOmmData->object->cappy.offset[1] = 200.f;
-    gOmmData->object->cappy.offset[2] = 50.f;
-    gOmmData->object->cappy.scale     = 4.f;
+    gOmmObject->cappy.offset[1] = 200.f;
+    gOmmObject->cappy.offset[2] = 50.f;
+    gOmmObject->cappy.scale     = 4.f;
 
     // OK
     POBJ_RETURN_OK;

@@ -24,7 +24,7 @@ static const Gfx omm_perry_trail_gfx[] = {
 //
 
 typedef struct {
-    Gfx gfx[OMM_ARRAY_SIZE(omm_perry_trail_gfx)];
+    Gfx gfx[omm_static_array_length(omm_perry_trail_gfx)];
     Gfx tri[OMM_PERRY_TRAIL_NUM_POINTS_MAX * 7 + 1];
     Vtx vtx[OMM_PERRY_TRAIL_NUM_POINTS_MAX][4];
     Lights1 lightsFront;
@@ -48,11 +48,11 @@ const GeoLayout omm_geo_perry_trail[] = {
 // Behavior
 //
 
-static void omm_bhv_perry_trail_update() {
+static void bhv_omm_perry_trail_update() {
     struct Object *o = gCurrentObject;
     struct MarioState *m = gMarioState;
     OmmPerryTrailGeoData *data = geo_get_geo_data(o, sizeof(OmmPerryTrailGeoData), omm_perry_trail_gfx, sizeof(omm_perry_trail_gfx));
-    o->oPerryType = omm_peach_get_perry_type(m);
+    o->oPerryType = omm_perry_get_type(m);
 
     // Update lights
     data->lightsFront = (Lights1) gdSPDefLights1(
@@ -75,7 +75,7 @@ static void omm_bhv_perry_trail_update() {
     );
 
     // Update previous points
-    OMM_MEMMOV(data->vtx + OMM_PERRY_TRAIL_NUM_POINTS_PER_FRAME, data->vtx, sizeof(data->vtx[0]) * (OMM_PERRY_TRAIL_NUM_POINTS_MAX - OMM_PERRY_TRAIL_NUM_POINTS_PER_FRAME));
+    omm_move(data->vtx + OMM_PERRY_TRAIL_NUM_POINTS_PER_FRAME, data->vtx, sizeof(data->vtx[0]) * (OMM_PERRY_TRAIL_NUM_POINTS_MAX - OMM_PERRY_TRAIL_NUM_POINTS_PER_FRAME));
     for (s32 i = 0; i != OMM_PERRY_TRAIL_NUM_POINTS_MAX; ++i) {
         for (s32 j = 0; j != 4; ++j) {
             u8 da = (data->vtx[i][j].n.tc[0] + OMM_PERRY_TRAIL_NUM_SEGMENTS_MAX - 1) / OMM_PERRY_TRAIL_NUM_SEGMENTS_MAX;
@@ -88,7 +88,7 @@ static void omm_bhv_perry_trail_update() {
     }
 
     // Add new point...
-    struct Object *perry = omm_peach_get_perry_object();
+    struct Object *perry = omm_perry_get_object();
     if (o->oAction == 0 && perry && (perry->oPerryFlags & OBJ_INT_PERRY_TRAIL)) {
         Vec3f perryDir = { 0.f, 110.f, 0.f };
         vec3f_rotate_zxy(perryDir, perryDir, perry->oFaceAnglePitch, perry->oFaceAngleYaw, perry->oFaceAngleRoll);
@@ -154,7 +154,7 @@ static void omm_bhv_perry_trail_update() {
     
     // ...or progressively unload the trail
     else {
-        OMM_MEMSET(data->vtx, 0, sizeof(data->vtx[0]) * OMM_PERRY_TRAIL_NUM_POINTS_PER_FRAME);
+        omm_zero(data->vtx, sizeof(data->vtx[0]) * OMM_PERRY_TRAIL_NUM_POINTS_PER_FRAME);
         o->oAction = 1;
         if (o->oSubAction++ > OMM_PERRY_TRAIL_NUM_SEGMENTS_MAX) {
             obj_mark_for_deletion(o);
@@ -181,10 +181,10 @@ static void omm_bhv_perry_trail_update() {
     obj_set_always_rendered(o, true);
 }
 
-const BehaviorScript omm_bhv_perry_trail[] = {
-    OBJ_TYPE_DEFAULT, // This object must be updated after omm_bhv_perry
+const BehaviorScript bhvOmmPerryTrail[] = {
+    OBJ_TYPE_DEFAULT, // This object must be updated after bhvOmmPerry
 	0x08000000,
-	0x0C000000, (uintptr_t) omm_bhv_perry_trail_update,
+	0x0C000000, (uintptr_t) bhv_omm_perry_trail_update,
 	0x09000000,
 };
 
@@ -194,11 +194,11 @@ const BehaviorScript omm_bhv_perry_trail[] = {
 
 OMM_ROUTINE_UPDATE(omm_spawn_perry_trail) {
     if (gMarioObject && OMM_PLAYER_IS_PEACH) {
-        struct Object *activeTrail = obj_get_first_with_behavior_and_field_s32(omm_bhv_perry_trail, 0x31, 0);
+        struct Object *activeTrail = obj_get_first_with_behavior_and_field_s32(bhvOmmPerryTrail, 0x31, 0);
         if (!activeTrail) {
-            struct Object *perry = omm_peach_get_perry_object();
+            struct Object *perry = omm_perry_get_object();
             if (perry && (perry->oPerryFlags & OBJ_INT_PERRY_TRAIL)) {
-                obj_spawn_from_geo(gMarioObject, omm_geo_perry_trail, omm_bhv_perry_trail);
+                obj_spawn_from_geo(gMarioObject, omm_geo_perry_trail, bhvOmmPerryTrail);
             }
         }
     }

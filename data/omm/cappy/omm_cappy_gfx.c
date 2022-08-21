@@ -2,6 +2,26 @@
 #include "data/omm/omm_includes.h"
 #undef OMM_ALL_HEADERS
 
+Lights1 omm_cappy_eye_top_light = gdSPDefLights1(
+    0xff, 0x00, 0x00,
+    0xff, 0x00, 0x00,
+    0x28, 0x28, 0x28
+);
+
+Lights1 omm_cappy_eye_bottom_light = gdSPDefLights1(
+    0xff, 0x40, 0x80,
+    0xff, 0x40, 0x80,
+    0x28, 0x28, 0x28
+);
+
+#define OMM_TEXTURE_CAPPY       (count < 12 ? OMM_TEXTURE_CAPPY_32       : (count < 20 ? OMM_TEXTURE_CAPPY_64       : OMM_TEXTURE_CAPPY_128      ))
+#define OMM_TEXTURE_CAPPY_EYE   (count < 12 ? OMM_TEXTURE_CAPPY_EYE_32   : (count < 20 ? OMM_TEXTURE_CAPPY_EYE_64   : OMM_TEXTURE_CAPPY_EYE_128  ))
+#define OMM_TEXTURE_CAPPY_METAL (count < 12 ? OMM_TEXTURE_CAPPY_METAL_32 : (count < 20 ? OMM_TEXTURE_CAPPY_METAL_64 : OMM_TEXTURE_CAPPY_METAL_128))
+
+//
+// Vec3f, but better
+//
+
 typedef struct {
     f32 x, y, z;
 } v3f;
@@ -19,88 +39,71 @@ OMM_INLINE f32 v3f_mag(v3f v) {
 // Cappy eyes
 //
 
-#define CAPPY_EYES_COUNT_DEFAULT    32
-#define CAPPY_EYES_RADIUS_DEFAULT   44.f
-#define CAPPY_EYES_FORWARD_DEFAULT  8.f
-#define CAPPY_EYES_GAP              0.90f
-#define CAPPY_EYES_TEXCOORDS_MULT   1.05f
-#define CAPPY_EYES_WH_RATIO         0.75f
-#define CAPPY_EYES_DEPTH            16
-#define CAPPY_EYES_CURVE            12
-
-static FILE *omm_cappy_gfx_find_file(u32 id) {
-    OMM_STRING(folder, 256, "%s/%s", OMM_EXE_FOLDER, OMM_CAPPY_FOLDER);
-    DIR *dir = opendir(folder);
-    if (dir) {
-        struct dirent *dirent = NULL;
-        while ((dirent = readdir(dir)) != NULL) {
-            if (strcmp(dirent->d_name, ".") == 0) continue;
-            if (strcmp(dirent->d_name, "..") == 0) continue;
-            OMM_STRING(dirname, 256, "%s/%s/%s", OMM_EXE_FOLDER, OMM_CAPPY_FOLDER, dirent->d_name);
-            if (fs_sys_dir_exists(dirname)) {
-                OMM_STRING(filename, 256, "%s/%08X.txt", dirname, id);
-                FILE *f = fopen(filename, "r");
-                if (f) {
-                    closedir(dir);
-                    return f;
-                }
-            }
-        }
-        closedir(dir);
-    }
-    return NULL;
-}
+#define OMM_CAPPY_EYES_COUNT_DEFAULT    32
+#define OMM_CAPPY_EYES_RADIUS_DEFAULT   44.f
+#define OMM_CAPPY_EYES_FORWARD_DEFAULT  8.f
+#define OMM_CAPPY_EYES_GAP              0.90f
+#define OMM_CAPPY_EYES_TEXCOORDS_MULT   1.05f
+#define OMM_CAPPY_EYES_WH_RATIO         0.75f
+#define OMM_CAPPY_EYES_DEPTH            16
+#define OMM_CAPPY_EYES_CURVE            12
 
 static bool omm_cappy_gfx_read_data_from_file(u32 id, v3fa *points, v3fa *normals, v3fa *tops, s32 *count, f32 *radius, f32 *offset) {
-    FILE *f = omm_cappy_gfx_find_file(id);
-    if (!f) return false;
+    char filename[SYS_MAX_PATH];
+    omm_sprintf(pattern, SYS_MAX_PATH, "%08X.txt", id);
+    if (fs_find(filename, SYS_MAX_PATH, pattern)) {
+        fs_file_t *f = fs_open(filename);
+        if (f) {
 
-    // Init
-    points->count = 0;
-    normals->count = 0;
-    tops->count = 0;
-    *count = CAPPY_EYES_COUNT_DEFAULT;
-    *radius = CAPPY_EYES_RADIUS_DEFAULT;
-    *offset = CAPPY_EYES_FORWARD_DEFAULT;
+            // Init
+            points->count = 0;
+            normals->count = 0;
+            tops->count = 0;
+            *count = OMM_CAPPY_EYES_COUNT_DEFAULT;
+            *radius = OMM_CAPPY_EYES_RADIUS_DEFAULT;
+            *offset = OMM_CAPPY_EYES_FORWARD_DEFAULT;
 
-    // Read
-    char buffer[256];
-    while (fgets(buffer, 256, f)) {
-        switch (buffer[0]) {
-            case 'p': {
-                v3f point = { 0, 0, 0 };
-                sscanf(buffer + 1, "%f %f %f", &point.x, &point.y, &point.z);
-                points->data[points->count++] = point;
-            } break;
+            // Read
+            char buffer[0x100];
+            while (fs_readline(f, buffer, 0x100)) {
+                switch (buffer[0]) {
+                    case 'p': {
+                        v3f point = { 0, 0, 0 };
+                        sscanf(buffer + 1, "%f %f %f", &point.x, &point.y, &point.z);
+                        points->data[points->count++] = point;
+                    } break;
 
-            case 'n': {
-                v3f normal = { 0, 0, 0 };
-                sscanf(buffer + 1, "%f %f %f", &normal.x, &normal.y, &normal.z);
-                normals->data[normals->count++] = normal;
-            } break;
+                    case 'n': {
+                        v3f normal = { 0, 0, 0 };
+                        sscanf(buffer + 1, "%f %f %f", &normal.x, &normal.y, &normal.z);
+                        normals->data[normals->count++] = normal;
+                    } break;
 
-            case 'v': {
-                v3f top = { 0, 0, 0 };
-                sscanf(buffer + 1, "%f %f %f", &top.x, &top.y, &top.z);
-                tops->data[tops->count++] = top;
-            } break;
+                    case 'v': {
+                        v3f top = { 0, 0, 0 };
+                        sscanf(buffer + 1, "%f %f %f", &top.x, &top.y, &top.z);
+                        tops->data[tops->count++] = top;
+                    } break;
 
-            case 'c': {
-                sscanf(buffer + 1, "%d", count);
-                *count = clamp_s(*count, 4, 64);
-            } break;
+                    case 'c': {
+                        sscanf(buffer + 1, "%d", count);
+                        *count = clamp_s(*count, 4, 64);
+                    } break;
 
-            case 'r': {
-                sscanf(buffer + 1, "%f", radius);
-            } break;
+                    case 'r': {
+                        sscanf(buffer + 1, "%f", radius);
+                    } break;
 
-            case 'f': {
-                sscanf(buffer + 1, "%f", offset);
-            } break;
+                    case 'f': {
+                        sscanf(buffer + 1, "%f", offset);
+                    } break;
+                }
+            }
+            fs_close(f);
+            return (points->count != 0) && (normals->count != 0) && (tops->count != 0);
         }
     }
-    fclose(f);
-    return (points->count != 0) && (normals->count != 0) && (tops->count != 0);
+    return false;
 }
 
 static v3f omm_cappy_gfx_get_origin(const v3fa *points) {
@@ -194,13 +197,13 @@ static Vtx omm_cappy_gfx_get_vertex(v3f ori, v3f hrz, v3f vrt, v3f fwd, f32 gap,
     s16 a    = (s16) ((65536.f * (i - 1)) / count);
     f32 texu = (i == 0 ? 0.5f : (1.f - ((1.f + sins(a)) / 2.f)) * sign - ((sign - 1.f) / 2.f));
     f32 texv = (i == 0 ? 0.5f : (1.f - ((1.f + coss(a)) / 2.f)));
-    f32 hrzv = ((i != 0) * radius * sins(a) - sign * gap) * -CAPPY_EYES_WH_RATIO;
+    f32 hrzv = ((i != 0) * radius * sins(a) - sign * gap) * -OMM_CAPPY_EYES_WH_RATIO;
     f32 vrtv = ((i != 0) * radius * coss(a));
-    f32 fwdv = -((1.f - coss(((i != 0) * (radius != 0.f) * sins(-sign * a) + 1.f) * 0x2000)) * CAPPY_EYES_CURVE + (back ? CAPPY_EYES_DEPTH : 0.f));
-    if (texu < 0) texu = ((texu + 0.5f) * CAPPY_EYES_TEXCOORDS_MULT) - 0.5f;
-    else          texu = ((texu - 0.5f) * CAPPY_EYES_TEXCOORDS_MULT) + 0.5f;
-    if (texv < 0) texv = ((texv + 0.5f) * CAPPY_EYES_TEXCOORDS_MULT) - 0.5f;
-    else          texv = ((texv - 0.5f) * CAPPY_EYES_TEXCOORDS_MULT) + 0.5f;
+    f32 fwdv = -((1.f - coss(((i != 0) * (radius != 0.f) * sins(-sign * a) + 1.f) * 0x2000)) * OMM_CAPPY_EYES_CURVE + (back ? OMM_CAPPY_EYES_DEPTH : 0.f));
+    if (texu < 0) texu = ((texu + 0.5f) * OMM_CAPPY_EYES_TEXCOORDS_MULT) - 0.5f;
+    else          texu = ((texu - 0.5f) * OMM_CAPPY_EYES_TEXCOORDS_MULT) + 0.5f;
+    if (texv < 0) texv = ((texv + 0.5f) * OMM_CAPPY_EYES_TEXCOORDS_MULT) - 0.5f;
+    else          texv = ((texv - 0.5f) * OMM_CAPPY_EYES_TEXCOORDS_MULT) + 0.5f;
     Vtx vtx = { { { 0, 0, 0 }, 0, { (s16) (texu * 0x1000), (s16) (texv * 0x1000) }, { 0xFF, 0xFF, 0xFF, 0xFF } } };
     vtx.v.ob[0] = hrzv * hrz.x + vrtv * vrt.x + fwdv * fwd.x + ori.x;
     vtx.v.ob[1] = hrzv * hrz.y + vrtv * vrt.y + fwdv * fwd.y + ori.y;
@@ -208,7 +211,25 @@ static Vtx omm_cappy_gfx_get_vertex(v3f ori, v3f hrz, v3f vrt, v3f fwd, f32 gap,
     return vtx;
 }
 
-static Gfx *omm_cappy_gfx_get_display_list(u32 id, bool metal, bool mirror) {
+static Vtx omm_cappy_gfx_get_pupil_vertex(v3f ori, v3f hrz, v3f vrt, v3f fwd, f32 gap, f32 radius, f32 sign, s32 count, s32 i, f32 v) {
+    s16 a    = (s16) ((65536.f * i) / count);
+    f32 texu = (1.f - ((1.f + sins(a)) / 2.f)) * sign - ((sign - 1.f) / 2.f);
+    f32 texv = (1.f - ((1.f + v) / 2.f));
+    f32 hrzv = (radius * sins(a) - sign * gap) * -OMM_CAPPY_EYES_WH_RATIO;
+    f32 vrtv = (radius * v) / 2.f;
+    f32 fwdv = 0.01f - (1.f - coss((sins(-sign * a) + 1.f) * 0x2000)) * OMM_CAPPY_EYES_CURVE;
+    if (texu < 0) texu = ((texu + 0.5f) * OMM_CAPPY_EYES_TEXCOORDS_MULT) - 0.5f;
+    else          texu = ((texu - 0.5f) * OMM_CAPPY_EYES_TEXCOORDS_MULT) + 0.5f;
+    if (texv < 0) texv = ((texv + 0.5f) * OMM_CAPPY_EYES_TEXCOORDS_MULT) - 0.5f;
+    else          texv = ((texv - 0.5f) * OMM_CAPPY_EYES_TEXCOORDS_MULT) + 0.5f;
+    Vtx vtx = { { { 0, 0, 0 }, 0, { (s16) (texu * 0x1000), (s16) (texv * 0x1000) }, { 0xFF, 0xFF, 0xFF, 0xFF } } };
+    vtx.v.ob[0] = hrzv * hrz.x + vrtv * vrt.x + fwdv * fwd.x + ori.x;
+    vtx.v.ob[1] = hrzv * hrz.y + vrtv * vrt.y + fwdv * fwd.y + ori.y;
+    vtx.v.ob[2] = hrzv * hrz.z + vrtv * vrt.z + fwdv * fwd.z + ori.z;
+    return vtx;
+}
+
+static Gfx **omm_cappy_gfx_get_display_lists(u32 id, bool metal, bool mirror) {
 
     // Load data from file
     v3fa points;
@@ -232,86 +253,120 @@ static Gfx *omm_cappy_gfx_get_display_list(u32 id, bool metal, bool mirror) {
     ori.y += fwd.y * offset;
     ori.z += fwd.z * offset;
 
-    // Textures
-    const char *texCappy = (count < 12 ? OMM_TEXTURE_CAPPY_EYE_32   : (count < 20 ? OMM_TEXTURE_CAPPY_EYE_64   : OMM_TEXTURE_CAPPY_EYE_128  ));
-    const char *texMetal = (count < 12 ? OMM_TEXTURE_CAPPY_METAL_32 : (count < 20 ? OMM_TEXTURE_CAPPY_METAL_64 : OMM_TEXTURE_CAPPY_METAL_128));
-
     // Data
-    Vtx *vtx = OMM_MEMNEW(Vtx, count * 12);
-    Gfx *tri = OMM_MEMNEW(Gfx, count * 6 + 1);
-    Gfx *gfx = NULL;
+    Vtx *vtx0 = omm_new(Vtx, count * 12);
+    Vtx *vtx1 = omm_new(Vtx, count * 4);
+    Gfx *tri0 = omm_new(Gfx, count * 6 + 1);
+    Gfx *tri1 = omm_new(Gfx, count * 7 + 1);
+    Gfx **gfx = omm_new(Gfx *, 2);
 
-    // Display list
-    const Gfx gfx_[2][0x20] = { {
-        gsDPPipeSync(),
+    // Display lists
+    const Gfx gfx_[3][0x20] = { {
+        gsDPSetEnvColor(0xFF, 0xFF, 0xFF, 0xFF),
         gsSPClearGeometryMode(G_TEXTURE_GEN | G_CULL_BOTH),
         gsSPSetGeometryMode(mirror ? G_CULL_FRONT : G_CULL_BACK),
         gsDPSetCombineLERP(TEXEL0, SHADE, TEXEL0_ALPHA, SHADE, 0, 0, 0, ENVIRONMENT, TEXEL0, SHADE, TEXEL0_ALPHA, SHADE, 0, 0, 0, ENVIRONMENT), // G_CC_BLENDRGBFADEA
         gsSPTexture(0xFFFF, 0xFFFF, 0, G_TX_RENDERTILE, G_ON),
-        gsDPLoadTextureBlock(texCappy, G_IM_FMT_RGBA, G_IM_SIZ_32b, 128, 128, 0, 0, 0, 0, 0, 0, 0),
-        gsSPDisplayList(tri),
+        gsDPLoadTextureBlock(OMM_TEXTURE_CAPPY, G_IM_FMT_RGBA, G_IM_SIZ_32b, 128, 128, 0, 0, 0, 0, 0, 0, 0),
+        gsSPDisplayList(tri0),
         gsSPTexture(0xFFFF, 0xFFFF, 0, G_TX_RENDERTILE, G_OFF),
         gsDPSetCombineLERP(0, 0, 0, SHADE, 0, 0, 0, ENVIRONMENT, 0, 0, 0, SHADE, 0, 0, 0, ENVIRONMENT), // G_CC_SHADEFADEA
         gsSPEndDisplayList(),
     }, {
-        gsDPPipeSync(),
+        gsDPSetEnvColor(0xFF, 0xFF, 0xFF, 0xFF),
         gsSPClearGeometryMode(G_TEXTURE_GEN | G_CULL_BOTH),
         gsSPSetGeometryMode(mirror ? G_CULL_FRONT : G_CULL_BACK),
         gsDPSetCombineLERP(TEXEL0, SHADE, TEXEL0_ALPHA, SHADE, 0, 0, 0, ENVIRONMENT, TEXEL0, SHADE, TEXEL0_ALPHA, SHADE, 0, 0, 0, ENVIRONMENT), // G_CC_BLENDRGBFADEA
         gsSPTexture(0xFFFF, 0xFFFF, 0, G_TX_RENDERTILE, G_ON),
-        gsDPLoadTextureBlock(texCappy, G_IM_FMT_RGBA, G_IM_SIZ_32b, 128, 128, 0, 0, 0, 0, 0, 0, 0),
-        gsSPDisplayList(tri),
+        gsDPLoadTextureBlock(OMM_TEXTURE_CAPPY, G_IM_FMT_RGBA, G_IM_SIZ_32b, 128, 128, 0, 0, 0, 0, 0, 0, 0),
+        gsSPDisplayList(tri0),
         gsSPTexture(0xFFFF, 0xFFFF, 0, G_TX_RENDERTILE, G_OFF),
         gsSPSetGeometryMode(G_TEXTURE_GEN),
         gsDPSetCombineLERP(0, 0, 0, TEXEL0, 0, 0, 0, ENVIRONMENT, 0, 0, 0, TEXEL0, 0, 0, 0, ENVIRONMENT), // G_CC_DECALFADE
-        gsDPLoadTextureBlock(texMetal, G_IM_FMT_RGBA, G_IM_SIZ_32b, 128, 128, 0, 0, 0, 0, 0, 0, 0),
+        gsDPLoadTextureBlock(OMM_TEXTURE_CAPPY_METAL, G_IM_FMT_RGBA, G_IM_SIZ_32b, 128, 128, 0, 0, 0, 0, 0, 0, 0),
         gsSPTexture(0x1F00, 0x1F00, 0, G_TX_RENDERTILE, G_ON),
         gsSPEndDisplayList(),
+    }, {
+        gsDPSetEnvColor(0xFF, 0xFF, 0xFF, 0xFF),
+        gsSPClearGeometryMode(G_TEXTURE_GEN | G_CULL_BOTH),
+        gsSPSetGeometryMode(G_LIGHTING | G_TEXTURE_ALPHA | (mirror ? G_CULL_FRONT : G_CULL_BACK)),
+        gsDPSetCombineLERP(TEXEL0, 0, SHADE, 0, TEXEL0, 0, ENVIRONMENT, 0, TEXEL0, 0, SHADE, 0, TEXEL0, 0, ENVIRONMENT, 0),
+        gsSPTexture(0xFFFF, 0xFFFF, 0, G_TX_RENDERTILE, G_ON),
+        gsDPLoadTextureBlock(OMM_TEXTURE_CAPPY_EYE, G_IM_FMT_RGBA, G_IM_SIZ_32b, 128, 128, 0, G_TX_CLAMP, G_TX_CLAMP, 0, 0, 0, 0),
+        gsSPDisplayList(tri1),
+        gsSPTexture(0xFFFF, 0xFFFF, 0, G_TX_RENDERTILE, G_OFF),
+        gsDPSetCombineLERP(0, 0, 0, SHADE, 0, 0, 0, ENVIRONMENT, 0, 0, 0, SHADE, 0, 0, 0, ENVIRONMENT), // G_CC_SHADEFADEA
+        gsSPClearGeometryMode(G_TEXTURE_ALPHA),
+        gsSPEndDisplayList(),
     } };
-    gfx = OMM_MEMDUP(gfx_[metal], sizeof(gfx_[metal]));
+    gfx[0] = omm_dup(gfx_[metal], sizeof(gfx_[metal]));
+    gfx[1] = omm_dup(gfx_[2], sizeof(gfx_[2]));
     
     // Triangles and vertices
     for (s32 sign = -1; sign <= +1; sign += 2) {
         for (s32 i = 1; i <= count; ++i) {
-            gSPVertex(tri++, vtx, 6, 0);
-            gSP2Triangles(tri++, 0, 2, 4, 0, 5, 3, 1, 0); // Front & Back
-            gSP2Triangles(tri++, 2, 3, 4, 0, 5, 4, 3, 0); // Border
-            *(vtx++) = omm_cappy_gfx_get_vertex(ori, hrz, vrt, fwd, CAPPY_EYES_GAP * radius, radius, sign, count,     0, 0);
-            *(vtx++) = omm_cappy_gfx_get_vertex(ori, hrz, vrt, fwd, CAPPY_EYES_GAP * radius,    0.f, sign, count, i + 0, 1);
-            *(vtx++) = omm_cappy_gfx_get_vertex(ori, hrz, vrt, fwd, CAPPY_EYES_GAP * radius, radius, sign, count, i + 0, 0);
-            *(vtx++) = omm_cappy_gfx_get_vertex(ori, hrz, vrt, fwd, CAPPY_EYES_GAP * radius, radius, sign, count, i + 0, 1);
-            *(vtx++) = omm_cappy_gfx_get_vertex(ori, hrz, vrt, fwd, CAPPY_EYES_GAP * radius, radius, sign, count, i + 1, 0);
-            *(vtx++) = omm_cappy_gfx_get_vertex(ori, hrz, vrt, fwd, CAPPY_EYES_GAP * radius, radius, sign, count, i + 1, 1);
+
+            // Eyes
+            gSPVertex(tri0++, vtx0, 6, 0);
+            gSP2Triangles(tri0++, 0, 2, 4, 0, 5, 3, 1, 0); // Front & Back
+            gSP2Triangles(tri0++, 2, 3, 4, 0, 5, 4, 3, 0); // Border
+            *(vtx0++) = omm_cappy_gfx_get_vertex(ori, hrz, vrt, fwd, OMM_CAPPY_EYES_GAP * radius, radius, sign, count,     0, 0);
+            *(vtx0++) = omm_cappy_gfx_get_vertex(ori, hrz, vrt, fwd, OMM_CAPPY_EYES_GAP * radius,    0.f, sign, count, i + 0, 1);
+            *(vtx0++) = omm_cappy_gfx_get_vertex(ori, hrz, vrt, fwd, OMM_CAPPY_EYES_GAP * radius, radius, sign, count, i + 0, 0);
+            *(vtx0++) = omm_cappy_gfx_get_vertex(ori, hrz, vrt, fwd, OMM_CAPPY_EYES_GAP * radius, radius, sign, count, i + 0, 1);
+            *(vtx0++) = omm_cappy_gfx_get_vertex(ori, hrz, vrt, fwd, OMM_CAPPY_EYES_GAP * radius, radius, sign, count, i + 1, 0);
+            *(vtx0++) = omm_cappy_gfx_get_vertex(ori, hrz, vrt, fwd, OMM_CAPPY_EYES_GAP * radius, radius, sign, count, i + 1, 1);
+
+            // Pupils
+            if (i <= count / 2) {
+                s32 j0 = count / 4 + (i - 1) % (count / 2);
+                s32 j1 = j0 + 1;
+                gSPLight(tri1++, &omm_cappy_eye_top_light.l, 1);
+                gSPLight(tri1++, &omm_cappy_eye_top_light.a, 2);
+                gSPVertex(tri1++, vtx1, 2, 0);
+                *(vtx1++) = omm_cappy_gfx_get_pupil_vertex(ori, hrz, vrt, fwd, OMM_CAPPY_EYES_GAP * radius, radius, sign, count, j0, 1);
+                *(vtx1++) = omm_cappy_gfx_get_pupil_vertex(ori, hrz, vrt, fwd, OMM_CAPPY_EYES_GAP * radius, radius, sign, count, j1, 1);
+                gSPLight(tri1++, &omm_cappy_eye_bottom_light.l, 1);
+                gSPLight(tri1++, &omm_cappy_eye_bottom_light.a, 2);
+                gSPVertex(tri1++, vtx1, 2, 2);
+                *(vtx1++) = omm_cappy_gfx_get_pupil_vertex(ori, hrz, vrt, fwd, OMM_CAPPY_EYES_GAP * radius, radius, sign, count, j0, -1);
+                *(vtx1++) = omm_cappy_gfx_get_pupil_vertex(ori, hrz, vrt, fwd, OMM_CAPPY_EYES_GAP * radius, radius, sign, count, j1, -1);
+                gSP2Triangles(tri1++, 2, 1, 0, 0, 1, 2, 3, 0);
+            }
         }
     }
-    gSPEndDisplayList(tri);
+    gSPEndDisplayList(tri0);
+    gSPEndDisplayList(tri1);
     return gfx;
 }
 
 static void omm_cappy_gfx_draw(u32 id, u8 alpha, bool metal, bool mirror, void (*append)(void *, s16)) {
     static OmmMap sDisplayLists = omm_map_zero;
-    u32 displayListId = (id & ~3) | (metal << 0) | (mirror << 1);
+    u32 displayListsId = (id & ~3) | (metal << 0) | (mirror << 1);
 
-    // Retrieve existing display list, or create new display list if not found
-    s32 i = omm_map_find_key(sDisplayLists, u32, displayListId);
+    // Retrieve existing display lists, or create new display lists if not found
+    s32 i = omm_map_find_key(sDisplayLists, u32, displayListsId);
     if (OMM_UNLIKELY(i == -1)) {
         i = omm_map_count(sDisplayLists);
-        omm_map_add(sDisplayLists, u32, displayListId, ptr, omm_cappy_gfx_get_display_list(id, metal, mirror));
+        omm_map_add(sDisplayLists, u32, displayListsId, ptr, (ptr) omm_cappy_gfx_get_display_lists(id, metal, mirror));
     }
 
-    // Draw display list
-    Gfx *displayList = omm_map_get_val(sDisplayLists, ptr, i);
-    if (displayList) {
-        gDPSetEnvColor(displayList, 0xFF, 0xFF, 0xFF, alpha);
-        append(displayList, (alpha != 0xFF) ? LAYER_TRANSPARENT : LAYER_OPAQUE);
+    // Draw display lists
+    Gfx **displayLists = (Gfx **) omm_map_get_val(sDisplayLists, ptr, i);
+    if (displayLists) {
+        gDPSetEnvColor(displayLists[0], 0xFF, 0xFF, 0xFF, alpha);
+        append(displayLists[0], (alpha != 0xFF) ? LAYER_TRANSPARENT : LAYER_OPAQUE);
+        gDPSetEnvColor(displayLists[1], 0xFF, 0xFF, 0xFF, alpha);
+        append(displayLists[1], LAYER_TRANSPARENT);
     }
 }
 
-void omm_cappy_gfx_draw_eyes(struct GraphNodeSwitchCase *node, void (*append)(void *, s16)) {
-    if (OMM_EXTRAS_CAPPY_AND_TIARA && gCurGraphNodeObject) {
+void omm_cappy_gfx_draw_eyes(struct GraphNode *node, void (*append)(void *, s16)) {
+    if (OMM_EXTRAS_CAPPY_AND_TIARA && gCurGraphNodeObject && node && node->type == GRAPH_NODE_TYPE_SWITCH_CASE) {
+        struct GraphNodeSwitchCase *scNode = (struct GraphNodeSwitchCase *) node;
 
         // Mario's cap
-        if (node->fnNode.func == (GraphNodeFunc) geo_switch_mario_cap_on_off) {
+        if (scNode->fnNode.func == (GraphNodeFunc) geo_switch_mario_cap_on_off) {
 
             // Cap must be on Mario's head
             struct MarioBodyState *bodyState = gMarioState->marioBodyState;
@@ -329,15 +384,15 @@ void omm_cappy_gfx_draw_eyes(struct GraphNodeSwitchCase *node, void (*append)(vo
         }
 
         // Cap object
-        if (node->fnNode.func == (GraphNodeFunc) geo_switch_anim_state) {
+        if (scNode->fnNode.func == (GraphNodeFunc) geo_switch_anim_state) {
 
             // Object's model must be a cap model
             struct Object *o = gCurrGraphNodeObject;
             for (s32 i = 0; i != OMM_NUM_PLAYABLE_CHARACTERS; ++i) {
-                if (obj_check_model(o, omm_player_get_normal_cap(i)) ||
-                    obj_check_model(o, omm_player_get_wing_cap(i)) ||
-                    obj_check_model(o, omm_player_get_metal_cap(i)) ||
-                    obj_check_model(o, omm_player_get_winged_metal_cap(i))) {
+                if (obj_check_model(o, omm_player_graphics_get_normal_cap(i)) ||
+                    obj_check_model(o, omm_player_graphics_get_wing_cap(i)) ||
+                    obj_check_model(o, omm_player_graphics_get_metal_cap(i)) ||
+                    obj_check_model(o, omm_player_graphics_get_winged_metal_cap(i))) {
 
                     // States
                     u32 id = omm_cappy_gfx_get_graph_node_identifier(gCurGraphNodeObject->sharedChild);
@@ -370,18 +425,18 @@ static void omm_cappy_gfx_process_display_list(const Gfx *displayList) {
         for (const Gfx *head = displayList;; ++head) {
         
             // End
-            if (OMM_MEMCMP(head, sSPEndDisplayList, sizeof(sSPEndDisplayList))) {
+            if (omm_same(head, sSPEndDisplayList, sizeof(sSPEndDisplayList))) {
                 return;
             }
 
             // Display list
-            if (OMM_MEMCMP(&head->words.w0, &sSPDisplayList->words.w0, sizeof(sSPDisplayList->words.w0))) {
+            if (omm_same(&head->words.w0, &sSPDisplayList->words.w0, sizeof(sSPDisplayList->words.w0))) {
                 omm_cappy_gfx_process_display_list((const Gfx *) head->words.w1);
                 continue;
             }
 
             // Branch list
-            if (OMM_MEMCMP(&head->words.w0, &sSPBranchList->words.w0, sizeof(sSPBranchList->words.w0))) {
+            if (omm_same(&head->words.w0, &sSPBranchList->words.w0, sizeof(sSPBranchList->words.w0))) {
                 omm_cappy_gfx_process_display_list((const Gfx *) head->words.w1);
                 return;
             }

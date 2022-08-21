@@ -70,6 +70,21 @@ s32 omm_camera_get_relative_dist_mode() {
     return sOmmCamDistMode - OMM_CAM_DIST_MODE_MEDIUM;
 }
 
+void omm_camera_warp(struct Camera *c, f32 dx, f32 dy, f32 dz) {
+    s16 cyaw = c->yaw;
+    warp_camera(dx, dy, dz);
+    c->yaw = cyaw;
+    c->nextYaw = cyaw;
+    gLakituState.pos[0] += dx;
+    gLakituState.pos[1] += dy;
+    gLakituState.pos[2] += dz;
+    gLakituState.focus[0] += dx;
+    gLakituState.focus[1] += dy;
+    gLakituState.focus[2] += dz;
+    gLakituState.yaw = cyaw;
+    gLakituState.nextYaw = cyaw;
+}
+
 //
 // Init
 //
@@ -157,7 +172,7 @@ static bool omm_camera_check_point_in_no_col_box(Vec3f pos) {
     return false;
 }
 
-static bool omm_camera_check_focus_behind_actual_wall(const RayCollisionData *hits, const RayHit *hit) {
+static bool omm_camera_check_hit(const RayHit *hit, const RayCollisionData *hits) {
     if (hits->count != -1) {
         for (s32 i = 0; i != hits->count; ++i) {
             if (hits->hits[i].ratio - hit->ratio < 0.15f) {
@@ -169,24 +184,53 @@ static bool omm_camera_check_focus_behind_actual_wall(const RayCollisionData *hi
     return true;
 }
 
+static bool omm_camera_check_perp_hit(Vec3f orig, Vec3f focus) {
+    Vec3f dir; vec3f_dif(dir, orig, focus);
+    RayCollisionData hits;
+    return find_collisions_on_ray(focus, dir, &hits, 1.1f, RAYCAST_FLAGS_CAMERA) != 0;
+}
+
 static void omm_camera_process_collisions() {
     Vec3f orig; vec3f_copy(orig, sOmmCamFocus);
     Vec3f dir; vec3f_dif(dir, sOmmCamPos, orig);
     RayCollisionData hits;
     if (find_collisions_on_ray(orig, dir, &hits, 1.1f, RAYCAST_FLAGS_CAMERA)) {
 
-        // Before applying the collision, try to find another hit from above the focus,
-        // to know if the first hit was against a fence or a small object
+        // Find collisions left and right to know if hits are against a thin wall
+        Vec3f origLR[2]; RayCollisionData hitsLR[2];
+        for (s32 i = 0; i != 2; ++i) {
+            Vec3f camDirXZRot = { dir[0], 0, dir[2] };
+            vec3f_rotate_around_n(camDirXZRot, camDirXZRot, gVec3fY, 0x4000 * (i ? +1 : -1));
+            vec3f_normalize(camDirXZRot);
+            origLR[i][0] = sOmmCamFocus[0] + 111.f * camDirXZRot[0];
+            origLR[i][1] = sOmmCamFocus[1];
+            origLR[i][2] = sOmmCamFocus[2] + 111.f * camDirXZRot[2];
+            find_collisions_on_ray(origLR[i], dir, hitsLR + i, 1.1f, RAYCAST_FLAGS_CAMERA);
+        }
+
+        // Find collisions above the focus to know if hits are against a fence or a small object
         RayCollisionData hitsAboveFocus = { .count = -1 };
         if (sOmmCamPos[1] > sOmmCamFocus[1]) {
+            orig[0] = sOmmCamFocus[0];
             orig[1] = min_f(find_ceil(sOmmCamFocus[0], sOmmCamFocus[1], sOmmCamFocus[2], NULL) - 10.f, (sOmmCamPos[1] + sOmmCamFocus[1]) / 2);
+            orig[2] = sOmmCamFocus[2];
             vec3f_dif(dir, sOmmCamPos, orig);
             find_collisions_on_ray(orig, dir, &hitsAboveFocus, 1.1f, RAYCAST_FLAGS_CAMERA);
         }
 
+        // Check for hits and apply collision
+        // Checks (in that order):
+        // - Not in a no collision box
+        // - Both left hit AND right hit, OR ONE of the perpendicular hit
+        // - Hit above focus
         for (s32 i = 0; i != hits.count; ++i) {
             RayHit *hit = hits.hits + i;
-            if (!omm_camera_check_point_in_no_col_box(hit->pos) && omm_camera_check_focus_behind_actual_wall(&hitsAboveFocus, hit)) {
+            if (!omm_camera_check_point_in_no_col_box(hit->pos) && ((
+                omm_camera_check_hit(hit, &hitsLR[0]) &&
+                omm_camera_check_hit(hit, &hitsLR[1])) ||
+                omm_camera_check_perp_hit(origLR[0], sOmmCamFocus) ||
+                omm_camera_check_perp_hit(origLR[1], sOmmCamFocus)) &&
+                omm_camera_check_hit(hit, &hitsAboveFocus)) {
                 sOmmCamPos[0] = hit->pos[0] + 8.f * hit->surf->normal.x;
                 sOmmCamPos[1] = hit->pos[1] + 8.f * hit->surf->normal.y;
                 sOmmCamPos[2] = hit->pos[2] + 8.f * hit->surf->normal.z;
@@ -331,10 +375,10 @@ static void omm_camera_calc_y_offsets(f32 *camPosOffsetY, f32 *camFocOffsetY) {
 }
 
 static bool omm_camera_is_bowser_fight() {
-    for_each_(const BehaviorScript *, bhv, 2, OMM_ARRAY_OF(const BehaviorScript *) { bhvBowser, omm_bhv_bowser }) {
+    for_each_(const BehaviorScript *, bhv, 2, omm_static_array_of(const BehaviorScript *) { bhvBowser, bhvOmmBowser }) {
         for_each_object_with_behavior(obj, *bhv) {
             if (!obj_is_dormant(obj)) {
-#if OMM_GAME_IS_R96A
+#if OMM_GAME_IS_R96X
                 // Spamba Bowser
                 if (*bhv == bhvBowser && obj->oInteractType == INTERACT_DAMAGE) {
                     continue;
@@ -376,7 +420,7 @@ static void omm_camera_update_angles_from_state(struct MarioState *m, s16 camPit
         // Flying
         if ((m->action == ACT_FLYING) ||
             (m->action == ACT_SHOT_FROM_CANNON) || (
-            (m->action == ACT_OMM_POSSESSION && gOmmData->object->state.camBehindMario))) {
+            (m->action == ACT_OMM_POSSESSION && gOmmObject->state.camBehindMario))) {
             sOmmCamPitch = approach(sOmmCamPitch, (-m->faceAngle[0] * 0.75f) + 0xC00, max_f(m->forwardVel, 4.f) * 0x20);
             sOmmCamYaw = approach(sOmmCamYaw, m->faceAngle[1] + 0x8000, max_f(m->forwardVel, 4.f) * 0x80);
             sOmmCamYawTarget = sOmmCamYaw;
@@ -511,18 +555,6 @@ static void omm_camera_apply(struct Camera *c) {
     // Angle
     c->yaw = gLakituState.yaw = sOmmCamYaw;
 
-    // Mario transparency
-    f32 dist = sqrtf(
-        sqr_f(gLakituState.curFocus[0] - gLakituState.curPos[0]) +
-        sqr_f(gLakituState.curFocus[1] - gLakituState.curPos[1]) +
-        sqr_f(gLakituState.curFocus[2] - gLakituState.curPos[2])
-    );
-    if (dist < 300.f) {
-        u8 alpha = (u8) ((max_f(dist - 100.f, 0) * 255.f) / 200.f);
-        gMarioState->marioBodyState->modelState &= ~0xFF;
-        gMarioState->marioBodyState->modelState |= (0x100 | alpha);
-    }
-
     // Remove the cannon reticle after shooting
     if (c->mode == CAMERA_MODE_INSIDE_CANNON) {
         c->mode = c->defMode;
@@ -558,7 +590,7 @@ bool omm_camera_update(struct Camera *c, struct MarioState *m) {
     sMarioGeometry.prevFloorType = sMarioGeometry.currFloorType;
     sMarioGeometry.prevCeilType = sMarioGeometry.currCeilType;
     find_mario_floor_and_ceil(&sMarioGeometry);
-    gCheckingSurfaceCollisionsForCamera = TRUE;
+    enable_surface_collisions_for_camera();
     vec3f_copy(c->pos, gLakituState.goalPos);
     vec3f_copy(c->focus, gLakituState.goalFocus);
     c->yaw = gLakituState.yaw;
@@ -568,10 +600,10 @@ bool omm_camera_update(struct Camera *c, struct MarioState *m) {
 
     // Init yaws for "play as Cappy"
     struct Object *playAsCappy = omm_cappy_get_object_play_as();
-    if (OMM_CAMERA_CLASSIC && !(playAsCappy->oCappyFlags & CAPPY_FLAG_CAMERA)) {
+    if (OMM_CAMERA_CLASSIC && !(playAsCappy->oCappyFlags & OMM_CAPPY_FLAG_CAMERA)) {
         sOmmCamYaw = c->yaw;
         sOmmCamYawTarget = c->yaw;
-        playAsCappy->oCappyFlags |= CAPPY_FLAG_CAMERA;
+        playAsCappy->oCappyFlags |= OMM_CAPPY_FLAG_CAMERA;
     }
 
     // Play the current cutscene...
@@ -600,6 +632,6 @@ bool omm_camera_update(struct Camera *c, struct MarioState *m) {
     // Update Lakitu
     update_lakitu(c);
     gLakituState.lastFrameAction = sMarioCamState->action;
-    gCheckingSurfaceCollisionsForCamera = FALSE;
+    disable_surface_collisions_for_camera();
     return true;
 }

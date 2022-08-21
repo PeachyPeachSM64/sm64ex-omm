@@ -1,8 +1,8 @@
 #ifndef GRAPH_NODE_H
 #define GRAPH_NODE_H
 
-#include "game/memory.h"
-#include "math_util.h"
+#include "types.h"
+#include "game/memory.h" // struct AllocOnlyPool
 
 #define GRAPH_RENDER_ACTIVE                     (1 << 0)
 #define GRAPH_RENDER_CHILDREN_FIRST             (1 << 1)
@@ -44,15 +44,18 @@
 #define GEO_CONTEXT_AREA_UNLOAD                 2 // called when unloading an area
 #define GEO_CONTEXT_AREA_LOAD                   3 // called when loading an area
 #define GEO_CONTEXT_AREA_INIT                   4 // called when initializing the 8 areas
-#define GEO_CONTEXT_HELD_OBJ                    5 // called when processing a GraphNodeHeldObj
+#define GEO_CONTEXT_HELD_OBJ                    5 // called when processing a GraphNodeHeldObject
 
 #define DISPLAY_LISTS_NUM_LAYERS                8
 
 typedef Gfx *(*GraphNodeFunc)(s32 callContext, struct GraphNode *node, void *context);
 
 struct DisplayListNode {
-    Mtx *transform[MAX_INTERPOLATED_FRAMES];
-    void *displayList[MAX_INTERPOLATED_FRAMES];
+    Mtx *transform0;
+    Mtx *transform1;
+    void *displayList;
+    bool interpMtxComponents;
+    bool applyCameraTransform;
     struct DisplayListNode *next;
 };
 
@@ -112,7 +115,7 @@ struct GraphNodeSwitchCase {
 
 struct GraphNodeCamera {
     struct FnGraphNode fnNode;
-    union { s32 mode; struct Camera *camera; } config;
+    struct { s32 mode; struct Camera *camera; } config;
     Vec3f pos;
     Vec3f focus;
     Mat4 *matrixPtr; // pointer to look-at matrix of this camera as a Mat4
@@ -120,56 +123,13 @@ struct GraphNodeCamera {
     s16 rollScreen;  // rolls screen while keeping the light direction consistent
     Vec3f_ts _pos;
     Vec3f_ts _focus;
-    Mat4 *lookAt[MAX_INTERPOLATED_FRAMES];
-};
-
-struct GraphNodeTranslationRotation {
-    struct GraphNode node;
-    void *displayList;
-    Vec3s translation;
-    Vec3s rotation;
-    Vec3s_ts _translation;
-    Vec3s_ts _rotation;
-};
-
-struct GraphNodeTranslation {
-    struct GraphNode node;
-    void *displayList;
-    Vec3s translation;
-    Vec3s_ts _translation;
-};
-
-struct GraphNodeRotation {
-    struct GraphNode node;
-    void *displayList;
-    Vec3s rotation;
-    Vec3s_ts _rotation;
-};
-
-struct GraphNodeAnimatedPart {
-    struct GraphNode node;
-    void *displayList;
-    Vec3s translation;
-    Vec3s_ts _translation;
-};
-
-struct GraphNodeBillboard {
-    struct GraphNode node;
-    void *displayList;
-    Vec3s translation;
-    Vec3s_ts _translation;
+    Mat4 *lookAt0;
+    Mat4 *lookAt1;
 };
 
 struct GraphNodeDisplayList {
     struct GraphNode node;
     void *displayList;
-};
-
-struct GraphNodeScale {
-    struct GraphNode node;
-    void *displayList;
-    f32 scale;
-    f32_ts _scale;
 };
 
 struct GraphNodeShadow {
@@ -212,6 +172,15 @@ struct GraphNodeCullingRadius {
     struct GraphNode node;
     s16 cullingRadius; // specifies the 'sphere radius' for purposes of frustum culling
 };
+
+// These are defined in graph_node_o.h
+// They need object_list_processor.h, but including it here creates cross-inclusions
+struct GraphNodeTranslationRotation;
+struct GraphNodeTranslation;
+struct GraphNodeRotation;
+struct GraphNodeAnimatedPart;
+struct GraphNodeBillboard;
+struct GraphNodeScale;
 
 extern u16 gAreaUpdateCounter;
 extern struct GraphNode gObjParentGraphNode;

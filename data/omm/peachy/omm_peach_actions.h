@@ -38,10 +38,11 @@
 #define OMM_PEACH_VIBE_GAUGE_RAGE_SHOCKWAVE_DEC     (450) // Releasing a shockwave drains 5% of the Vibe gauge
 #define OMM_PEACH_VIBE_GAUGE_GLOOM_DEC              (12) // 25 seconds (750 frames)
 #define OMM_PEACH_VIBE_GAUGE_CALM_O2_DEC            (20) // 15 seconds (450 frames), recovers 6 O2 every frame (fully restored in 8~20 seconds)
-#define OMM_PEACH_VIBE_GAUGE_CALM_HP_DEC            (30) // 10 seconds (300 frames), recovers 1 HP every 2 seconds (fully restored in 10 seconds)
+#define OMM_PEACH_VIBE_GAUGE_CALM_HEALTH_DEC        (30) // 10 seconds (300 frames), recovers 1 segment every 2 seconds (fully restored in 10 seconds)
 #define OMM_PEACH_VIBE_GAUGE_CALM_FREEZE_DEC        (15) // 20 seconds (600 frames), prevents the effect of frozen water
 
 #define OMM_PEACH_VIBE_COOLDOWN                     (20)
+
 #define OMM_PEACH_VIBE_MUSIC_FREQ_MOD_JOY           (1.50f)
 #define OMM_PEACH_VIBE_MUSIC_FREQ_MOD_RAGE          (0.40f)
 #define OMM_PEACH_VIBE_MUSIC_FREQ_MOD_GLOOM         (0.75f)
@@ -50,22 +51,25 @@
 #define OMM_PEACH_VIBE_MUSIC_VOLUME_MOD_RAGE        (1.40f)
 #define OMM_PEACH_VIBE_MUSIC_VOLUME_MOD_GLOOM       (1.20f)
 #define OMM_PEACH_VIBE_MUSIC_VOLUME_MOD_CALM        (1.00f)
+
 #define OMM_PEACH_VIBE_MUSIC_STRM_FREQ_MOD_JOY      (1.40f)
-#define OMM_PEACH_VIBE_MUSIC_STRM_FREQ_MOD_RAGE     (0.50f)
+#define OMM_PEACH_VIBE_MUSIC_STRM_FREQ_MOD_RAGE     (0.55f)
 #define OMM_PEACH_VIBE_MUSIC_STRM_FREQ_MOD_GLOOM    (0.80f)
 #define OMM_PEACH_VIBE_MUSIC_STRM_FREQ_MOD_CALM     (1.10f)
 #define OMM_PEACH_VIBE_MUSIC_STRM_VOLUME_MOD_JOY    (1.00f)
 #define OMM_PEACH_VIBE_MUSIC_STRM_VOLUME_MOD_RAGE   (1.30f)
 #define OMM_PEACH_VIBE_MUSIC_STRM_VOLUME_MOD_GLOOM  (1.15f)
 #define OMM_PEACH_VIBE_MUSIC_STRM_VOLUME_MOD_CALM   (1.00f)
-#define OMM_PEACH_VIBE_MUSIC_R96A_FREQ_MOD_JOY      (1.40f)
-#define OMM_PEACH_VIBE_MUSIC_R96A_FREQ_MOD_RAGE     (0.50f)
-#define OMM_PEACH_VIBE_MUSIC_R96A_FREQ_MOD_GLOOM    (0.80f)
-#define OMM_PEACH_VIBE_MUSIC_R96A_FREQ_MOD_CALM     (1.10f)
-#define OMM_PEACH_VIBE_MUSIC_R96A_VOLUME_MOD_JOY    (1.00f)
-#define OMM_PEACH_VIBE_MUSIC_R96A_VOLUME_MOD_RAGE   (1.30f)
-#define OMM_PEACH_VIBE_MUSIC_R96A_VOLUME_MOD_GLOOM  (1.15f)
-#define OMM_PEACH_VIBE_MUSIC_R96A_VOLUME_MOD_CALM   (1.00f)
+
+#define OMM_PEACH_VIBE_MUSIC_R96X_FREQ_MOD_JOY      (1.40f)
+#define OMM_PEACH_VIBE_MUSIC_R96X_FREQ_MOD_RAGE     (0.60f)
+#define OMM_PEACH_VIBE_MUSIC_R96X_FREQ_MOD_GLOOM    (0.80f)
+#define OMM_PEACH_VIBE_MUSIC_R96X_FREQ_MOD_CALM     (1.10f)
+#define OMM_PEACH_VIBE_MUSIC_R96X_VOLUME_MOD_JOY    (1.00f)
+#define OMM_PEACH_VIBE_MUSIC_R96X_VOLUME_MOD_RAGE   (1.30f)
+#define OMM_PEACH_VIBE_MUSIC_R96X_VOLUME_MOD_GLOOM  (1.15f)
+#define OMM_PEACH_VIBE_MUSIC_R96X_VOLUME_MOD_CALM   (1.00f)
+
 #define OMM_PEACH_VIBE_SOUND_PITCH_MOD_JOY          (1.08f)
 #define OMM_PEACH_VIBE_SOUND_PITCH_MOD_RAGE         (0.95f)
 #define OMM_PEACH_VIBE_SOUND_PITCH_MOD_GLOOM        (0.90f)

@@ -78,17 +78,19 @@ static s16 omm_render_course_complete_course_name(s16 y) {
     s32 levelNum = OMM_BOWSER_IN_THE_LEVEL(gLastCompletedCourseNum);
     s32 courseNum = omm_level_get_course(levelNum);
     u8 *textCourse = omm_text_convert(OMM_TEXT_COURSE___, false);
+    s32 textCourseLength = omm_text_length(textCourse);
     if (COURSE_IS_MAIN_COURSE(courseNum)) {
-        s32 length = omm_text_length(textCourse);
-        textCourse[length - 3] = DIALOG_CHAR_SPACE;
+        textCourse[textCourseLength - 3] = DIALOG_CHAR_SPACE;
         if (courseNum >= 10) {
-            textCourse[length - 2] = courseNum / 10;
-            textCourse[length - 1] = courseNum % 10;
-            textCourse[length - 0] = 0xFF;
+            textCourse[textCourseLength - 2] = courseNum / 10;
+            textCourse[textCourseLength - 1] = courseNum % 10;
+            textCourse[textCourseLength - 0] = 0xFF;
         } else {
-            textCourse[length - 2] = courseNum;
-            textCourse[length - 1] = 0xFF;
+            textCourse[textCourseLength - 2] = courseNum;
+            textCourse[textCourseLength - 1] = 0xFF;
         }
+    } else {
+        textCourse[textCourseLength - 3] = 0xFF;
     }
     omm_render_string_right_align(OMM_RENDER_COURSE_COMPLETE_RIGHT_ALIGN_X, y, 0xFF, 0xFF, 0xFF, sCompleteAlpha, textCourse, true);
     omm_render_string_left_align(OMM_RENDER_COURSE_COMPLETE_LEFT_ALIGN_X, y, 0xFF, 0xFF, 0xFF, sCompleteAlpha, omm_level_get_name(levelNum, false, false), false);

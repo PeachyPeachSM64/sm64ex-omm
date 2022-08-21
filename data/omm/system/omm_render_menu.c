@@ -6,7 +6,7 @@
 // Sparkly Stars timer
 //
 
-static void omm_render_menu_ssd_timer(s16 x, s16 y, s16 w, u8 alpha, s32 timer) {
+static void omm_render_menu_sparkly_timer(s16 x, s16 y, s16 w, u8 alpha, s32 timer) {
     static const char *sTimerGlyphs[] = {
         OMM_TEXTURE_HUD_0,
         OMM_TEXTURE_HUD_1,
@@ -50,7 +50,7 @@ static void omm_render_menu_update_score(struct Object *sparklyStarsScore) {
 
     // After holding B for 3 seconds, delete the Sparkly Stars save data
     if (sDeleteTimer >= 90) {
-        omm_ssd_clear_mode(sparklyStarsScore->oAction);
+        omm_sparkly_clear_mode(sparklyStarsScore->oAction);
         play_sound(SOUND_MARIO_WAAAOOOW, gGlobalSoundArgs);
         closeScoreScreen = true;
     }
@@ -78,11 +78,13 @@ static void omm_render_menu_update_score(struct Object *sparklyStarsScore) {
     // Close the score screen
     if (closeScoreScreen) {
         obj_mark_for_deletion(sparklyStarsScore);
-        gPlayer1Controller->buttonPressed = 0;
-        gPlayer2Controller->buttonPressed = 0;
-        gPlayer3Controller->buttonPressed = 0;
         sDeleteTimer = 0;
     }
+
+    // Inhibit inputs so the file select screen buttons don't get triggered
+    gPlayer1Controller->buttonPressed = 0;
+    gPlayer2Controller->buttonPressed = 0;
+    gPlayer3Controller->buttonPressed = 0;
 }
 
 static void omm_render_menu_update_character(struct Object *characterSelectButton, f32 *cursorPos) {
@@ -98,6 +100,12 @@ static void omm_render_menu_update_character(struct Object *characterSelectButto
         // Change the current character by pressing the character select button
         if (abs_f(cursorPos[0] - (characterSelectButton->oPosX / 67.5f)) < 20.f &&
             abs_f(cursorPos[1] - (characterSelectButton->oPosY / 67.5f)) < 16.f) {
+
+            // Access the palette editor by pressing Start
+            if (gPlayer1Controller->buttonPressed & START_BUTTON) {
+                omm_palette_editor_open();
+                return;
+            }
 
             // Advance the character index by 1 until an unlocked character is found and select it
             do { gOmmCharacter = (gOmmCharacter + 1) % OMM_NUM_PLAYABLE_CHARACTERS;
@@ -118,11 +126,11 @@ static void omm_render_menu_update_character(struct Object *characterSelectButto
 
         // Select a star icon by pressing A to display the Sparkly Stars score screen
         else if (gPlayer1Controller->buttonPressed & A_BUTTON) {
-            for (s32 mode = OMM_SSM_NORMAL; mode != OMM_SSM_COUNT; ++mode) {
-                if (omm_ssd_is_selectible(mode)) {
+            for (s32 mode = OMM_SPARKLY_MODE_NORMAL; mode != OMM_SPARKLY_MODE_COUNT; ++mode) {
+                if (omm_sparkly_is_selectible(mode)) {
                     if (cursorPos[0] >= 56 + mode * 18 && cursorPos[1] >= 72 &&
                         cursorPos[0] <= 73 + mode * 18 && cursorPos[1] <= 90) {
-                        spawn_object(characterSelectButton, MODEL_NONE, omm_bhv_act_select_star)->oAction = mode;
+                        spawn_object(characterSelectButton, MODEL_NONE, bhvOmmActSelectStar)->oAction = mode;
                         play_sound(SOUND_MENU_STAR_SOUND, gGlobalSoundArgs);
                         break;
                     }
@@ -133,14 +141,10 @@ static void omm_render_menu_update_character(struct Object *characterSelectButto
 }
 
 static void omm_render_menu_update_mode() {
-#if !OMM_GAME_IS_SMSR
-
-    // Press L to enable/disable 1 HP mode
     if (gPlayer1Controller->buttonPressed & L_TRIG) {
         play_sound(SOUND_MENU_MARIO_CASTLE_WARP, gGlobalSoundArgs);
-        g1HPMode = !g1HPMode;
+        gOmmOneHealthMode = !gOmmOneHealthMode;
     }
-#endif
 }
 
 void omm_render_menu_update_inputs(struct Object *characterSelectButton, struct Object *sparklyStarsScore, f32 *cursorPos) {
@@ -153,14 +157,19 @@ void omm_render_menu_update_inputs(struct Object *characterSelectButton, struct 
 }
 
 void omm_render_menu_update(f32 *cursorPos, s8 selectedButtonId, u8 alpha) {
+    static u16 sLastButtonPressed = 0;
     if (selectedButtonId >= MENU_BUTTON_PLAY_FILE_A && selectedButtonId <= MENU_BUTTON_PLAY_FILE_D) {
+        gPlayer1Controller->buttonPressed = sLastButtonPressed;
         omm_select_save_file(1 + selectedButtonId - MENU_BUTTON_PLAY_FILE_A);
         omm_player_select(gOmmCharacter);
     } else if (selectedButtonId == MENU_BUTTON_NONE) {
-        struct Object *characterSelectButton = obj_get_first_with_behavior(omm_bhv_menu_character_select_button);
-        struct Object *sparklyStarsScore = obj_get_first_with_behavior(omm_bhv_act_select_star);
+        struct Object *characterSelectButton = obj_get_first_with_behavior(bhvOmmMenuCharacterSelectButton);
+        struct Object *sparklyStarsScore = obj_get_first_with_behavior(bhvOmmActSelectStar);
         omm_render_menu_update_inputs(characterSelectButton, sparklyStarsScore, cursorPos);
         omm_render_menu(characterSelectButton, sparklyStarsScore, alpha);
+        if (gPlayer1Controller->buttonPressed) {
+            sLastButtonPressed = gPlayer1Controller->buttonPressed;
+        }
     }
 }
 
@@ -170,7 +179,7 @@ void omm_render_menu_update(f32 *cursorPos, s8 selectedButtonId, u8 alpha) {
 
 static void omm_render_menu_character_button(struct Object *characterSelectButton, u8 alpha) {
     if (characterSelectButton) {
-        const u8 *str64 = omm_text_convert(omm_player_get_name(omm_player_get_selected_index()), false);
+        const u8 *str64 = omm_text_convert(omm_player_properties_get_name(omm_player_get_selected_index()), false);
         s16 dx = omm_render_get_string_width(str64) / 2;
         gSPDisplayList(gDisplayListHead++, dl_ia_text_begin);
         gDPSetEnvColor(gDisplayListHead++, 0xFF, 0xFF, 0xFF, alpha);
@@ -180,29 +189,25 @@ static void omm_render_menu_character_button(struct Object *characterSelectButto
 }
 
 static void omm_render_menu_mode_display(u8 alpha) {
-#if !OMM_GAME_IS_SMSR
-#if defined(WIDESCREEN)
+#if defined(WIDESCREEN) && (OMM_GAME_IS_XALO || OMM_GAME_IS_SM74 || OMM_GAME_IS_SMSR)
     s16 hardModeX = GFX_DIMENSIONS_RECT_FROM_LEFT_EDGE(3);
 #else
-    s16 hardModeX = -6;
+    s16 hardModeX = max_s(-6, GFX_DIMENSIONS_RECT_FROM_LEFT_EDGE(3));
 #endif
-    if (g1HPMode) {
+    if (gOmmOneHealthMode) {
         omm_render_string(hardModeX, 3, 0xFF, 0xFF, 0xFF, alpha, omm_text_convert(OMM_TEXT_MENU_HARD_MODE_ON, false), false);
     } else {
         omm_render_string(hardModeX, 3, 0x40, 0x40, 0x40, alpha / 2, omm_text_convert(OMM_TEXT_MENU_HARD_MODE_OFF, false), false);
     }
-#else
-    OMM_UNUSED(alpha);
-#endif
 }
 
 static void omm_render_menu_stars_icons(u8 alpha) {
-    for (s32 mode = OMM_SSM_NORMAL; mode != OMM_SSM_COUNT; ++mode) {
-        if (omm_ssd_is_selectible(mode)) {
-            if (omm_ssd_is_completed(mode)) {
-                omm_render_glyph(216 + 18 * mode, SCREEN_HEIGHT - 51, 16, 16, 0xFF, 0xFF, 0xFF, alpha, OMM_SSX_HUD_GLYPH[mode], false);
+    for (s32 mode = OMM_SPARKLY_MODE_NORMAL; mode != OMM_SPARKLY_MODE_COUNT; ++mode) {
+        if (omm_sparkly_is_selectible(mode)) {
+            if (omm_sparkly_is_completed(mode)) {
+                omm_render_glyph(216 + 18 * mode, SCREEN_HEIGHT - 51, 16, 16, 0xFF, 0xFF, 0xFF, alpha, OMM_SPARKLY_HUD_GLYPH[mode], false);
             } else {
-                omm_render_glyph(216 + 18 * mode, SCREEN_HEIGHT - 51, 16, 16, 0x00, 0x00, 0x00, alpha / 2, OMM_SSX_HUD_GLYPH[mode], false);
+                omm_render_glyph(216 + 18 * mode, SCREEN_HEIGHT - 51, 16, 16, 0x00, 0x00, 0x00, alpha / 2, OMM_SPARKLY_HUD_GLYPH[mode], false);
             }
         }
     }
@@ -211,21 +216,36 @@ static void omm_render_menu_stars_icons(u8 alpha) {
 static void omm_render_menu_score_screen(struct Object *sparklyStarsScore) {
     if (sparklyStarsScore) {
         s32 mode = sparklyStarsScore->oAction;
+
+        // Black background
         omm_render_shade_screen(0.9f * sparklyStarsScore->oOpacity);
-        omm_render_glyph(10, SCREEN_HEIGHT - 36, 16, 16, 0xFF, 0xFF, 0xFF, sparklyStarsScore->oOpacity, OMM_SSX_HUD_GLYPH[mode], false);
-        omm_render_number(30, SCREEN_HEIGHT - 36, 16, 16, 12, sparklyStarsScore->oOpacity, omm_ssd_get_star_count(mode), 2, true, false);
-        omm_render_menu_ssd_timer(220, SCREEN_HEIGHT - 36, 14, sparklyStarsScore->oOpacity, omm_ssd_get_timer(mode));
-        u8 r = OMM_SSX_HUD_COLOR[mode][0];
-        u8 g = OMM_SSX_HUD_COLOR[mode][1];
-        u8 b = OMM_SSX_HUD_COLOR[mode][2];
-        for (s32 i = 0; i != 30; ++i) {
-            s16 x = 12 + 140 * (i / 15);
-            s16 y = SCREEN_HEIGHT - 8 - (44 + 12 * (i % 15));
-            u8 *name = omm_ssd_get_star_level_name(mode, i);
-            if ((i == 29 && omm_ssd_is_grand_star_collected(mode)) || omm_ssd_is_star_collected(mode, i)) {
-                omm_render_string(x, y, r, g, b, sparklyStarsScore->oOpacity, name, false);
-            } else {
-                omm_render_string(x, y, r / 3, g / 3, b / 3, sparklyStarsScore->oOpacity, name, false);
+
+        // Collected count
+        omm_render_glyph(10, SCREEN_HEIGHT - 36, 16, 16, 0xFF, 0xFF, 0xFF, sparklyStarsScore->oOpacity, OMM_SPARKLY_HUD_GLYPH[mode], false);
+        omm_render_number(30, SCREEN_HEIGHT - 36, 16, 16, 12, sparklyStarsScore->oOpacity, omm_sparkly_get_collected_count(mode), 2, true, false);
+
+        // Elapsed time
+        omm_render_menu_sparkly_timer(220, SCREEN_HEIGHT - 36, 14, sparklyStarsScore->oOpacity, omm_sparkly_get_timer(mode));
+
+        // List of stars
+        u8 r = OMM_SPARKLY_HUD_COLOR[mode][0];
+        u8 g = OMM_SPARKLY_HUD_COLOR[mode][1];
+        u8 b = OMM_SPARKLY_HUD_COLOR[mode][2];
+        for (s32 i = 0, j0 = 0, j1 = 0, n = omm_sparkly_get_bowser_4_index(mode); i <= n; ++i) {
+            const u8 *levelName = omm_sparkly_get_level_name(mode, i);
+            if (levelName) {
+                s32 courseNum = omm_level_get_course(gOmmSparklyData[mode][i].level);
+                s32 mainCourse = COURSE_IS_MAIN_COURSE(courseNum);
+                s32 x = 12 + 140 * !mainCourse;
+                s32 y = SCREEN_HEIGHT - 8 - (44 + 12 * (mainCourse ? j0 : j1));
+                j0 += mainCourse; j1 += !mainCourse;
+                if ((i == n && omm_sparkly_is_grand_star_collected(mode)) || omm_sparkly_is_star_collected(mode, i)) {
+                    omm_render_string(x, y, r, g, b, sparklyStarsScore->oOpacity, levelName, false);
+                } else if (i == n) {
+                    omm_render_string(x, y, r / 3, g / 3, b / 3, sparklyStarsScore->oOpacity, omm_text_convert(OMM_TEXT_LEVEL_UNKNOWN, false), false);
+                } else {
+                    omm_render_string(x, y, r / 3, g / 3, b / 3, sparklyStarsScore->oOpacity, levelName, false);
+                }
             }
         }
     }

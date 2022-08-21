@@ -13,7 +13,11 @@ u8 gInterpolatingSurfaces;
 // - Checks floor on a square instead of a point, to prevent objects to fall inside small gaps
 // - Increases number of cells checked for more precise wall collisions
 
-static void recompute_surface_parameters(struct Surface *surf) {
+f32 get_surface_height_at_pos(f32 x, f32 z, struct Surface *surf) {
+    return -(x * surf->normal.x + z * surf->normal.z + surf->originOffset) / surf->normal.y;
+}
+
+bool recompute_surface_parameters(struct Surface *surf) {
     f32 x1 = surf->vertex1[0];
     f32 y1 = surf->vertex1[1];
     f32 z1 = surf->vertex1[2];
@@ -26,13 +30,17 @@ static void recompute_surface_parameters(struct Surface *surf) {
     f32 nx = (y2 - y1) * (z3 - z2) - (z2 - z1) * (y3 - y2);
     f32 ny = (z2 - z1) * (x3 - x2) - (x2 - x1) * (z3 - z2);
     f32 nz = (x2 - x1) * (y3 - y2) - (y2 - y1) * (x3 - x2);
-    f32 mag = max_f(0.0001f, sqrtf(sqr_f(nx) + sqr_f(ny) + sqr_f(nz)));
-    surf->lowerY = min_3_s(y1, y2, y3) - 5;
-    surf->upperY = max_3_s(y1, y2, y3) + 5;
-    surf->normal.x = nx / mag;
-    surf->normal.y = ny / mag;
-    surf->normal.z = nz / mag;
-    surf->originOffset = -(nx * x1 + ny * y1 + nz * z1) / mag;
+    f32 mag = sqrtf(sqr_f(nx) + sqr_f(ny) + sqr_f(nz));
+    if (mag > 0) {
+        surf->lowerY = min_3_s(y1, y2, y3) - 5;
+        surf->upperY = max_3_s(y1, y2, y3) + 5;
+        surf->normal.x = nx / mag;
+        surf->normal.y = ny / mag;
+        surf->normal.z = nz / mag;
+        surf->originOffset = -(nx * x1 + ny * y1 + nz * z1) / mag;
+        return true;
+    }
+    return false;
 }
 
 //
@@ -41,7 +49,7 @@ static void recompute_surface_parameters(struct Surface *surf) {
 
 static bool check_wall_extension(struct Surface *surf, f32 y) {
 #if OMM_GAME_IS_SM64
-    if (OMM_SSM_IS_ENABLED) {
+    if (OMM_SPARKLY_MODE_IS_ENABLED) {
 
     // Extended volcano walls
     // The purpose is to extend the volcano walls vertically to prevent
@@ -78,7 +86,7 @@ static bool check_wall_extension(struct Surface *surf, f32 y) {
 }
 
 static void find_wall_collisions_from_list(OmmArray surfaces, s32 count, struct WallCollisionData *data) {
-    for (s32 i = 0, isWallExtended = 0; i < count && data->numWalls < 16; ++i, isWallExtended = 0) {
+    for (s32 i = 0, isWallExtended = 0; i < count && data->numWalls < MAX_REFERENCED_WALLS; ++i, isWallExtended = 0) {
         struct Surface *surf = omm_array_get(surfaces, ptr, i);
         f32 x = data->x;
         f32 y = data->y + data->offsetY;
@@ -99,7 +107,7 @@ static void find_wall_collisions_from_list(OmmArray surfaces, s32 count, struct 
         }
 
         // Camera collision
-        if (gCheckingSurfaceCollisionsForCamera) {
+        if (check_surface_collisions_for_camera()) {
             if (surf->flags & SURFACE_FLAG_NO_CAM_COLLISION) {
                 continue;
             }
@@ -166,7 +174,7 @@ static void find_wall_collisions_from_list(OmmArray surfaces, s32 count, struct 
 s32 find_wall_collisions(struct WallCollisionData *data) {
     data->numWalls = 0;
 
-#if OMM_GAME_IS_R96A
+#if OMM_GAME_IS_R96X
     if (cheats_no_bounds(gMarioState)) {
         return 0;
     }
@@ -176,27 +184,27 @@ s32 find_wall_collisions(struct WallCollisionData *data) {
     // His radius is bigger than 200, but not capping it at 200 breaks its path
 #if !OMM_GAME_IS_SMSR
     if (gCurrentObject && gCurrentObject->behavior == bhvRacingPenguin) {
-        data->radius = min_f(data->radius, 200.f);
+        data->radius = min_f(data->radius, MAX_COLLISION_RADIUS);
     }
 #endif
 
     // Check PUs
     if (OMM_COLLISION_CHECK_PUS) {
-        if (data->x < -LEVEL_BOUNDS || data->x >= +LEVEL_BOUNDS ||
-            data->z < -LEVEL_BOUNDS || data->z >= +LEVEL_BOUNDS) {
+        if (data->x < -LEVEL_BOUNDARY_MAX || data->x >= +LEVEL_BOUNDARY_MAX ||
+            data->z < -LEVEL_BOUNDARY_MAX || data->z >= +LEVEL_BOUNDARY_MAX) {
             return 0;
         }
     }
 
     // Check cells
-    s16 cx0 = ((s16) ((data->x + LEVEL_BOUNDS) / CELL_SIZE)) & CELL_BITS;
-    s16 cz0 = ((s16) ((data->z + LEVEL_BOUNDS) / CELL_SIZE)) & CELL_BITS;
+    s16 cx0 = ((s16) ((data->x + LEVEL_BOUNDARY_MAX) / CELL_SIZE)) & NUM_CELLS_INDEX;
+    s16 cz0 = ((s16) ((data->z + LEVEL_BOUNDARY_MAX) / CELL_SIZE)) & NUM_CELLS_INDEX;
     for (s16 dz = -(s16) OMM_COLLISION_CHECK_NEIGHBOR_CELLS; dz <= +(s16) OMM_COLLISION_CHECK_NEIGHBOR_CELLS; ++dz)
     for (s16 dx = -(s16) OMM_COLLISION_CHECK_NEIGHBOR_CELLS; dx <= +(s16) OMM_COLLISION_CHECK_NEIGHBOR_CELLS; ++dx) {
         s16 cx = cx0 + dx;
         s16 cz = cz0 + dz;
-        if (cx < 0 || cx >= CELL_COUNT ||
-            cz < 0 || cz >= CELL_COUNT) {
+        if (cx < 0 || cx >= NUM_CELLS ||
+            cz < 0 || cz >= NUM_CELLS) {
             continue;
         }
         find_wall_collisions_from_list(gOmmWalls(1, cx, cz)->data, gOmmWalls(1, cx, cz)->count, data);
@@ -259,7 +267,7 @@ s32 f32_find_wall_collision(f32 *x, f32 *y, f32 *z, f32 offsetY, f32 radius) {
 
 static void check_ceil_extension(struct Surface *surf) {
 #if OMM_GAME_IS_SM64
-    if (OMM_SSM_IS_ENABLED) {
+    if (OMM_SPARKLY_MODE_IS_ENABLED) {
 
     // Extended castle upstairs ceilings
     // The purpose is to extend the castle upstairs ceilings horizontally
@@ -289,8 +297,8 @@ static struct Surface *find_ceil_from_list(OmmArray surfaces, s32 count, f32 x, 
         struct Surface *surf = omm_array_get(surfaces, ptr, i);
 
         // Ignore no-cam if checking for the camera, or camera surfaces if checking for an object
-        if ((gCheckingSurfaceCollisionsForCamera && (surf->flags & SURFACE_FLAG_NO_CAM_COLLISION)) ||
-           (!gCheckingSurfaceCollisionsForCamera && (surf->type == SURFACE_CAMERA_BOUNDARY))) {
+        if ((check_surface_collisions_for_camera() && (surf->flags & SURFACE_FLAG_NO_CAM_COLLISION)) ||
+           (!check_surface_collisions_for_camera() && (surf->type == SURFACE_CAMERA_BOUNDARY))) {
             continue;
         }
 
@@ -298,7 +306,7 @@ static struct Surface *find_ceil_from_list(OmmArray surfaces, s32 count, f32 x, 
         check_ceil_extension(surf);
 
         // Skip if too low or above the previous ceiling
-        f32 height = -(x * surf->normal.x + z * surf->normal.z + surf->originOffset) / surf->normal.y;
+        f32 height = get_surface_height_at_pos(x, z, surf);
         if (height < y - 78.f || height >= *pHeight) {
             continue;
         }
@@ -330,7 +338,7 @@ f32 find_ceil(f32 x, f32 y, f32 z, struct Surface **pCeil) {
     f32 dHeight = +20000.f;
     *pCeil = NULL;
 
-#if OMM_GAME_IS_R96A
+#if OMM_GAME_IS_R96X
     if (cheats_no_bounds(gMarioState)) {
         return sHeight;
     }
@@ -338,20 +346,20 @@ f32 find_ceil(f32 x, f32 y, f32 z, struct Surface **pCeil) {
 
     // Check PUs
     if (OMM_COLLISION_CHECK_PUS) {
-        if (x < -LEVEL_BOUNDS || x >= +LEVEL_BOUNDS ||
-            z < -LEVEL_BOUNDS || z >= +LEVEL_BOUNDS) {
-            return 0;
+        if (x < -LEVEL_BOUNDARY_MAX || x >= +LEVEL_BOUNDARY_MAX ||
+            z < -LEVEL_BOUNDARY_MAX || z >= +LEVEL_BOUNDARY_MAX) {
+            return sHeight;
         }
     }
 
     // Check the center cell only
-    s16 cx = ((s16) ((x + LEVEL_BOUNDS) / CELL_SIZE)) & CELL_BITS;
-    s16 cz = ((s16) ((z + LEVEL_BOUNDS) / CELL_SIZE)) & CELL_BITS;
+    s16 cx = ((s16) ((x + LEVEL_BOUNDARY_MAX) / CELL_SIZE)) & NUM_CELLS_INDEX;
+    s16 cz = ((s16) ((z + LEVEL_BOUNDARY_MAX) / CELL_SIZE)) & NUM_CELLS_INDEX;
     struct Surface *dCeil = find_ceil_from_list(gOmmCeils(1, cx, cz)->data, gOmmCeils(1, cx, cz)->count, x, y, z, &dHeight);
     struct Surface *sCeil = find_ceil_from_list(gOmmCeils(0, cx, cz)->data, gOmmCeils(0, cx, cz)->count, x, y, z, &sHeight);
 
     // Return the lowest of the two ceilings
-    if (dCeil != NULL && dHeight < sHeight) {
+    if (dCeil && dHeight < sHeight) {
         *pCeil = dCeil;
         return dHeight;
     }
@@ -388,13 +396,13 @@ static struct Surface *find_floor_from_list(OmmArray surfaces, s32 count, f32 x,
         struct Surface *surf = omm_array_get(surfaces, ptr, i);
 
         // Ignore no-cam if checking for the camera, or camera surfaces if checking for an object
-        if ((gCheckingSurfaceCollisionsForCamera && (surf->flags & SURFACE_FLAG_NO_CAM_COLLISION)) ||
-           (!gCheckingSurfaceCollisionsForCamera && (surf->type == SURFACE_CAMERA_BOUNDARY))) {
+        if ((check_surface_collisions_for_camera() && (surf->flags & SURFACE_FLAG_NO_CAM_COLLISION)) ||
+           (!check_surface_collisions_for_camera() && (surf->type == SURFACE_CAMERA_BOUNDARY))) {
             continue;
         }
 
         // Skip if too high or below the previous floor
-        f32 height = -(x * surf->normal.x + z * surf->normal.z + surf->originOffset) / surf->normal.y;
+        f32 height = get_surface_height_at_pos(x, z, surf);
         if (height > y + 78.f || height <= *pHeight) {
             continue;
         }
@@ -517,7 +525,7 @@ f32 find_floor_height_and_data(f32 x, f32 y, f32 z, struct FloorGeometry **floor
     static struct FloorGeometry sFloorGeo;
     struct Surface *floor;
     f32 floorHeight = find_floor(x, y, z, &floor);
-    if (floor != NULL) {
+    if (floor) {
         sFloorGeo.normalX = floor->normal.x;
         sFloorGeo.normalY = floor->normal.y;
         sFloorGeo.normalZ = floor->normal.z;
@@ -538,7 +546,7 @@ f32 find_floor_height(f32 x, f32 y, f32 z) {
 }
 
 f32 find_room_floor(f32 x, f32 y, f32 z, struct Surface **pFloor) {
-    gFindFloorIncludeSurfaceIntangible = TRUE;
+    enable_surface_intangible_find_floor();
     return find_floor(x, y, z, pFloor);
 }
 
@@ -570,33 +578,33 @@ f32 find_floor(f32 x, f32 y, f32 z, struct Surface **pFloor) {
 
     // Check PUs
     if (OMM_COLLISION_CHECK_PUS) {
-        if (x < -LEVEL_BOUNDS || x >= +LEVEL_BOUNDS ||
-            z < -LEVEL_BOUNDS || z >= +LEVEL_BOUNDS) {
-            return 0;
+        if (x < -LEVEL_BOUNDARY_MAX || x >= +LEVEL_BOUNDARY_MAX ||
+            z < -LEVEL_BOUNDARY_MAX || z >= +LEVEL_BOUNDARY_MAX) {
+            return sHeight;
         }
     }
 
     // Check the center cell only
-    s16 cx = ((s16) ((x + LEVEL_BOUNDS) / CELL_SIZE)) & CELL_BITS;
-    s16 cz = ((s16) ((z + LEVEL_BOUNDS) / CELL_SIZE)) & CELL_BITS;
+    s16 cx = ((s16) ((x + LEVEL_BOUNDARY_MAX) / CELL_SIZE)) & NUM_CELLS_INDEX;
+    s16 cz = ((s16) ((z + LEVEL_BOUNDARY_MAX) / CELL_SIZE)) & NUM_CELLS_INDEX;
     struct Surface *dFloor = find_floor_from_list(gOmmFloors(1, cx, cz)->data, gOmmFloors(1, cx, cz)->count, x, y, z, &dHeight);
     struct Surface *sFloor = find_floor_from_list(gOmmFloors(0, cx, cz)->data, gOmmFloors(0, cx, cz)->count, x, y, z, &sHeight);
 
     // BBH Merry-Go-Round
     // Handle SURFACE_INTANGIBLE, used to prevent the wrong room from loading
     // when passing above the Merry-Go-Round, but allows Mario to pass through.
-    if (!gFindFloorIncludeSurfaceIntangible && sFloor && sFloor->type == SURFACE_INTANGIBLE) {
+    if (!check_surface_intangible_find_floor() && sFloor && sFloor->type == SURFACE_INTANGIBLE) {
         f32 y0 = sHeight - 200.f; sHeight = -11000.f;
         sFloor = find_floor_from_list(gOmmFloors(0, cx, cz)->data, gOmmFloors(0, cx, cz)->count, x, y0, z, &sHeight);
     } else {
-        gFindFloorIncludeSurfaceIntangible = FALSE;
+        disable_surface_intangible_find_floor();
     }
 
     // Possession fake floor
     // Because the Possession action doesn't check for floors during the animation (first 20 frames),
     // it can easily result in an out of bounds step, triggering the instant death sequence
     if (!sFloor && !dFloor) {
-        if (gMarioState->action == ACT_OMM_POSSESSION && gOmmData->mario->capture.timer < 20) {
+        if (gMarioState->action == ACT_OMM_POSSESSION && gOmmMario->capture.timer < 20) {
             sFloor = get_pseudo_floor_at_pos(x, y, z);
             sHeight = y;
         }
@@ -619,7 +627,7 @@ f32 find_floor(f32 x, f32 y, f32 z, struct Surface **pFloor) {
     }
 #endif
 
-#if OMM_GAME_IS_R96A
+#if OMM_GAME_IS_R96X
     // If out-of-bounds but NoBounds is enabled, place a fake death plane below Mario
     if (!sFloor && !dFloor && cheats_no_bounds(gMarioState)) {
         sFloor = get_pseudo_floor_at_pos(x, -11000.f, z);
@@ -636,7 +644,7 @@ f32 find_floor(f32 x, f32 y, f32 z, struct Surface **pFloor) {
     }
 
     // Return the highest of the two floors
-    if (dFloor != NULL && dHeight > sHeight) {
+    if (dFloor && dHeight > sHeight) {
         *pFloor = dFloor;
         return dHeight;
     }
@@ -673,14 +681,14 @@ f32 find_water_level_and_floor(f32 x, f32 z, struct Surface **pFloor) {
 
 f32 find_water_level(f32 x, f32 z) {
     if (!omm_world_is_flooded()) {
-        if (gEnvironmentRegions != NULL) {
+        if (gEnvironmentRegions) {
             s16 numRegions = gEnvironmentRegions[0];
             const EnvironmentRegion *regions = (const EnvironmentRegion *) &gEnvironmentRegions[1];
             for (s16 i = 0; i < numRegions; ++i) {
                 if (regions[i].type < 50 &&
                     regions[i].x0 <= x && x <= regions[i].x1 &&
                     regions[i].z0 <= z && z <= regions[i].z1) {
-                    return regions[i].value;
+                    return (f32) regions[i].value;
                 }
             }
         }
@@ -690,7 +698,7 @@ f32 find_water_level(f32 x, f32 z) {
 }
 
 f32 find_poison_gas_level(f32 x, f32 z) {
-    if (gEnvironmentRegions != NULL) {
+    if (gEnvironmentRegions) {
         s16 numRegions = gEnvironmentRegions[0];
         const EnvironmentRegion *regions = (const EnvironmentRegion *) &gEnvironmentRegions[1];
         for (s16 i = 0; i < numRegions; ++i) {
@@ -716,7 +724,7 @@ static OmmArray sCheckedSurfaces = omm_array_zero;
 static void find_ray_hits_from_surface_list(OmmArray surfaces, s32 count, Vec3f orig, Vec3f ndir, f32 maxDist, f32 delta, RayCollisionData *hits, bool rejectNoCamCol) {
     f32 upperY = max_f(orig[1], orig[1] + ndir[1] * maxDist);
     f32 lowerY = min_f(orig[1], orig[1] + ndir[1] * maxDist);
-    for (s32 i = 0; i < count && hits->count < 16; ++i) {
+    for (s32 i = 0; i < count && hits->count < MAX_RAYCAST_COL_HITS; ++i) {
         struct Surface *surf = omm_array_get(surfaces, ptr, i);
 
         // Reject surface out of vertical bounds
@@ -811,7 +819,7 @@ static void find_ray_hits_from_surface_list(OmmArray surfaces, s32 count, Vec3f 
         // Add hit to the hits sorted list
         for (s32 i = 0; i <= hits->count; ++i) {
             if (i == hits->count || hits->hits[i].dist > hit.dist) {
-                OMM_MEMMOV(hits->hits + i + 1, hits->hits + i, sizeof(RayHit) * (hits->count - i));
+                omm_move(hits->hits + i + 1, hits->hits + i, sizeof(RayHit) * (hits->count - i));
                 hits->hits[i] = hit;
                 hits->count++;
                 break;
@@ -821,7 +829,7 @@ static void find_ray_hits_from_surface_list(OmmArray surfaces, s32 count, Vec3f 
 }
 
 static void find_ray_hits_on_cell(s16 cx, s16 cz, Vec3f orig, Vec3f ndir, f32 maxDist, f32 delta, RayCollisionData *hits, u32 flags) {
-    if (cx >= 0 && cx < CELL_COUNT && cz >= 0 && cz < CELL_COUNT) {
+    if (cx >= 0 && cx < NUM_CELLS && cz >= 0 && cz < NUM_CELLS) {
 
         // Walls
         if (flags & RAYCAST_FLAG_WALLS) {
@@ -846,7 +854,7 @@ static void find_ray_hits_on_cell(s16 cx, s16 cz, Vec3f orig, Vec3f ndir, f32 ma
 s32 find_collisions_on_ray(Vec3f orig, Vec3f dir, RayCollisionData* hits, f32 delta, u32 flags) {
     hits->count = 0;
     f32 maxDist = vec3f_length(dir);
-    if (!maxDist) {
+    if (maxDist < 0.0001f) {
         return 0;
     }
 
@@ -859,8 +867,8 @@ s32 find_collisions_on_ray(Vec3f orig, Vec3f dir, RayCollisionData* hits, f32 de
     f32 steps = 4.f * max_f(abs_f(dir[0]), abs_f(dir[2])) / CELL_SIZE;
     f32 dx = dir[0] / (steps * CELL_SIZE);
     f32 dz = dir[2] / (steps * CELL_SIZE);
-    f32 cx = (orig[0] + LEVEL_BOUNDS) / CELL_SIZE;
-    f32 cz = (orig[2] + LEVEL_BOUNDS) / CELL_SIZE;
+    f32 cx = (orig[0] + LEVEL_BOUNDARY_MAX) / CELL_SIZE;
+    f32 cz = (orig[2] + LEVEL_BOUNDARY_MAX) / CELL_SIZE;
 
     // DDA
     for (s32 i = 0; i <= (s32) steps; ++i, cx += dx, cz += dz) {
@@ -872,7 +880,7 @@ s32 find_collisions_on_ray(Vec3f orig, Vec3f dir, RayCollisionData* hits, f32 de
 
 void find_surface_on_ray(Vec3f orig, Vec3f dir, struct Surface **hitSurface, Vec3f hitPos BETTER_CAM_RAYCAST_ARGS) {
     RayCollisionData hits;
-    if (find_collisions_on_ray(orig, dir, &hits, 1.f, gCheckingSurfaceCollisionsForCamera ? RAYCAST_FLAGS_CAMERA : RAYCAST_FLAGS_SURFACES)) {
+    if (find_collisions_on_ray(orig, dir, &hits, 1.f, check_surface_collisions_for_camera() ? RAYCAST_FLAGS_CAMERA : RAYCAST_FLAGS_SURFACES)) {
         *hitSurface = hits.hits[0].surf;
         vec3f_copy(hitPos, hits.hits[0].pos);
     } else {

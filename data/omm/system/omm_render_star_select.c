@@ -24,11 +24,10 @@ s32 omm_render_star_select_get_string_width(const u8 *str64, s32 glyphSize, s32 
     for (; *str64 != 0xFF; ++str64) {
         width += spacing;
         switch (*str64) {
-            case OMM_RENDER_STAR_SELECT_SPACE:      width +=  8; break;
-            case OMM_RENDER_STAR_SELECT_COMMA:      width +=  8; break;
-            case OMM_RENDER_STAR_SELECT_HYPHEN:     width += 14; break;
-            case OMM_RENDER_STAR_SELECT_APOSTROPHE: width +=  8; break;
-            default:                                width += 12; break;
+            case DIALOG_CHAR_SPACE: width +=  8; break;
+            case DIALOG_CHAR_COMMA: width +=  8; break;
+            case 0x3E:              width +=  8; break;
+            default:                width += 12; break;
         }
     }
     return ((width * glyphSize) / 16);
@@ -41,16 +40,10 @@ void omm_render_star_select_string(const u8 *str64, s32 x, s32 y, s32 glyphSize,
         s32 dy = 0;
         const void *texture = NULL;
         switch (*str64) {
-            case OMM_RENDER_STAR_SELECT_SPACE:      { dw =  8; dx =  0; dy =  0; texture = NULL; } break;
-            case OMM_RENDER_STAR_SELECT_COMMA:      { dw =  8; dx = -2; dy = -6; texture = ((const u8 **) main_hud_lut)[GLYPH_APOSTROPHE]; } break;
-            case OMM_RENDER_STAR_SELECT_HYPHEN:     { dw = 14; dx =  0; dy =  0; texture = OMM_TEXTURE_HUD_HYPHEN; } break;
-            case OMM_RENDER_STAR_SELECT_APOSTROPHE: { dw =  8; dx = -2; dy = +6; texture = ((const u8 **) main_hud_lut)[GLYPH_APOSTROPHE]; } break;
-            case OMM_RENDER_STAR_SELECT_J:          { dw = 12; dx =  0; dy =  0; texture = OMM_TEXTURE_HUD_J; } break;
-            case OMM_RENDER_STAR_SELECT_Q:          { dw = 12; dx =  0; dy =  0; texture = OMM_TEXTURE_HUD_Q; } break;
-            case OMM_RENDER_STAR_SELECT_V:          { dw = 12; dx =  0; dy =  0; texture = OMM_TEXTURE_HUD_V; } break;
-            case OMM_RENDER_STAR_SELECT_X:          { dw = 12; dx =  0; dy =  0; texture = OMM_TEXTURE_HUD_X; } break;
-            case OMM_RENDER_STAR_SELECT_Z:          { dw = 12; dx =  0; dy =  0; texture = OMM_TEXTURE_HUD_Z; } break;
-            default:                                { dw = 12; dx =  0; dy =  0; texture = ((const u8 **) main_hud_lut)[*str64]; } break;
+            case DIALOG_CHAR_SPACE: { dw =  8; dx =  0; dy =  0; texture = NULL; } break;
+            case DIALOG_CHAR_COMMA: { dw =  8; dx = -2; dy = -6; texture = gOmmFontHud[GLYPH_APOSTROPHE]; } break;
+            case 0x3E:              { dw =  8; dx = -2; dy = +6; texture = gOmmFontHud[GLYPH_APOSTROPHE]; } break;
+            default:                { dw = 12; dx =  0; dy =  0; texture = gOmmFontHud[*str64]; } break;
         }
         dw += spacing;
         dw = ((dw * glyphSize) / 16);
@@ -102,12 +95,12 @@ static s32 omm_render_star_select_init_values() {
 }
 
 static s32 omm_render_star_select_init_objects() {
-    sStarSelectStars[0] = spawn_object(gCurrentObject, MODEL_STAR, omm_bhv_act_select_star);
-    sStarSelectStars[1] = spawn_object(gCurrentObject, MODEL_STAR, omm_bhv_act_select_star);
-    sStarSelectStars[2] = spawn_object(gCurrentObject, MODEL_STAR, omm_bhv_act_select_star);
-    sStarSelectStars[3] = spawn_object(gCurrentObject, MODEL_STAR, omm_bhv_act_select_star);
-    sStarSelectStars[4] = spawn_object(gCurrentObject, MODEL_STAR, omm_bhv_act_select_star);
-    sStarSelectStars[5] = spawn_object(gCurrentObject, MODEL_STAR, omm_bhv_act_select_star);
+    sStarSelectStars[0] = spawn_object(gCurrentObject, MODEL_STAR, bhvOmmActSelectStar);
+    sStarSelectStars[1] = spawn_object(gCurrentObject, MODEL_STAR, bhvOmmActSelectStar);
+    sStarSelectStars[2] = spawn_object(gCurrentObject, MODEL_STAR, bhvOmmActSelectStar);
+    sStarSelectStars[3] = spawn_object(gCurrentObject, MODEL_STAR, bhvOmmActSelectStar);
+    sStarSelectStars[4] = spawn_object(gCurrentObject, MODEL_STAR, bhvOmmActSelectStar);
+    sStarSelectStars[5] = spawn_object(gCurrentObject, MODEL_STAR, bhvOmmActSelectStar);
     return 0;
 }
 
@@ -140,6 +133,8 @@ static s32 omm_render_star_select_update_inputs() {
             gCurrCourseNum = omm_level_get_course(gCurrLevelNum);
             gSavedCourseNum = gCurrCourseNum;
             sWarpDest.levelNum = gCurrLevelNum;
+            sWarpDest.areaIdx = 1;
+            sWarpDest.nodeId = OMM_LEVEL_ENTRY_WARP(gCurrLevelNum);
             starFlags = save_file_get_star_flags(gCurrSaveFileNum - 1, gCurrCourseNum - 1);
             break;
         }
@@ -207,16 +202,16 @@ static s32 omm_render_star_select() {
     if (courseNum < 10) {
         buffer[0] = courseNum;
         buffer[1] = DIALOG_CHAR_SPACE;
-        buffer[2] = OMM_RENDER_STAR_SELECT_HYPHEN;
+        buffer[2] = 0x9F;
         buffer[3] = DIALOG_CHAR_SPACE;
-        OMM_MEMCPY(&buffer[4], courseName, length + 1);
+        omm_copy(&buffer[4], courseName, length + 1);
     } else {
         buffer[0] = courseNum / 10;
         buffer[1] = courseNum % 10;
         buffer[2] = DIALOG_CHAR_SPACE;
-        buffer[3] = OMM_RENDER_STAR_SELECT_HYPHEN;
+        buffer[3] = 0x9F;
         buffer[4] = DIALOG_CHAR_SPACE;
-        OMM_MEMCPY(&buffer[5], courseName, length + 1);
+        omm_copy(&buffer[5], courseName, length + 1);
     }
     omm_text_capitalize(buffer);
     omm_render_star_select_string(buffer, (SCREEN_WIDTH - omm_render_star_select_get_string_width(buffer, 16, 1)) / 2, OMM_RENDER_STAR_SELECT_COURSE_NAME_Y, 16, 1, true, true);
@@ -291,9 +286,9 @@ s32 omm_render_star_select_update(s32 action) {
 // Behavior functions
 //
 
-#if OMM_GAME_IS_R96A
+#if OMM_GAME_IS_R96X
 s32 lvl_star_select() {
-    r96_play_menu_jingle(R96_EVENT_STAR_SELECT);
+    r96_play_menu_jingle(R96_EVENT_STAR_SELECT, 1.0, 1.0, 1500);
 }
 #endif
 

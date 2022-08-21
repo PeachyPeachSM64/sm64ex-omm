@@ -14,7 +14,7 @@ const GeoLayout omm_geo_vanish_mist[] = {
 // Behavior
 //
 
-static void omm_bhv_vanish_mist_update() {
+static void bhv_omm_vanish_mist_update() {
     struct Object *o = gCurrentObject;
     struct Object *p = o->parentObj;
     if (!p || !p->activeFlags) {
@@ -36,11 +36,11 @@ static void omm_bhv_vanish_mist_update() {
     }
 }
 
-const BehaviorScript omm_bhv_vanish_mist[] = {
+const BehaviorScript bhvOmmVanishMist[] = {
     OBJ_TYPE_UNIMPORTANT,
     0x11010001,
     0x08000000,
-    0x0C000000, (uintptr_t) omm_bhv_vanish_mist_update,
+    0x0C000000, (uintptr_t) bhv_omm_vanish_mist_update,
     0x09000000
 };
 
@@ -49,7 +49,7 @@ const BehaviorScript omm_bhv_vanish_mist[] = {
 //
 
 struct Object *omm_spawn_vanish_mist(struct Object *o) {
-    struct Object *mist = obj_spawn_from_geo(o, omm_geo_vanish_mist, omm_bhv_vanish_mist);
+    struct Object *mist = obj_spawn_from_geo(o, omm_geo_vanish_mist, bhvOmmVanishMist);
     mist->activeFlags  |= ACTIVE_FLAG_INITIATED_TIME_STOP;
     mist->oPosX         = o->oPosX;
     mist->oPosY         = o->oPosY + o->hitboxHeight / 2;

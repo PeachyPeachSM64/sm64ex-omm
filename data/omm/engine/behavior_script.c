@@ -90,6 +90,23 @@ static bool cur_obj_update_knockback() {
 }
 
 //
+// Hitbox fixes
+//
+
+static void cur_obj_fix_hitbox() {
+    if (OMM_MOVESET_ODYSSEY) {
+        const OmmBhvDataHitbox *hitbox = omm_behavior_data_get_hitbox(o->behavior);
+        if (hitbox) {
+            o->hitboxRadius = hitbox->hitboxRadius * (hitbox->scale ? o->oScaleX : 1.f);
+            o->hitboxHeight = hitbox->hitboxHeight * (hitbox->scale ? o->oScaleY : 1.f);
+            o->hurtboxRadius = hitbox->hurtboxRadius * (hitbox->scale ? o->oScaleX : 1.f);
+            o->hurtboxHeight = hitbox->hurtboxHeight * (hitbox->scale ? o->oScaleY : 1.f);
+            o->hitboxDownOffset = hitbox->hitboxDownOffset * (hitbox->scale ? o->oScaleY : 1.f);
+        }
+    }
+}
+
+//
 // Objects update by function
 //
 
@@ -105,19 +122,21 @@ static bool do_nothing(NativeBhvFunc func) {
     return false;
 }
 
+// Make 1-up always spawn, ignore save flags
 static bool bhv_1up_always_spawn(NativeBhvFunc func) {
     bhv_1up_common_init();
     return true;
 }
 
+// Trigger the life-up cutscene or fully heal Mario
 static bool bhv_1up_life_up(NativeBhvFunc func) {
-    if ((o->oNodeFlags & GRAPH_RENDER_ACTIVE) && !(o->oNodeFlags & GRAPH_RENDER_INVISIBLE) && (o->oIntangibleTimer == 0)) {
+    if ((o->oNodeFlags & GRAPH_RENDER_ACTIVE) && !(o->oNodeFlags & GRAPH_RENDER_INVISIBLE) && o->oIntangibleTimer == 0) {
         if (obj_check_if_collided_with_object(o, mo)) {
-#if OMM_GAME_IS_R96A
+#if OMM_GAME_IS_R96X
             // Green Demon effect
             if (Cheats.EnableCheats && Cheats.ChaosGreenDemon) {
                 play_sound(SOUND_MENU_CAMERA_BUZZ, gDefaultSoundArgs);
-                m->health = 0xFF;
+                m->health = OMM_HEALTH_DEAD;
                 m->healCounter = 0;
                 m->hurtCounter = 0;
                 obj_mark_for_deletion(o);
@@ -132,6 +151,7 @@ static bool bhv_1up_life_up(NativeBhvFunc func) {
     return false;
 }
 
+// Respawn the blue coin switch if there is blue coins not collected
 static bool bhv_blue_coin_switch_respawn(NativeBhvFunc func) {
     switch (o->oAction) {
 
@@ -174,6 +194,22 @@ static bool bhv_blue_coin_switch_respawn(NativeBhvFunc func) {
     return false;
 }
 
+// Destroy the bob-omb if outside of Mario's range after being thrown or attacked
+static bool bhv_bobomb_fix(NativeBhvFunc func) {
+    if (obj_get_distance(o, gMarioObject) > 4000 && (
+        o->oHeldState == HELD_THROWN ||
+        o->oHeldState == HELD_DROPPED ||
+        o->oAction == BOBOMB_ACT_LAUNCHED ||
+        o->oAction == BOBOMB_ACT_EXPLODE ||
+        o->oAction == BOBOMB_ACT_LAVA_DEATH ||
+        o->oAction == BOBOMB_ACT_DEATH_PLANE_DEATH)) {
+        obj_destroy(o);
+        return true;
+    }
+    return false;
+}
+
+// Extra action for Boo after being uncaptured
 static bool bhv_boo_uncaptured(NativeBhvFunc func) {
     if (o->oAction == 6) {
         o->oIntangibleTimer = -1;
@@ -193,6 +229,7 @@ static bool bhv_boo_uncaptured(NativeBhvFunc func) {
     return false;
 }
 
+// Extra action for Bowser after being KOed
 static bool bhv_bowser_ohkoed(NativeBhvFunc func) {
     if (o->oBowserCameraState == 10 && o->oAction == 4) {
         if (o->oSubAction == 0) {
@@ -207,7 +244,7 @@ static bool bhv_bowser_ohkoed(NativeBhvFunc func) {
             func();
             struct Surface *floor = NULL;
             find_floor(o->oPosX, o->oPosY, o->oPosZ, &floor);
-            if (!floor || floor->type == SURFACE_BURNING || floor->type == SURFACE_DEATH_PLANE) {
+            if (!floor || SURFACE_IS_LETHAL(floor->type)) {
                 o->oPosX = o->oGfxPos[0] = prevXZ[0];
                 o->oPosZ = o->oGfxPos[2] = prevXZ[1];
                 o->oPosY = o->oGfxPos[1] = max_f(o->oPosY, find_floor_height(prevXZ[0], o->oPosY + 100.f, prevXZ[1]));
@@ -218,14 +255,15 @@ static bool bhv_bowser_ohkoed(NativeBhvFunc func) {
     return false;
 }
 
+// Flag the red coins star and don't respawn it if already collected
 static bool bhv_red_coin_star_flag_and_dont_respawn(NativeBhvFunc func) {
-    if (!omm_stars_is_collected(o->oBehParams >> 24)) {
+    if (!omm_stars_is_collected(o->oBhvArgs >> 24)) {
         func();
-        if (o->activeFlags == ACTIVE_FLAG_DEACTIVATED) {
-            u8 starIndex = (o->oBehParams >> 24) & 0xFF;
-            for_each_until_null(const BehaviorScript *, bhv, OMM_ARRAY_OF(const BehaviorScript *) { bhvStar, bhvStarSpawnCoordinates, NULL }) {
+        if (!o->activeFlags) {
+            u8 starIndex = (o->oBhvArgs >> 24) & 0xFF;
+            for_each_until_null(const BehaviorScript *, bhv, omm_static_array_of(const BehaviorScript *) { bhvStar, bhvStarSpawnCoordinates, NULL }) {
                 for_each_object_with_behavior(star, *bhv) {
-                    if (((star->oBehParams >> 24) & 0xFF) == starIndex) {
+                    if (((star->oBhvArgs >> 24) & 0xFF) == starIndex) {
                         star->activeFlags |= ACTIVE_FLAG_RED_COIN_STAR;
                     }
                 }
@@ -237,14 +275,16 @@ static bool bhv_red_coin_star_flag_and_dont_respawn(NativeBhvFunc func) {
     return true;
 }
 
+// Don't respawn a star if already collected
 static bool bhv_star_dont_respawn(NativeBhvFunc func) {
-    if (omm_stars_is_collected(o->oBehParams >> 24)) {
+    if (omm_stars_is_collected(o->oBhvArgs >> 24)) {
         obj_mark_for_deletion(o);
         return true;
     }
     return false;
 }
 
+// Fix Bowser's electric shockwave hitbox
 static bool bhv_bowser_shock_wave_fix(NativeBhvFunc func) {
     o->oDistanceToMario = 0.f;
     func();
@@ -265,6 +305,7 @@ static bool bhv_bowser_shock_wave_fix(NativeBhvFunc func) {
     return true;
 }
 
+// Fix Bowser's tail anchor position, hitbox and grab properties
 static bool bhv_bowser_tail_anchor_fix(NativeBhvFunc func) {
     if (OMM_MOVESET_ODYSSEY) {
         struct Object *bowser = o->parentObj;
@@ -289,6 +330,7 @@ static bool bhv_bowser_tail_anchor_fix(NativeBhvFunc func) {
     return false;
 }
 
+// Always spawn and make Bowser's sub tangible during Non-Stop mode
 static bool bhv_bowsers_sub_non_stop_spawn(NativeBhvFunc func) {
     if (OMM_STARS_NON_STOP_NOT_ENDING_CUTSCENE) {
         obj_load_collision_model(o);
@@ -297,11 +339,13 @@ static bool bhv_bowsers_sub_non_stop_spawn(NativeBhvFunc func) {
     return false;
 }
 
+// Fix the checkerboard elevator group object crash
 static bool bhv_checkerboard_elevator_group_fix(NativeBhvFunc func) {
     o->oGraphNode = NULL;
     return false;
 }
 
+// Boos always carry blue coins, unless inside Castle grounds
 static bool bhv_coin_inside_boo_always_blue(NativeBhvFunc func) {
 #if OMM_GAME_IS_SM64
     if (gCurrLevelNum == LEVEL_COURT) {
@@ -315,51 +359,71 @@ static bool bhv_coin_inside_boo_always_blue(NativeBhvFunc func) {
     return false;
 }
 
+// Always spawn DDD poles during Non-Stop mode
 static bool bhv_ddd_pole_non_stop_spawn(NativeBhvFunc func) {
     if (OMM_STARS_NON_STOP_NOT_ENDING_CUTSCENE) {
         o->hitboxDownOffset = 100.f;
-        o->oDDDPoleMaxOffset = 100.f * o->oBehParams2ndByte;
+        o->oDDDPoleMaxOffset = 100.f * o->oBhvArgs2ndByte;
         return true;
     }
     return false;
 }
 
+// Fix the exclamation box hitbox
+// Make koopa shells respawn
 static bool bhv_exclamation_box_fix(NativeBhvFunc func) {
     func();
     if (o->oAction == 2) {
         o->hitboxHeight *= 2.f;
     }
+    if (o->oAction == 4 && o->oBhvArgs2ndByte == 3 && !o->activeFlags) {
+        o->activeFlags = ACTIVE_FLAG_ACTIVE;
+        o->oAction = 5;
+        cur_obj_hide();
+    }
     return true;
 }
 
-static bool bhv_explosion_fix(NativeBhvFunc func) {
-    o->hitboxRadius = 150.f;
-    o->hitboxHeight = 200.f;
-    o->hitboxDownOffset = 50.f;
-    return false;
-}
-
+// Make flamethrowers always active
 static bool bhv_flamethrower_always_active(NativeBhvFunc func) {
     o->oDistanceToMario = 0.f;
     return false;
 }
 
-static bool bhv_flamethrower_flame_fix(NativeBhvFunc func) {
-    o->hitboxRadius = 60.f;
-    o->hitboxHeight = 120.f;
-    o->hitboxDownOffset = 60.f;
-    return false;
-}
-
-static bool bhv_hidden_blue_coin_respawn(NativeBhvFunc func) {
-    if (o->oAction == HIDDEN_BLUE_COIN_ACT_ACTIVE && o->oTimer >= 239) {
-        o->oAction = HIDDEN_BLUE_COIN_ACT_INACTIVE;
-        o->oNodeFlags &= ~GRAPH_RENDER_INVISIBLE;
+// Make all goombas independent and defeat them if they reach the death barrier
+static bool bhv_goomba_fix(NativeBhvFunc func) {
+    if (o->parentObj && o->parentObj != o) {
+        set_object_respawn_info_bits(o->parentObj, (o->oBhvArgs2ndByte & GOOMBA_BP_TRIPLET_FLAG_MASK) >> 2);
+        o->parentObj->oBhvArgs = o->parentObj->oBhvArgs | (o->oBhvArgs2ndByte & GOOMBA_BP_TRIPLET_FLAG_MASK) << 6;
+        o->oBhvArgs = (o->oGoombaSize & GOOMBA_BP_SIZE_MASK) << 16;
+        o->oBhvArgs2ndByte = (o->oGoombaSize & GOOMBA_BP_SIZE_MASK);
+        o->parentObj = o;
+        o->prevObj = NULL;
+    }
+    if (obj_is_on_ground(o) && SURFACE_IS_LETHAL(o->oFloor->type)) {
+        obj_destroy(o);
         return true;
     }
     return false;
 }
 
+// Make the blue coins not collected respawn with the switch
+static bool bhv_hidden_blue_coin_respawn(NativeBhvFunc func) {
+    if (o->oAction == HIDDEN_BLUE_COIN_ACT_ACTIVE && o->oTimer >= 239) {
+        if (o->oInteractStatus & INT_STATUS_INTERACTED) {
+            spawn_object(o, MODEL_SPARKLES, bhvGoldenCoinSparkles);
+            obj_mark_for_deletion(o);
+            return true;
+        }
+        o->oAction = HIDDEN_BLUE_COIN_ACT_INACTIVE;
+        cur_obj_disable_rendering();
+        cur_obj_become_intangible();
+        return true;
+    }
+    return false;
+}
+
+// Make secrets visible
 static bool bhv_hidden_star_trigger_reveal(NativeBhvFunc func) {
     if (OMM_EXTRAS_REVEAL_SECRETS) {
         o->oGraphNode = gLoadedGraphNodes[MODEL_PURPLE_MARBLE];
@@ -371,11 +435,23 @@ static bool bhv_hidden_star_trigger_reveal(NativeBhvFunc func) {
     return false;
 }
 
+// Fix intro Lakitu's model
 static bool bhv_intro_lakitu_fix(NativeBhvFunc func) {
     o->oGraphNode = geo_layout_to_graph_node(NULL, lakitu_geo);
     return false;
 }
 
+// Always make the jumping box spawn coins when destroyed
+static bool bhv_jumping_box_fix(NativeBhvFunc func) {
+    func();
+    if (o->oHeldState == HELD_FREE && o->oAction == 1 && !o->activeFlags) {
+        create_sound_spawner(SOUND_GENERAL_BREAK_BOX);
+        obj_explode_and_spawn_coins(46.f, 1);
+    }
+    return true;
+}
+
+// Force King Bob-omb to release Mario during some actions to prevent softlocks
 static bool bhv_king_bobomb_fix(NativeBhvFunc func) {
     if (m->action == ACT_GRABBED && o->oAction >= 7) {
         o->oInteractStatus &= ~INT_STATUS_GRABBED_MARIO;
@@ -386,6 +462,7 @@ static bool bhv_king_bobomb_fix(NativeBhvFunc func) {
     return false;
 }
 
+// Make Mad pianos always tangible
 static bool bhv_mad_piano_always_tangible(NativeBhvFunc func) {
     static struct ObjectHitbox sMadPianoHitbox = { INTERACT_MR_BLIZZARD, 0, 3, 99, 0, 200, 150, 200, 150 };
     obj_set_hitbox(o, &sMadPianoHitbox);
@@ -393,6 +470,7 @@ static bool bhv_mad_piano_always_tangible(NativeBhvFunc func) {
     return false;
 }
 
+// Fix the water ring hitbox
 static bool bhv_manta_ray_water_ring_fix(NativeBhvFunc func) {
     cur_obj_init_animation(0);
     o->oWaterRingScalePhaseX = (s32) (random_u16() & 0xFFF) + 0x1000;
@@ -413,6 +491,7 @@ static bool bhv_manta_ray_water_ring_fix(NativeBhvFunc func) {
     return true;
 }
 
+// Fix Monty moles interaction status to prevent a crash
 static bool bhv_monty_mole_fix(NativeBhvFunc func) {
     if (o->oAction == MONTY_MOLE_ACT_SELECT_HOLE) {
         o->oInteractStatus = 0;
@@ -420,9 +499,10 @@ static bool bhv_monty_mole_fix(NativeBhvFunc func) {
     return false;
 }
 
+// Remove the sound button on file select screen
 static bool bhv_menu_button_character_select(NativeBhvFunc func) {
     if (obj_check_model(o, MODEL_MAIN_MENU_PURPLE_SOUND_BUTTON)) {
-        struct Object *characterSelectButton = obj_get_first_with_behavior(omm_bhv_menu_character_select_button);
+        struct Object *characterSelectButton = obj_get_first_with_behavior(bhvOmmMenuCharacterSelectButton);
         if (characterSelectButton) {
             characterSelectButton->oPosX = o->oParentRelativePosX;
             characterSelectButton->oPosY = o->oParentRelativePosY;
@@ -440,8 +520,9 @@ static bool bhv_menu_button_character_select(NativeBhvFunc func) {
     return false;
 }
 
+// Spawn the character select button on the file select screen
 static bool bhv_menu_button_manager_spawn_character_select(NativeBhvFunc func) {
-    struct Object *charSelButton = spawn_object_rel_with_rot(o, MODEL_NONE, omm_bhv_menu_character_select_button, 6400.f, -3500.f, 0, 0, 0, 0);
+    struct Object *charSelButton = spawn_object_rel_with_rot(o, MODEL_NONE, bhvOmmMenuCharacterSelectButton, 6400.f, -3500.f, 0, 0, 0, 0);
     charSelButton->oMenuButtonScale = 1.f;
     charSelButton->oAnimState = 0;
     switch (omm_player_get_selected_index()) {
@@ -454,9 +535,10 @@ static bool bhv_menu_button_manager_spawn_character_select(NativeBhvFunc func) {
     return false;
 }
 
+// Always spawn Mips past 120 stars
 static bool bhv_mips_spawn_at_120_stars(NativeBhvFunc func) {
     if (m->numStars >= 120) {
-        o->oBehParams2ndByte = (OMM_GAME_IS_SMSR ? 0 : 1);
+        o->oBhvArgs2ndByte = (OMM_GAME_IS_SMSR ? 0 : 1);
         o->oMipsForwardVelocity = 50.f;
         o->oInteractionSubtype = INT_SUBTYPE_HOLDABLE_NPC;
         o->oGravity = 15.f;
@@ -468,6 +550,7 @@ static bool bhv_mips_spawn_at_120_stars(NativeBhvFunc func) {
     return false;
 }
 
+// Extra action for Motos when being attacked
 static bool bhv_motos_attacked(NativeBhvFunc func) {
     s32 attackFlags = (o->oInteractStatus >> 24) & (OBJ_INT_ATTACK_STRONG | OBJ_INT_ATTACK_WEAK);
     if (attackFlags) {
@@ -486,11 +569,13 @@ static bool bhv_motos_attacked(NativeBhvFunc func) {
     return false;
 }
 
+// Reduce moving yellow coin RNG
 static bool bhv_moving_yellow_coin_fix(NativeBhvFunc func) {
     o->oForwardVel /= 2.f;
     return false;
 }
 
+// Make Mr. I instantly target Mario if he's close enough
 static bool bhv_mr_i_target_mario(NativeBhvFunc func) {
     if (o->oAction <= 1 && obj_get_distance(o, mo) < 300.f) {
         s16 angleToMario = obj_get_object1_angle_yaw_to_object2(o, mo);
@@ -500,11 +585,21 @@ static bool bhv_mr_i_target_mario(NativeBhvFunc func) {
         o->oMrIUnkFC = 0;
         o->oMrIUnk100 = 0;
         o->oMrIUnk104 = 0;
-        o->oMrIUnk108 = (s32)(random_float() * 50.f + 50.f);
+        o->oMrIUnk108 = (s32) (random_float() * 50.f + 50.f);
     }
     return false;
 }
 
+// Fix the glitchy camera when Mario is holding a pole due to it being slightly above the ground
+static bool bhv_pole_base_fix(NativeBhvFunc func) {
+    f32 fy = find_floor_height(o->oPosX, o->oPosY, o->oPosZ);
+    if (fy < o->oPosY && o->oPosY < fy + 5) {
+        o->oPosY = fy;
+    }
+    return false;
+}
+
+// Allow any type of ground pound to trigger purple switches
 static bool bhv_purple_switch_fix(NativeBhvFunc func) {
     if (o->oAction == PURPLE_SWITCH_IDLE && omm_mario_is_ground_pound_landing(m) &&
         o == mo->platform && obj_get_horizontal_distance(o, mo) < 85.f * o->oScaleX) {
@@ -514,16 +609,18 @@ static bool bhv_purple_switch_fix(NativeBhvFunc func) {
     return false;
 }
 
-static bool bhv_recovery_heart_heal_mario_for_1_hp(NativeBhvFunc func) {
+// Make recovery hearts slowly heal Mario when spinning
+static bool bhv_recovery_heart_heal_mario_for_1_segment(NativeBhvFunc func) {
     if (o->oSpinningHeartTotalSpin + o->oAngleVelYaw >= 0x10000) {
         omm_health_heal_mario(m);
     }
     return false;
 }
 
+// Fix red coin count, display and sound effect
 static bool bhv_red_coin_fix(NativeBhvFunc func) {
-    if (o->parentObj == NULL ||
-        o->parentObj->activeFlags == ACTIVE_FLAG_DEACTIVATED || (
+    if (!o->parentObj ||
+        !o->parentObj->activeFlags || (
         o->parentObj->behavior != bhvHiddenRedCoinStar &&
         o->parentObj->behavior != bhvBowserCourseRedCoinStar)) {
         o->parentObj = NULL;
@@ -541,18 +638,34 @@ static bool bhv_red_coin_fix(NativeBhvFunc func) {
     return false;
 }
 
+// Disable respawner during "defeat x enemies" challenges
+static bool bhv_respawner_disable(NativeBhvFunc func) {
+    if (omm_sparkly_context_get_data(OMM_SPARKLY_DATA_ENEMIES)) {
+        obj_mark_for_deletion(o);
+        return true;
+    }
+    return false;
+}
+
+// Fix home position
+static bool bhv_skeeter_fix(NativeBhvFunc func) {
+    func();
+    obj_set_home(o, o->oPosX, o->oPosY, o->oPosZ);
+    return true;
+}
+
+// Skip the SL snowman dialog if Sparkly Stars are enabled
 static bool bhv_sl_snowman_wind_blow_if_sparkly_stars_enabled(NativeBhvFunc func) {
-    if (OMM_SSM_IS_ENABLED) {
+    if (OMM_SPARKLY_MODE_IS_ENABLED) {
         o->oSubAction = SL_SNOWMAN_WIND_ACT_BLOWING;
     }
     return false;
 }
 
+// Fix a softlock that can happen if Mario is not in the 400 units radius after starting the dialog
+// Fix snowman's body yaw after reaching the head
 static bool bhv_snowmans_bottom_fix(NativeBhvFunc func) {
     switch (o->oAction) {
-
-        // Fix a softlock that can happen if Mario is not
-        // in the 400 units radius after starting the dialog
         case 0: {
             if (m->action == ACT_READING_NPC_DIALOG &&
                 m->usedObj == o && vec3f_dist(m->pos, &o->oPosX) > 400.f) {
@@ -568,7 +681,6 @@ static bool bhv_snowmans_bottom_fix(NativeBhvFunc func) {
             }
         } break;
 
-        // Fix snowman's body yaw after reaching the head
         case 3: {
             struct Object *snowmansHead = obj_get_nearest_with_behavior(o, bhvSnowmansHead);
             if (snowmansHead) {
@@ -579,6 +691,7 @@ static bool bhv_snowmans_bottom_fix(NativeBhvFunc func) {
     return false;
 }
 
+// Don't spawn the CCM snowman as a whole if Non-Stop is enabled
 static bool bhv_snowmans_head_non_stop_dont_spawn_whole(NativeBhvFunc func) {
     if (OMM_STARS_NON_STOP_NOT_ENDING_CUTSCENE) {
         cur_obj_scale(0.7f);
@@ -590,8 +703,9 @@ static bool bhv_snowmans_head_non_stop_dont_spawn_whole(NativeBhvFunc func) {
     return false;
 }
 
+// Allow any type of ground pound to drain the water on top of Tiny THI
 static bool bhv_thi_tiny_island_top_fix(NativeBhvFunc func) {
-    if (o->oAction == 0 && !gTHIWaterDrained && omm_mario_is_ground_pound_landing(m) && obj_get_distance(o, mo) < 500.0f) {
+    if (o->oAction == 0 && !gTHIWaterDrained && omm_mario_is_ground_pound_landing(m) && obj_get_distance(o, mo) < 500.f) {
         obj_spawn_particles(o, 30, MODEL_WHITE_PARTICLE_SMALL, 0, 40, 0, 20, 40, -4, 2, 0);
         obj_spawn_triangle_break_particles(o, OBJ_SPAWN_TRI_BREAK_PRESET_DIRT_SMALL);
         play_sound(SOUND_GENERAL_ACTIVATE_CAP_SWITCH, o->oCameraToObject);
@@ -602,6 +716,7 @@ static bool bhv_thi_tiny_island_top_fix(NativeBhvFunc func) {
     return false;
 }
 
+// Make Tuxie's mother endlessly chase Mario if he's holding or capturing Tuxie
 static bool bhv_tuxies_mother_chase_mario(NativeBhvFunc func) {
     if (o->oAction == 2 && m->action == ACT_OMM_POSSESSION && gOmmCapture->behavior == bhvUnused20E0) {
         gOmmCapture->oHeldState = HELD_HELD;
@@ -609,8 +724,9 @@ static bool bhv_tuxies_mother_chase_mario(NativeBhvFunc func) {
     return false;
 }
 
+// Fix Cage Ukiki's path
 static bool bhv_ukiki_fix(NativeBhvFunc func) {
-    if (o->oBehParams2ndByte == UKIKI_CAGE) {
+    if (o->oBhvArgs2ndByte == UKIKI_CAGE) {
         obj_set_home(o, o->oPosX, o->oPosY, o->oPosZ);
         if (o->oAction == UKIKI_ACT_GO_TO_CAGE && o->oSubAction == UKIKI_SUB_ACT_CAGE_RUN_TO_CAGE && o->oPathedStartWaypoint && o->oTimer == 1) {
             struct Waypoint *nearest = obj_path_get_nearest_waypoint(o, o->oPathedStartWaypoint, 200.f);
@@ -623,19 +739,21 @@ static bool bhv_ukiki_fix(NativeBhvFunc func) {
     return false;
 }
 
+// Make wooden posts spawn coins if fully pounded
 static bool bhv_wooden_post_spawn_coins(NativeBhvFunc func) {
-    if (!(o->oBehParams & WOODEN_POST_BP_NO_COINS_MASK) && o->oWoodenPostOffsetY <= -190.f) {
+    if (!(o->oBhvArgs & WOODEN_POST_BP_NO_COINS_MASK) && o->oWoodenPostOffsetY <= -190.f) {
         o->oPosY = o->oHomeY;
         obj_spawn_loot_yellow_coins(o, 5, 20.f);
         set_object_respawn_info_bits(o, 1);
-        o->oBehParams |= WOODEN_POST_BP_NO_COINS_MASK;
+        o->oBhvArgs |= WOODEN_POST_BP_NO_COINS_MASK;
         o->oPosY = o->oHomeY + o->oWoodenPostOffsetY;
     }
     return false;
 }
 
-static bool bhv_yoshi_surprise(NativeBhvFunc func) {
 #if OMM_GAME_IS_SM64
+// Make Yoshi give something more interesting than 100 useless 1-ups
+static bool bhv_yoshi_surprise(NativeBhvFunc func) {
     if (o->oAction == YOSHI_ACT_GIVE_PRESENT) {
         o->oAction = YOSHI_ACT_IDLE;
         omm_spawn_problem(m->marioObj);
@@ -647,9 +765,9 @@ static bool bhv_yoshi_surprise(NativeBhvFunc func) {
             m->hurtCounter = 64;
         }
     }
-#endif
     return false;
 }
+#endif
 
 #undef m
 #undef mo
@@ -657,80 +775,86 @@ static bool bhv_yoshi_surprise(NativeBhvFunc func) {
 
 OMM_AT_STARTUP static void omm_setup_behavior_update_functions_map() {
     static const void *sBhvUpdateTable[][2] = {
-        { bhv_1up_init,                         bhv_1up_always_spawn },
-        { bhv_1up_loop,                         bhv_1up_life_up },
-        { bhv_1up_hidden_loop,                  bhv_1up_life_up },
-        { bhv_1up_hidden_in_pole_loop,          bhv_1up_life_up },
-        { bhv_1up_jump_on_approach_loop,        bhv_1up_life_up },
-        { bhv_1up_running_away_loop,            bhv_1up_life_up },
-        { bhv_1up_sliding_loop,                 bhv_1up_life_up },
-        { bhv_1up_walking_loop,                 bhv_1up_life_up },
-        { bhv_blue_coin_switch_loop,            bhv_blue_coin_switch_respawn },
-        { bhv_boo_loop,                         bhv_boo_uncaptured },
-        { bhv_bowser_loop,                      bhv_bowser_ohkoed },
-        { bhv_bowser_course_red_coin_star_loop, bhv_red_coin_star_flag_and_dont_respawn },
-        { bhv_bowser_shock_wave_loop,           bhv_bowser_shock_wave_fix },
-        { bhv_bowser_tail_anchor_loop,          bhv_bowser_tail_anchor_fix},
-        { bhv_bowsers_sub_loop,                 bhv_bowsers_sub_non_stop_spawn },
-        { bhv_ccm_touched_star_spawn_loop,      bhv_star_dont_respawn },
-        { bhv_checkerboard_elevator_group_init, bhv_checkerboard_elevator_group_fix },
-        { bhv_coin_inside_boo_loop,             bhv_coin_inside_boo_always_blue },
-        { bhv_collect_star_init,                bhv_star_dont_respawn },
-        { bhv_collect_star_loop,                bhv_star_dont_respawn },
-        { bhv_ddd_pole_init,                    bhv_ddd_pole_non_stop_spawn },
-        { bhv_exclamation_box_loop,             bhv_exclamation_box_fix },
-        { bhv_explosion_loop,                   bhv_explosion_fix },
-        { bhv_flamethrower_loop,                bhv_flamethrower_always_active },
-        { bhv_flamethrower_flame_loop,          bhv_flamethrower_flame_fix },
-        { bhv_hidden_blue_coin_loop,            bhv_hidden_blue_coin_respawn },
-        { bhv_hidden_red_coin_star_init,        bhv_red_coin_star_flag_and_dont_respawn },
-        { bhv_hidden_red_coin_star_loop,        bhv_red_coin_star_flag_and_dont_respawn },
-        { bhv_hidden_star_init,                 bhv_star_dont_respawn },
-        { bhv_hidden_star_loop,                 bhv_star_dont_respawn },
-        { bhv_hidden_star_trigger_loop,         bhv_hidden_star_trigger_reveal },
-        { bhv_init_room,                        do_nothing },
-        { bhv_intro_lakitu_loop,                bhv_intro_lakitu_fix },
-        { bhv_king_bobomb_loop,                 bhv_king_bobomb_fix },
-        { bhv_mad_piano_update,                 bhv_mad_piano_always_tangible },
-        { bhv_manta_ray_water_ring_init,        bhv_manta_ray_water_ring_fix },
-        { bhv_monty_mole_update,                bhv_monty_mole_fix },
-        { bhv_menu_button_loop,                 bhv_menu_button_character_select },
-        { bhv_menu_button_manager_init,         bhv_menu_button_manager_spawn_character_select },
-        { bhv_mips_init,                        bhv_mips_spawn_at_120_stars },
-#if OMM_GAME_IS_R96A
-        { bhv_motos_loop,                       bhv_motos_attacked },
+        { bhv_1up_init,                             bhv_1up_always_spawn },
+        { bhv_1up_loop,                             bhv_1up_life_up },
+        { bhv_1up_hidden_loop,                      bhv_1up_life_up },
+        { bhv_1up_hidden_in_pole_loop,              bhv_1up_life_up },
+        { bhv_1up_jump_on_approach_loop,            bhv_1up_life_up },
+        { bhv_1up_running_away_loop,                bhv_1up_life_up },
+        { bhv_1up_sliding_loop,                     bhv_1up_life_up },
+        { bhv_1up_walking_loop,                     bhv_1up_life_up },
+        { bhv_blue_coin_switch_loop,                bhv_blue_coin_switch_respawn },
+        { bhv_bobomb_loop,                          bhv_bobomb_fix },
+        { bhv_boo_loop,                             bhv_boo_uncaptured },
+        { bhv_bowser_loop,                          bhv_bowser_ohkoed },
+        { bhv_bowser_course_red_coin_star_loop,     bhv_red_coin_star_flag_and_dont_respawn },
+        { bhv_bowser_shock_wave_loop,               bhv_bowser_shock_wave_fix },
+        { bhv_bowser_tail_anchor_loop,              bhv_bowser_tail_anchor_fix},
+        { bhv_bowsers_sub_loop,                     bhv_bowsers_sub_non_stop_spawn },
+        { bhv_ccm_touched_star_spawn_loop,          bhv_star_dont_respawn },
+        { bhv_checkerboard_elevator_group_init,     bhv_checkerboard_elevator_group_fix },
+        { bhv_coin_inside_boo_loop,                 bhv_coin_inside_boo_always_blue },
+        { bhv_collect_star_init,                    bhv_star_dont_respawn },
+        { bhv_collect_star_loop,                    bhv_star_dont_respawn },
+        { bhv_ddd_pole_init,                        bhv_ddd_pole_non_stop_spawn },
+        { bhv_exclamation_box_loop,                 bhv_exclamation_box_fix },
+        { bhv_flamethrower_loop,                    bhv_flamethrower_always_active },
+        { bhv_goomba_update,                        bhv_goomba_fix },
+        { bhv_hidden_blue_coin_loop,                bhv_hidden_blue_coin_respawn },
+        { bhv_hidden_red_coin_star_init,            bhv_red_coin_star_flag_and_dont_respawn },
+        { bhv_hidden_red_coin_star_loop,            bhv_red_coin_star_flag_and_dont_respawn },
+        { bhv_hidden_star_init,                     bhv_star_dont_respawn },
+        { bhv_hidden_star_loop,                     bhv_star_dont_respawn },
+        { bhv_hidden_star_trigger_loop,             bhv_hidden_star_trigger_reveal },
+        { bhv_intro_lakitu_loop,                    bhv_intro_lakitu_fix },
+        { bhv_jumping_box_loop,                     bhv_jumping_box_fix },
+        { bhv_king_bobomb_loop,                     bhv_king_bobomb_fix },
+        { bhv_mad_piano_update,                     bhv_mad_piano_always_tangible },
+        { bhv_manta_ray_water_ring_init,            bhv_manta_ray_water_ring_fix },
+        { bhv_monty_mole_update,                    bhv_monty_mole_fix },
+        { bhv_menu_button_loop,                     bhv_menu_button_character_select },
+        { bhv_menu_button_manager_init,             bhv_menu_button_manager_spawn_character_select },
+        { bhv_mips_init,                            bhv_mips_spawn_at_120_stars },
+#if OMM_GAME_IS_R96X
+        { bhv_motos_loop,                           bhv_motos_attacked },
 #endif
-        { bhv_moving_yellow_coin_init,          bhv_moving_yellow_coin_fix },
-        { bhv_mr_i_loop,                        bhv_mr_i_target_mario },
-        { bhv_purple_switch_loop,               bhv_purple_switch_fix },
-        { bhv_recovery_heart_loop,              bhv_recovery_heart_heal_mario_for_1_hp },
-        { bhv_red_coin_loop,                    bhv_red_coin_fix },
-        { bhv_sl_snowman_wind_loop,             bhv_sl_snowman_wind_blow_if_sparkly_stars_enabled },
-        { bhv_snowmans_bottom_loop,             bhv_snowmans_bottom_fix },
-        { bhv_snowmans_head_init,               bhv_snowmans_head_non_stop_dont_spawn_whole },
-        { bhv_spawned_star_loop,                bhv_star_dont_respawn },
-        { bhv_star_spawn_init,                  bhv_star_dont_respawn },
-        { bhv_star_spawn_loop,                  bhv_star_dont_respawn },
-        { bhv_thi_tiny_island_top_loop,         bhv_thi_tiny_island_top_fix },
-        { bhv_tuxies_mother_loop,               bhv_tuxies_mother_chase_mario },
-        { bhv_ukiki_loop,                       bhv_ukiki_fix },
-        { bhv_wooden_post_update,               bhv_wooden_post_spawn_coins },
-        { bhv_yoshi_loop,                       bhv_yoshi_surprise },
-        { load_object_collision_model,          do_nothing },
+        { bhv_moving_yellow_coin_init,              bhv_moving_yellow_coin_fix },
+        { bhv_mr_i_loop,                            bhv_mr_i_target_mario },
+        { bhv_pole_base_loop,                       bhv_pole_base_fix },
+        { bhv_purple_switch_loop,                   bhv_purple_switch_fix },
+        { bhv_recovery_heart_loop,                  bhv_recovery_heart_heal_mario_for_1_segment },
+        { bhv_red_coin_loop,                        bhv_red_coin_fix },
+        { bhv_respawner_loop,                       bhv_respawner_disable },
+        { bhv_skeeter_update,                       bhv_skeeter_fix },
+        { bhv_sl_snowman_wind_loop,                 bhv_sl_snowman_wind_blow_if_sparkly_stars_enabled },
+        { bhv_snowmans_bottom_loop,                 bhv_snowmans_bottom_fix },
+        { bhv_snowmans_head_init,                   bhv_snowmans_head_non_stop_dont_spawn_whole },
+        { bhv_spawned_star_loop,                    bhv_star_dont_respawn },
+        { bhv_star_spawn_init,                      bhv_star_dont_respawn },
+        { bhv_star_spawn_loop,                      bhv_star_dont_respawn },
+        { bhv_thi_tiny_island_top_loop,             bhv_thi_tiny_island_top_fix },
+        { bhv_tuxies_mother_loop,                   bhv_tuxies_mother_chase_mario },
+        { bhv_ukiki_loop,                           bhv_ukiki_fix },
+        { bhv_wooden_post_update,                   bhv_wooden_post_spawn_coins },
+#if OMM_GAME_IS_SM64
+        { bhv_yoshi_loop,                           bhv_yoshi_surprise },
+#endif
     };
-    for (s32 i = 0; i != OMM_ARRAY_SIZE(sBhvUpdateTable); ++i) {
+    for (s32 i = 0; i != omm_static_array_length(sBhvUpdateTable); ++i) {
         omm_hmap_insert(sBhvUpdateMap, (uintptr_t) sBhvUpdateTable[i][0], sBhvUpdateTable[i][1]);
     }
 }
 
 static void cur_obj_update_behavior_func(void (*func)(void)) {
     if (!cur_obj_update_knockback()) {
-        bool doSafeStep = (omm_obj_is_goomba(gCurrentObject) || omm_obj_is_coin(gCurrentObject));
-        if (doSafeStep) obj_safe_step(gCurrentObject, 0);
+        bool doSafeStep = (omm_obj_is_goomba(o) || omm_obj_is_coin(o) || o->behavior == bhvBobomb);
+        if (doSafeStep) obj_safe_step(o, false);
+        cur_obj_fix_hitbox();
         s32 i = omm_hmap_find(sBhvUpdateMap, (uintptr_t) func);
         if (i == -1 || !omm_hmap_get(sBhvUpdateMap, UpdateFunc, i)(func)) {
             if (func) func();
-            if (doSafeStep) obj_safe_step(gCurrentObject, 1);
+            cur_obj_fix_hitbox();
+            if (doSafeStep) obj_safe_step(o, true);
         }
     }
 }
@@ -1033,7 +1157,7 @@ static bool bhv_cmd_animate() {
 
 static bool bhv_cmd_spawn_child_with_param() {
     struct Object *child = spawn_object_at_origin(o, 0, bhv_cmd_get(u32, 1, 0), bhv_cmd_get_ptr(const BehaviorScript *, 2));
-    child->oBehParams2ndByte = bhv_cmd_get(s16, 0, 1);
+    child->oBhvArgs2ndByte = bhv_cmd_get(s16, 0, 1);
     obj_copy_pos_and_angle(child, o);
     gCurBhvCommand += 3;
     return true;
@@ -1147,7 +1271,7 @@ static bool bhv_cmd_cylboard() {
     return true;
 }
 
-#if OMM_GAME_IS_R96A
+#if OMM_GAME_IS_R96X
 static bool bhv_cmd_modelpack_no_billboard() {
     if (configBillboard) {
         o->oNodeFlags &= ~GRAPH_RENDER_BILLBOARD;
@@ -1233,7 +1357,7 @@ static BhvCommandProc sBehaviorCmdTable[] = {
     bhv_cmd_set_int_unused,
     bhv_cmd_spawn_water_droplet,
     bhv_cmd_cylboard,
-#if OMM_GAME_IS_R96A
+#if OMM_GAME_IS_R96X
     bhv_cmd_modelpack_no_billboard,
     bhv_cmd_mr_i_fix,
 #else
@@ -1327,6 +1451,15 @@ void cur_obj_update(void) {
         obj_update_gfx(o);
     }
 
+#if OMM_GAME_IS_XALO
+    // Make trees more or less transparent depending on their distance to the camera
+    if (o->behavior == bhvTree) {
+        s32 opacityDist = ((s32) (-o->oCameraToObject[2] - 128)) >> 2;
+        if (opacityDist < 0x00) opacityDist = 0xFF;
+        o->oOpacity = clamp_s(opacityDist, 0x00, 0xFF);
+    }
+#endif
+
     // Update visibility
     if (o->oRoom != -1) {
         cur_obj_enable_rendering_if_mario_in_room();
@@ -1334,7 +1467,7 @@ void cur_obj_update(void) {
         (objFlags & OBJ_FLAG_COMPUTE_DIST_TO_MARIO) &&
        !(objFlags & OBJ_FLAG_ACTIVE_FROM_AFAR) &&
         o->oHeldState == HELD_FREE &&
-        o->collisionData == NULL)
+       !o->collisionData)
     {
         o->oNodeFlags |= GRAPH_RENDER_ACTIVE;
         o->activeFlags &= ~ACTIVE_FLAG_FAR_AWAY;

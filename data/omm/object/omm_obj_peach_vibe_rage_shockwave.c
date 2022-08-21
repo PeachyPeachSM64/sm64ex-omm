@@ -37,7 +37,7 @@ typedef struct {
 } State;
 
 typedef struct {
-    Gfx gfx[OMM_ARRAY_SIZE(omm_peach_vibe_rage_shockwave_gfx)];
+    Gfx gfx[omm_static_array_length(omm_peach_vibe_rage_shockwave_gfx)];
     Gfx tri[2 * (2 * OMM_PEACH_VIBE_RAGE_SHOCKWAVE_POINTS + 8) + 1];
     Vtx vtx[2 * (2 * (OMM_PEACH_VIBE_RAGE_SHOCKWAVE_POINTS + 1))];
     State state[OMM_PEACH_VIBE_RAGE_SHOCKWAVE_POINTS + 1];
@@ -60,7 +60,7 @@ const GeoLayout omm_geo_peach_vibe_rage_shockwave[] = {
 // Behavior
 //
 
-static void omm_bhv_peach_vibe_rage_shockwave_update() {
+static void bhv_omm_peach_vibe_rage_shockwave_update() {
     struct Object *o = gCurrentObject;
     OmmPeachVibeRageShockwaveGeoData *data = geo_get_geo_data(o, sizeof(OmmPeachVibeRageShockwaveGeoData), omm_peach_vibe_rage_shockwave_gfx, sizeof(omm_peach_vibe_rage_shockwave_gfx));
     f32 r = o->oTimer * OMM_PEACH_VIBE_RAGE_SHOCKWAVE_SPEED;
@@ -81,7 +81,7 @@ static void omm_bhv_peach_vibe_rage_shockwave_update() {
         f32 y = o->oPosY + state->y;
         struct Surface *floor = NULL;
         f32 fy = find_floor(o->oPosX + state->x, y, o->oPosZ + state->z, &floor);
-        if (floor && floor->type != SURFACE_DEATH_PLANE && floor->type != SURFACE_VERTICAL_WIND) {
+        if (floor && !SURFACE_IS_DEATH_PLANE(floor->type)) {
             if (y < fy + OMM_PEACH_VIBE_RAGE_SHOCKWAVE_SPEED * 1.5f) {
                 state->onGround = true;
                 airOnly = false;
@@ -252,11 +252,11 @@ static void omm_bhv_peach_vibe_rage_shockwave_update() {
     }
 }
 
-const BehaviorScript omm_bhv_peach_vibe_rage_shockwave[] = {
+const BehaviorScript bhvOmmPeachVibeRageShockwave[] = {
     OBJ_TYPE_SPECIAL,
     0x11010001,
     0x08000000,
-    0x0C000000, (uintptr_t) omm_bhv_peach_vibe_rage_shockwave_update,
+    0x0C000000, (uintptr_t) bhv_omm_peach_vibe_rage_shockwave_update,
     0x09000000,
 };
 
@@ -265,7 +265,7 @@ const BehaviorScript omm_bhv_peach_vibe_rage_shockwave[] = {
 //
 
 struct Object *omm_spawn_peach_vibe_rage_shockwave(struct Object *o) {
-    struct Object *wave = obj_spawn_from_geo(o, omm_geo_peach_vibe_rage_shockwave, omm_bhv_peach_vibe_rage_shockwave);
+    struct Object *wave = obj_spawn_from_geo(o, omm_geo_peach_vibe_rage_shockwave, bhvOmmPeachVibeRageShockwave);
     obj_set_always_rendered(wave, true);
     obj_set_pos(wave, o->oPosX, o->oPosY, o->oPosZ);
     obj_set_home(wave, o->oPosX, o->oPosY, o->oPosZ);

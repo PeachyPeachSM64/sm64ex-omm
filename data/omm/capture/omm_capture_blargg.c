@@ -6,17 +6,17 @@
 // Init
 //
 
-bool cappy_blargg_init(UNUSED struct Object *o) {
-    gOmmData->object->state.actionState = 0;
+bool omm_cappy_blargg_init(UNUSED struct Object *o) {
+    gOmmObject->state.actionState = 0;
     return true;
 }
 
-void cappy_blargg_end(struct Object *o) {
+void omm_cappy_blargg_end(struct Object *o) {
     o->oAction = 0;
     o->oInteractStatus = 0;
 }
 
-f32 cappy_blargg_get_top(struct Object *o) {
+f32 omm_cappy_blargg_get_top(struct Object *o) {
     return 100.f * o->oScaleY;
 }
 
@@ -24,7 +24,7 @@ f32 cappy_blargg_get_top(struct Object *o) {
 // Update
 //
 
-s32 cappy_blargg_update(struct Object *o) {
+s32 omm_cappy_blargg_update(struct Object *o) {
 
     // Hitbox
     o->hitboxRadius = omm_capture_get_hitbox_radius(o);
@@ -43,10 +43,10 @@ s32 cappy_blargg_update(struct Object *o) {
 
     // Inputs
     if (!omm_mario_is_locked(gMarioState)) {
-        gOmmData->object->state.actionState = 0;
+        gOmmObject->state.actionState = 0;
         pobj_move(o, false, false, false);
         if (POBJ_B_BUTTON_PRESSED) {
-            gOmmData->object->state.actionState = 1;
+            gOmmObject->state.actionState = 1;
             omm_mario_lock(gMarioState, -1);
         }
     }
@@ -68,10 +68,10 @@ s32 cappy_blargg_update(struct Object *o) {
 
     // Gfx
     obj_update_gfx(o);
-    obj_make_step_sound_and_particle(o, &gOmmData->object->state.walkDistance, 0.f, 0.f, -1, OBJ_PARTICLE_FLAME);
+    obj_make_step_sound_and_particle(o, &gOmmObject->state.walkDistance, 0.f, 0.f, -1, OBJ_PARTICLE_FLAME);
 
     // Animation
-    switch (gOmmData->object->state.actionState) {
+    switch (gOmmObject->state.actionState) {
 
         // Idle/Moving
         case 0: {
@@ -85,18 +85,18 @@ s32 cappy_blargg_update(struct Object *o) {
                 obj_play_sound(o, SOUND_OBJ_FLAME_BLOWN | 0xFF00);
                 omm_spawn_blargg_fire_ball(o);
             } else if (obj_anim_is_at_end(o)) {
-                gOmmData->object->state.actionState = 0;
+                gOmmObject->state.actionState = 0;
                 omm_mario_unlock(gMarioState);
             }
         } break;
     }
     
     // Cappy values
-    gOmmData->object->cappy.offset[0] = -6.f;
-    gOmmData->object->cappy.offset[1] = 96.f + 10.f * sins(((obj_anim_get_frame(o) - 6) * 0x10000) / 30);
-    gOmmData->object->cappy.offset[2] = 88.f;
-    gOmmData->object->cappy.angle[0]  = -0x1400;
-    gOmmData->object->cappy.scale     = 1.f * (gOmmData->object->state.actionState != 1);
+    gOmmObject->cappy.offset[0] = -6.f;
+    gOmmObject->cappy.offset[1] = 96.f + 10.f * sins(((obj_anim_get_frame(o) - 6) * 0x10000) / 30);
+    gOmmObject->cappy.offset[2] = 88.f;
+    gOmmObject->cappy.angle[0]  = -0x1400;
+    gOmmObject->cappy.scale     = 1.f * (gOmmObject->state.actionState != 1);
 
     // OK
     POBJ_RETURN_OK;

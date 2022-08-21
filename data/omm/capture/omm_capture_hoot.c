@@ -6,26 +6,26 @@
 // Init
 //
 
-bool cappy_hoot_init(struct Object *o) {
+bool omm_cappy_hoot_init(struct Object *o) {
     if (o->oHootAvailability != HOOT_AVAIL_READY_TO_FLY) {
         return false;
     }
 
-    gOmmData->object->state.initialPos[0] = o->oHomeX;
-    gOmmData->object->state.initialPos[1] = o->oHomeY;
-    gOmmData->object->state.initialPos[2] = o->oHomeZ;
+    gOmmObject->state.initialPos[0] = o->oHomeX;
+    gOmmObject->state.initialPos[1] = o->oHomeY;
+    gOmmObject->state.initialPos[2] = o->oHomeZ;
     return true;
 }
 
-void cappy_hoot_end(struct Object *o) {
-    o->oHomeX = gOmmData->object->state.initialPos[0];
-    o->oHomeY = gOmmData->object->state.initialPos[1];
-    o->oHomeZ = gOmmData->object->state.initialPos[2];
+void omm_cappy_hoot_end(struct Object *o) {
+    o->oHomeX = gOmmObject->state.initialPos[0];
+    o->oHomeY = gOmmObject->state.initialPos[1];
+    o->oHomeZ = gOmmObject->state.initialPos[2];
     o->oCurrAnim = NULL;
     obj_anim_play(o, 0, 1.f);
 }
 
-f32 cappy_hoot_get_top(struct Object *o) {
+f32 omm_cappy_hoot_get_top(struct Object *o) {
     return 100.f * o->oScaleY;
 }
 
@@ -33,7 +33,7 @@ f32 cappy_hoot_get_top(struct Object *o) {
 // Update
 //
 
-s32 cappy_hoot_update(struct Object *o) {
+s32 omm_cappy_hoot_update(struct Object *o) {
 
     // Hitbox
     o->hitboxRadius = omm_capture_get_hitbox_radius(o);
@@ -71,9 +71,9 @@ s32 cappy_hoot_update(struct Object *o) {
     obj_anim_play(o, 0, (o->oVelY > 0.f) ? 2.f : 1.f);
 
     // Cappy values
-    gOmmData->object->cappy.offset[1] = 100.f;
-    gOmmData->object->cappy.offset[2] = 26.f;
-    gOmmData->object->cappy.scale     = 0.8f;
+    gOmmObject->cappy.offset[1] = 100.f;
+    gOmmObject->cappy.offset[2] = 26.f;
+    gOmmObject->cappy.scale     = 0.8f;
 
     // OK
     POBJ_RETURN_OK;

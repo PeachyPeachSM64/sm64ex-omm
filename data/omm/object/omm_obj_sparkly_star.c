@@ -34,9 +34,9 @@ const GeoLayout omm_geo_sparkly_star_3_transparent[] = {
 // Behavior
 //
 
-static void omm_bhv_sparkly_star_update() {
+static void bhv_omm_sparkly_star_update() {
     struct Object *o = gCurrentObject;
-    if (!OMM_SSM_IS_ENABLED || !omm_ssc_check_star(o)) {
+    if (!OMM_SPARKLY_MODE_IS_ENABLED || !omm_sparkly_context_check_star(o)) {
         obj_mark_for_deletion(o);
         return;
     }
@@ -178,7 +178,7 @@ static void omm_bhv_sparkly_star_update() {
         case 1:
         case 2:
         case 4: {
-            o->oGraphNode = geo_layout_to_graph_node(NULL, OMM_SSX_STAR_GEO_OPAQUE[o->oSparklyStarMode]);
+            o->oGraphNode = geo_layout_to_graph_node(NULL, OMM_SPARKLY_STAR_GEO_OPAQUE[o->oSparklyStarMode]);
             o->oNodeFlags &= ~GRAPH_RENDER_INVISIBLE;
             if ((o->oTimer % (1 << o->oAction)) == 0) {
                 omm_spawn_sparkly_star_sparkle(o, o->oSparklyStarMode, 0, 8.f, 0.4f, 40.f);
@@ -187,17 +187,17 @@ static void omm_bhv_sparkly_star_update() {
 
         // Transparent
         case 3: {
-            o->oGraphNode = geo_layout_to_graph_node(NULL, OMM_SSX_STAR_GEO_TRANSPARENT[o->oSparklyStarMode]);
+            o->oGraphNode = geo_layout_to_graph_node(NULL, OMM_SPARKLY_STAR_GEO_TRANSPARENT[o->oSparklyStarMode]);
             o->oNodeFlags &= ~GRAPH_RENDER_INVISIBLE;
         } break;
     }
 }
 
-const BehaviorScript omm_bhv_sparkly_star[] = {
+const BehaviorScript bhvOmmSparklyStar[] = {
     OBJ_TYPE_LEVEL,
     0x11010001,
     0x08000000,
-    0x0C000000, (uintptr_t) omm_bhv_sparkly_star_update,
+    0x0C000000, (uintptr_t) bhv_omm_sparkly_star_update,
     0x09000000,
 };
 
@@ -206,7 +206,7 @@ const BehaviorScript omm_bhv_sparkly_star[] = {
 //
 
 struct Object *omm_spawn_sparkly_star(struct Object *o, s32 mode, f32 x, f32 y, f32 z, bool isCondStar) {
-    struct Object *star = spawn_object(o, MODEL_NONE, omm_bhv_sparkly_star);
+    struct Object *star = spawn_object(o, MODEL_NONE, bhvOmmSparklyStar);
     obj_set_angle(star, 0, 0, 0);
     star->oAction = 2 * !isCondStar;
     star->oTimer = 0;

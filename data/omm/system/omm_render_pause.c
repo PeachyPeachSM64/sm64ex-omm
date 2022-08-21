@@ -17,7 +17,7 @@ static s32 sLevelList[] = { LEVEL_BOB, LEVEL_WF, LEVEL_JRB, LEVEL_CCM, LEVEL_BBH
 // Sparkly Stars timer
 //
 
-static void omm_render_pause_ssd_timer(s16 x, s16 y, s16 w, u8 alpha, s32 mode, s32 timer, bool blink) {
+static void omm_render_pause_sparkly_timer(s16 x, s16 y, s16 w, u8 alpha, s32 mode, s32 timer, bool blink) {
     static const char *sTimerGlyphs[] = {
         OMM_TEXTURE_HUD_0,
         OMM_TEXTURE_HUD_1,
@@ -68,7 +68,7 @@ OMM_INLINE void omm_render_pause_collectible(s16 x, s16 y, const void *texture, 
 }
 
 static void omm_render_pause_collectibles() {
-#if OMM_GAME_IS_R96A
+#if OMM_GAME_IS_R96X
 
     // Luigi keys
     if ((gHudDisplay.flags & HUD_DISPLAY_FLAG_KEYS) && gHudDisplay.keys > 0 && gHudDisplay.keys < NUM_KEYS) {
@@ -123,17 +123,19 @@ static s16 omm_render_pause_course_name(s16 y) {
     s32 levelNum = OMM_BOWSER_IN_THE_LEVEL(gCurrLevelNum);
     s32 courseNum = omm_level_get_course(levelNum);
     u8 *textCourse = omm_text_convert(OMM_TEXT_COURSE___, false);
+    s32 textCourseLength = omm_text_length(textCourse);
     if (COURSE_IS_MAIN_COURSE(courseNum)) {
-        s32 length = omm_text_length(textCourse);
-        textCourse[length - 3] = DIALOG_CHAR_SPACE;
+        textCourse[textCourseLength - 3] = DIALOG_CHAR_SPACE;
         if (courseNum >= 10) {
-            textCourse[length - 2] = courseNum / 10;
-            textCourse[length - 1] = courseNum % 10;
-            textCourse[length - 0] = 0xFF;
+            textCourse[textCourseLength - 2] = courseNum / 10;
+            textCourse[textCourseLength - 1] = courseNum % 10;
+            textCourse[textCourseLength - 0] = 0xFF;
         } else {
-            textCourse[length - 2] = courseNum;
-            textCourse[length - 1] = 0xFF;
+            textCourse[textCourseLength - 2] = courseNum;
+            textCourse[textCourseLength - 1] = 0xFF;
         }
+    } else {
+        textCourse[textCourseLength - 3] = 0xFF;
     }
     omm_render_string_right_align(OMM_RENDER_PAUSE_COURSE_RIGHT_ALIGN_X, y, 0xFF, 0xFF, 0xFF, sPauseAlpha, textCourse, true);
     omm_render_string_left_align(OMM_RENDER_PAUSE_COURSE_LEFT_ALIGN_X, y, 0xFF, 0xFF, 0xFF, sPauseAlpha, omm_level_get_name(levelNum, false, false), false);
@@ -187,7 +189,7 @@ static void omm_render_pause_course_red_coins() {
             x, OMM_RENDER_RED_COINS_Y, OMM_RENDER_GLYPH_SIZE, OMM_RENDER_GLYPH_SIZE,
             G_IM_FMT_IA, G_IM_SIZ_16b, 32, 32, 
             0xFF, 0x00, 0x00, 0xFF,
-            (const void *) (OMM_ARRAY_OF(const char *) {
+            (const void *) (omm_static_array_of(const char *) {
                 OMM_ASSET_COIN_0,
                 OMM_ASSET_COIN_1,
                 OMM_ASSET_COIN_2,
@@ -208,17 +210,17 @@ static void omm_render_pause_course_collectibles() {
     omm_render_pause_collectibles();
 }
 
-static void omm_render_pause_course_ssd_timer() {
-    if (OMM_SSM_IS_ENABLED) {
-        s32 mode = gOmmSSM;
-        omm_render_pause_ssd_timer(
+static void omm_render_pause_course_sparkly_timer() {
+    if (OMM_SPARKLY_MODE_IS_ENABLED) {
+        s32 mode = gOmmSparklyMode;
+        omm_render_pause_sparkly_timer(
             OMM_RENDER_SPARKLY_TIMER_X(OMM_RENDER_SPARKLY_TIMER_GLYPH_SIZE),
             OMM_RENDER_SPARKLY_TIMER_Y,
             OMM_RENDER_SPARKLY_TIMER_GLYPH_SIZE,
             sPauseAlpha,
             mode,
-            omm_ssd_get_timer(mode),
-           !omm_ssd_is_grand_star_collected(mode)
+            omm_sparkly_get_timer(mode),
+           !omm_sparkly_is_grand_star_collected(mode)
         );
     }
 }
@@ -266,6 +268,7 @@ static void omm_render_pause_course_select_option() {
             } break;
 
             case 3: { // Return to Castle (same as Exit Course)
+                omm_health_set_max(gMarioState);
                 omm_return_to_castle(true, true);
             } break;
         }
@@ -280,7 +283,7 @@ void omm_render_pause_course() {
     y = omm_render_pause_course_coins(y);
     omm_render_pause_course_red_coins();
     omm_render_pause_course_collectibles();
-    omm_render_pause_course_ssd_timer();
+    omm_render_pause_course_sparkly_timer();
     omm_render_pause_course_options();
     omm_render_pause_course_select_option();
 }
@@ -291,7 +294,7 @@ void omm_render_pause_course() {
 
 static void omm_render_pause_castle_update() {
     if (sCastleScrollV.idx == -1) {
-        for (s32 i = 0; i != OMM_ARRAY_SIZE(sLevelList); ++i) {
+        for (s32 i = 0; i != omm_static_array_length(sLevelList); ++i) {
             if (gLastCompletedCourseNum == sLevelList[i]) {
                 sCastleScrollV.idx = i;
                 gLastCompletedCourseNum = LEVEL_CASTLE;
@@ -299,7 +302,7 @@ static void omm_render_pause_castle_update() {
             }
         }
     }
-    omm_render_update_scroll(&sCastleScrollV, OMM_ARRAY_SIZE(sLevelList) + OMM_SSM_IS_ENABLED, -gPlayer1Controller->stickY);
+    omm_render_update_scroll(&sCastleScrollV, omm_static_array_length(sLevelList) + OMM_SPARKLY_MODE_IS_ENABLED, -gPlayer1Controller->stickY);
 }
 
 static void omm_render_pause_castle_pause() {
@@ -377,37 +380,45 @@ static void omm_render_pause_castle_course() {
     }
 }
 
-static void omm_render_pause_castle_ssd_stars_and_timer() {
-    omm_render_update_scroll(&sCastleScrollH, 30, gPlayer1Controller->stickX);
-    s32 mode = gOmmSSM;
-    u8 textR = OMM_SSX_HUD_COLOR[mode][0];
-    u8 textG = OMM_SSX_HUD_COLOR[mode][1];
-    u8 textB = OMM_SSX_HUD_COLOR[mode][2];
+static void omm_render_pause_castle_sparkly_stars_and_timer() {
+    s32 mode = gOmmSparklyMode;
+    s32 count = omm_sparkly_get_bowser_4_index(mode) + 1;
+    u8 textR = OMM_SPARKLY_HUD_COLOR[mode][0];
+    u8 textG = OMM_SPARKLY_HUD_COLOR[mode][1];
+    u8 textB = OMM_SPARKLY_HUD_COLOR[mode][2];
+    omm_render_update_scroll(&sCastleScrollH, count, gPlayer1Controller->stickX);
 
     // Title
-    u8 *textSparklyStars = omm_text_convert(OMM_SSX_TEXT_STARS[mode], false);
+    u8 *textSparklyStars = omm_text_convert(OMM_SPARKLY_TEXT_STARS[mode], false);
     omm_render_string_centered(OMM_RENDER_PAUSE_CASTLE_BOX_LINE_1_Y, textR, textG, textB, sPauseAlpha, textSparklyStars, false);
 
     // Star count
-    omm_render_counter(OMM_RENDER_PAUSE_CASTLE_BOX_LINE_2_Y, textR, textG, textB, sPauseAlpha, 0xFA, omm_ssd_get_star_count(mode));
+    omm_render_counter(OMM_RENDER_PAUSE_CASTLE_BOX_LINE_2_Y, textR, textG, textB, sPauseAlpha, 0xFA, omm_sparkly_get_collected_count(mode));
 
     // Level display
-    u8 *textLevelName = omm_ssd_get_star_level_name(mode, sCastleScrollH.idx);
-    if ((sCastleScrollH.idx == 29 && omm_ssd_is_grand_star_collected(mode)) || omm_ssd_is_star_collected(mode, sCastleScrollH.idx)) {
-        omm_render_string_centered(OMM_RENDER_PAUSE_CASTLE_BOX_LINE_3_Y, textR, textG, textB, sPauseAlpha, textLevelName, false);
-    } else {
-        omm_render_string_centered(OMM_RENDER_PAUSE_CASTLE_BOX_LINE_3_Y, textR / 2, textG / 2, textB / 2, sPauseAlpha, textLevelName, false);
+    for (;; sCastleScrollH.idx = (sCastleScrollH.idx + count + sign_s(sCastleScrollH.inc)) % count) {
+        u8 *levelName = omm_sparkly_get_level_name(mode, sCastleScrollH.idx);
+        if (levelName) {
+            if ((sCastleScrollH.idx == count - 1 && omm_sparkly_is_grand_star_collected(mode)) || omm_sparkly_is_star_collected(mode, sCastleScrollH.idx)) {
+                omm_render_string_centered(OMM_RENDER_PAUSE_CASTLE_BOX_LINE_3_Y, textR, textG, textB, sPauseAlpha, levelName, false);
+            } else if (sCastleScrollH.idx == count - 1) {
+                omm_render_string_centered(OMM_RENDER_PAUSE_CASTLE_BOX_LINE_3_Y, textR / 2, textG / 2, textB / 2, sPauseAlpha, omm_text_convert(OMM_TEXT_LEVEL_UNKNOWN, false), false);
+            } else {
+                omm_render_string_centered(OMM_RENDER_PAUSE_CASTLE_BOX_LINE_3_Y, textR / 2, textG / 2, textB / 2, sPauseAlpha, levelName, false);
+            }
+            break;
+        }
     }
 
     // Sparkly Stars timer
-    omm_render_pause_ssd_timer(
+    omm_render_pause_sparkly_timer(
         OMM_RENDER_SPARKLY_TIMER_X(OMM_RENDER_SPARKLY_TIMER_GLYPH_SIZE),
         OMM_RENDER_SPARKLY_TIMER_Y,
         OMM_RENDER_SPARKLY_TIMER_GLYPH_SIZE,
         sPauseAlpha,
         mode,
-        omm_ssd_get_timer(mode),
-        !omm_ssd_is_grand_star_collected(mode)
+        omm_sparkly_get_timer(mode),
+        !omm_sparkly_is_grand_star_collected(mode)
     );
 }
 
@@ -453,10 +464,10 @@ void omm_render_pause_castle() {
     omm_render_pause_castle_update();
     omm_render_pause_castle_pause();
     omm_render_pause_castle_sm74_edition();
-    if (sCastleScrollV.idx != OMM_ARRAY_SIZE(sLevelList)) {
+    if (sCastleScrollV.idx != omm_static_array_length(sLevelList)) {
         omm_render_pause_castle_course();
     } else {
-        omm_render_pause_castle_ssd_stars_and_timer();
+        omm_render_pause_castle_sparkly_stars_and_timer();
     }
 #if OMM_CODE_TIME_TRIALS
     }

@@ -132,7 +132,7 @@ const GeoLayout omm_geo_sparkly_star_3_block[] = {
 // Behavior
 //
 
-static void omm_bhv_sparkly_star_block_update() {
+static void bhv_omm_sparkly_star_block_update() {
     struct Object *o = gCurrentObject;
     switch (o->oAction) {
         case 0: {
@@ -175,35 +175,35 @@ static void omm_bhv_sparkly_star_block_update() {
     }
 
     // Unloads the Block if the corresponding Sparkly Stars mode is enabled
-    if (o->oAction == 0 && omm_ssd_is_selected(o->oSparklyStarMode)) {
+    if (o->oAction == 0 && omm_sparkly_is_selected(o->oSparklyStarMode)) {
         obj_mark_for_deletion(o);
     }
 }
 
-const BehaviorScript omm_bhv_sparkly_star_1_block[] = {
+const BehaviorScript bhvOmmSparklyStarBlock1[] = {
     OBJ_TYPE_SURFACE,
     0x11010001,
     0x2A000000, (uintptr_t) exclamation_box_outline_seg8_collision_08025F78,
     0x08000000,
-    0x0C000000, (uintptr_t) omm_bhv_sparkly_star_block_update,
+    0x0C000000, (uintptr_t) bhv_omm_sparkly_star_block_update,
     0x09000000,
 };
 
-const BehaviorScript omm_bhv_sparkly_star_2_block[] = {
+const BehaviorScript bhvOmmSparklyStarBlock2[] = {
     OBJ_TYPE_SURFACE,
     0x11010001,
     0x2A000000, (uintptr_t) exclamation_box_outline_seg8_collision_08025F78,
     0x08000000,
-    0x0C000000, (uintptr_t) omm_bhv_sparkly_star_block_update,
+    0x0C000000, (uintptr_t) bhv_omm_sparkly_star_block_update,
     0x09000000,
 };
 
-const BehaviorScript omm_bhv_sparkly_star_3_block[] = {
+const BehaviorScript bhvOmmSparklyStarBlock3[] = {
     OBJ_TYPE_SURFACE,
     0x11010001,
     0x2A000000, (uintptr_t) exclamation_box_outline_seg8_collision_08025F78,
     0x08000000,
-    0x0C000000, (uintptr_t) omm_bhv_sparkly_star_block_update,
+    0x0C000000, (uintptr_t) bhv_omm_sparkly_star_block_update,
     0x09000000,
 };
 
@@ -212,7 +212,7 @@ const BehaviorScript omm_bhv_sparkly_star_3_block[] = {
 //
 
 struct Object *omm_spawn_sparkly_star_block(struct Object *o, s32 mode, f32 x, f32 y, f32 z) {
-    struct Object *block = obj_spawn_from_geo(o, OMM_SSX_BLOCK_GEO[mode], OMM_SSX_BLOCK_BHV[mode]);
+    struct Object *block = obj_spawn_from_geo(o, OMM_SPARKLY_BLOCK_GEO[mode], OMM_SPARKLY_BLOCK_BHV[mode]);
     obj_set_always_rendered(block, true);
     obj_set_pos(block, x, y, z);
     obj_set_angle(block, 0, 0, 0);

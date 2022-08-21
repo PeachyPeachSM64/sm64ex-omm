@@ -6,12 +6,12 @@
 // Behavior
 //
 
-static void omm_bhv_perry_update() {
+static void bhv_omm_perry_update() {
     struct MarioState *m = gMarioState;
     struct Object *o = gCurrentObject;
     obj_set_params(o, 0, 0, 0, 0, 0);
     obj_reset_hitbox(o, 0, 0, 0, 0, 0, 0);
-    o->oPerryType = omm_peach_get_perry_type(m);
+    o->oPerryType = omm_perry_get_type(m);
 
     // Hitbox and interactions
     if (o->oPerryFlags & ~(OBJ_INT_PERRY_SWORD | OBJ_INT_PERRY_TRAIL)) {
@@ -40,11 +40,11 @@ static void omm_bhv_perry_update() {
     geo_preprocess_object_graph_node(o);
 }
 
-const BehaviorScript omm_bhv_perry[] = {
-    OBJ_TYPE_SPECIAL, // This object must be updated before omm_bhv_perry_trail
+const BehaviorScript bhvOmmPerry[] = {
+    OBJ_TYPE_SPECIAL, // This object must be updated before bhvOmmPerryTrail
     0x11010001,
     0x08000000,
-    0x0C000000, (uintptr_t) omm_bhv_perry_update,
+    0x0C000000, (uintptr_t) bhv_omm_perry_update,
     0x09000000,
 };
 
@@ -55,16 +55,16 @@ const BehaviorScript omm_bhv_perry[] = {
 OMM_ROUTINE_UPDATE(omm_spawn_perry) {
     if (gMarioObject) {
         if (OMM_PLAYER_IS_PEACH) {
-            struct Object *perry = omm_peach_get_perry_object();
+            struct Object *perry = omm_perry_get_object();
             if (!perry) {
-                gOmmPerry = obj_spawn_from_geo(gMarioObject, omm_geo_perry, omm_bhv_perry);
+                gOmmPerry = obj_spawn_from_geo(gMarioObject, omm_geo_perry, bhvOmmPerry);
             }
         } else {
-            obj_deactivate_all_with_behavior(omm_bhv_perry);
-            obj_deactivate_all_with_behavior(omm_bhv_perry_trail);
-            obj_deactivate_all_with_behavior(omm_bhv_perry_shockwave);
-            obj_deactivate_all_with_behavior(omm_bhv_perry_blast);
-            obj_deactivate_all_with_behavior(omm_bhv_perry_charge);
+            obj_deactivate_all_with_behavior(bhvOmmPerry);
+            obj_deactivate_all_with_behavior(bhvOmmPerryTrail);
+            obj_deactivate_all_with_behavior(bhvOmmPerryShockwave);
+            obj_deactivate_all_with_behavior(bhvOmmPerryBlast);
+            obj_deactivate_all_with_behavior(bhvOmmPerryCharge);
         }
     }
 }

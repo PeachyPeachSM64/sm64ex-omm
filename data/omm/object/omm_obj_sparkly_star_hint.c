@@ -153,7 +153,7 @@ const GeoLayout omm_geo_sparkly_star_3_hint[] = {
 // Behavior
 //
 
-const BehaviorScript omm_bhv_sparkly_star_hint[] = {
+const BehaviorScript bhvOmmSparklyStarHint[] = {
     OBJ_TYPE_SURFACE,
     0x11010001,
     0x2A000000, (uintptr_t) wooden_signpost_seg3_collision_0302DD80,
@@ -173,12 +173,12 @@ const BehaviorScript omm_bhv_sparkly_star_hint[] = {
 //
 
 struct Object *omm_spawn_sparkly_star_hint(struct Object *o, s32 mode, f32 x, f32 y, f32 z, s16 yaw, s32 dialogId) {
-    struct Object *sign = obj_spawn_from_geo(o, OMM_SSX_HINT_GEO[mode], omm_bhv_sparkly_star_hint);
+    struct Object *sign = obj_spawn_from_geo(o, OMM_SPARKLY_HINT_GEO[mode], bhvOmmSparklyStarHint);
     obj_set_pos(sign, x, y, z);
     obj_set_angle(sign, 0, yaw, 0);
     obj_drop_to_floor(sign);
-    sign->oBehParams = (dialogId << 16);
-    sign->oBehParams2ndByte = dialogId;
+    sign->oBhvArgs = (dialogId << 16);
+    sign->oBhvArgs2ndByte = dialogId;
     sign->oSparklyStarMode = mode;
     return sign;
 }

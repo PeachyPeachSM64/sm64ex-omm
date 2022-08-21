@@ -1,7 +1,7 @@
 #ifndef OMM_CAPTURE_ALL_H
 #define OMM_CAPTURE_ALL_H
 
-#include "data/omm/omm_includes.h"
+#include "types.h"
 
 //
 // Possessed object shortcuts
@@ -18,43 +18,45 @@
 #define POBJ_RESULT_HOP_SMALL                   3
 #define POBJ_RESULT_HOP_LARGE                   4
 
-#define POBJ_A_BUTTON_PRESSED                   (gOmmData->mario->capture.buttonPressed & A_BUTTON)
-#define POBJ_A_BUTTON_DOWN                      (gOmmData->mario->capture.buttonDown & A_BUTTON)
-#define POBJ_B_BUTTON_PRESSED                   (gOmmData->mario->capture.buttonPressed & B_BUTTON)
-#define POBJ_B_BUTTON_DOWN                      (gOmmData->mario->capture.buttonDown & B_BUTTON)
+#define POBJ_A_BUTTON_PRESSED                   (gOmmMario->capture.buttonPressed & A_BUTTON)
+#define POBJ_A_BUTTON_DOWN                      (gOmmMario->capture.buttonDown & A_BUTTON)
+#define POBJ_B_BUTTON_PRESSED                   (gOmmMario->capture.buttonPressed & B_BUTTON)
+#define POBJ_B_BUTTON_DOWN                      (gOmmMario->capture.buttonDown & B_BUTTON)
 
-#define POBJ_GROUND_SPEED_MULTIPLIER            (1.f / omm_player_get_selected_ground_speed_multiplier())
-#define POBJ_AIR_SPEED_MULTIPLIER               (1.f / omm_player_get_selected_air_speed_multiplier())
-#define POBJ_JUMP_MULTIPLIER                    (1.f / sqrtf(omm_player_get_selected_jump_multiplier()))
+#define POBJ_PHYSICS_GROUND                     (1.f / omm_player_physics_get_selected_ground())
+#define POBJ_PHYSICS_AIR                        (1.f / omm_player_physics_get_selected_air())
+#define POBJ_PHYSICS_SWIM                       (1.f / omm_player_physics_get_selected_swim())
+#define POBJ_PHYSICS_JUMP                       (1.f / omm_player_physics_get_selected_jump())
+#define POBJ_PHYSICS_GRAVITY                    (1.f / omm_player_physics_get_selected_gravity())
 
-#define POBJ_SET_ABOVE_WATER                    gOmmData->object->state.properties |= (1 << 0)
-#define POBJ_SET_UNDER_WATER                    gOmmData->object->state.properties |= (1 << 1)
-#define POBJ_SET_INVULNERABLE                   gOmmData->object->state.properties |= (1 << 2)
-#define POBJ_SET_IMMUNE_TO_FIRE                 gOmmData->object->state.properties |= (1 << 3)
-#define POBJ_SET_IMMUNE_TO_LAVA                 gOmmData->object->state.properties |= (1 << 4)
-#define POBJ_SET_IMMUNE_TO_SAND                 gOmmData->object->state.properties |= (1 << 5)
-#define POBJ_SET_IMMUNE_TO_WIND                 gOmmData->object->state.properties |= (1 << 6)
-#define POBJ_SET_ABLE_TO_MOVE_ON_WATER          gOmmData->object->state.properties |= (1 << 7)
-#define POBJ_SET_ABLE_TO_MOVE_ON_SLOPES         gOmmData->object->state.properties |= (1 << 8)
-#define POBJ_SET_ABLE_TO_MOVE_THROUGH_WALLS     gOmmData->object->state.properties |= (1 << 9)
-#define POBJ_SET_ATTACKING                      gOmmData->object->state.properties |= (1 << 10)
+#define POBJ_SET_ABOVE_WATER                    gOmmObject->state.properties |= (1 << 0)
+#define POBJ_SET_UNDER_WATER                    gOmmObject->state.properties |= (1 << 1)
+#define POBJ_SET_INVULNERABLE                   gOmmObject->state.properties |= (1 << 2)
+#define POBJ_SET_IMMUNE_TO_FIRE                 gOmmObject->state.properties |= (1 << 3)
+#define POBJ_SET_IMMUNE_TO_LAVA                 gOmmObject->state.properties |= (1 << 4)
+#define POBJ_SET_IMMUNE_TO_SAND                 gOmmObject->state.properties |= (1 << 5)
+#define POBJ_SET_IMMUNE_TO_WIND                 gOmmObject->state.properties |= (1 << 6)
+#define POBJ_SET_ABLE_TO_MOVE_ON_WATER          gOmmObject->state.properties |= (1 << 7)
+#define POBJ_SET_ABLE_TO_MOVE_ON_SLOPES         gOmmObject->state.properties |= (1 << 8)
+#define POBJ_SET_ABLE_TO_MOVE_THROUGH_WALLS     gOmmObject->state.properties |= (1 << 9)
+#define POBJ_SET_ATTACKING                      gOmmObject->state.properties |= (1 << 10)
 
-#define POBJ_IS_ABOVE_WATER                     ((gOmmData->object->state.properties & (1 << 0)) != 0)
-#define POBJ_IS_UNDER_WATER                     ((gOmmData->object->state.properties & (1 << 1)) != 0)
-#define POBJ_IS_INVULNERABLE                    ((gOmmData->object->state.properties & (1 << 2)) != 0)
-#define POBJ_IS_IMMUNE_TO_FIRE                  ((gOmmData->object->state.properties & (1 << 3)) != 0)
-#define POBJ_IS_IMMUNE_TO_LAVA                  ((gOmmData->object->state.properties & (1 << 4)) != 0)
-#define POBJ_IS_IMMUNE_TO_SAND                  ((gOmmData->object->state.properties & (1 << 5)) != 0)
-#define POBJ_IS_IMMUNE_TO_WIND                  ((gOmmData->object->state.properties & (1 << 6)) != 0)
-#define POBJ_IS_ABLE_TO_MOVE_ON_WATER           ((gOmmData->object->state.properties & (1 << 7)) != 0)
-#define POBJ_IS_ABLE_TO_MOVE_ON_SLOPES          ((gOmmData->object->state.properties & (1 << 8)) != 0)
-#define POBJ_IS_ABLE_TO_MOVE_THROUGH_WALLS      ((gOmmData->object->state.properties & (1 << 9)) != 0)
-#define POBJ_IS_ATTACKING                       ((gOmmData->object->state.properties & (1 << 10)) != 0)
+#define POBJ_IS_ABOVE_WATER                     ((gOmmObject->state.properties & (1 << 0)) != 0)
+#define POBJ_IS_UNDER_WATER                     ((gOmmObject->state.properties & (1 << 1)) != 0)
+#define POBJ_IS_INVULNERABLE                    ((gOmmObject->state.properties & (1 << 2)) != 0)
+#define POBJ_IS_IMMUNE_TO_FIRE                  ((gOmmObject->state.properties & (1 << 3)) != 0)
+#define POBJ_IS_IMMUNE_TO_LAVA                  ((gOmmObject->state.properties & (1 << 4)) != 0)
+#define POBJ_IS_IMMUNE_TO_SAND                  ((gOmmObject->state.properties & (1 << 5)) != 0)
+#define POBJ_IS_IMMUNE_TO_WIND                  ((gOmmObject->state.properties & (1 << 6)) != 0)
+#define POBJ_IS_ABLE_TO_MOVE_ON_WATER           ((gOmmObject->state.properties & (1 << 7)) != 0)
+#define POBJ_IS_ABLE_TO_MOVE_ON_SLOPES          ((gOmmObject->state.properties & (1 << 8)) != 0)
+#define POBJ_IS_ABLE_TO_MOVE_THROUGH_WALLS      ((gOmmObject->state.properties & (1 << 9)) != 0)
+#define POBJ_IS_ATTACKING                       ((gOmmObject->state.properties & (1 << 10)) != 0)
 
 #define POBJ_STEP_FLAGS                         (OBJ_STEP_UPDATE_HOME | (OBJ_STEP_MOVE_THROUGH_WALLS * POBJ_IS_ABLE_TO_MOVE_THROUGH_WALLS) | (OBJ_STEP_STICKY_FEET * POBJ_IS_ABLE_TO_MOVE_ON_SLOPES) | OBJ_STEP_CHECK_ON_GROUND)
 
 #define POBJ_INTERACTIONS(...)                                                                         \
-    if ((gOmmData->object->state.invincTimer-- <= 0) && !omm_mario_is_locked(gMarioState)) {           \
+    if ((gOmmObject->state.invincTimer-- <= 0) && !omm_mario_is_locked(gMarioState)) {           \
         for_each_object_in_interaction_lists(obj) {                                                    \
             if (obj != o) {                                                                            \
                 __VA_ARGS__;                                                                           \
@@ -82,7 +84,6 @@ bool pobj_process_interaction(struct Object *o, struct Object *obj, u32 interact
 // Capture data
 //
 
-const void *omm_capture_get_data(struct Object *o);
 bool omm_capture_init(struct Object *o);
 void omm_capture_end(struct Object *o);
 s32  omm_capture_update(struct Object *o);
@@ -105,11 +106,11 @@ void omm_capture_reset_camera();
 // Behaviors
 //
 
-#define CAPTURE_BEHAVIOR(name)                  \
-bool cappy_##name##_init(struct Object *o);     \
-void cappy_##name##_end(struct Object *o);      \
-s32 cappy_##name##_update(struct Object *o);    \
-f32 cappy_##name##_get_top(struct Object *o)
+#define CAPTURE_BEHAVIOR(name)                   \
+bool omm_cappy_##name##_init(struct Object *o);  \
+void omm_cappy_##name##_end(struct Object *o);   \
+s32 omm_cappy_##name##_update(struct Object *o); \
+f32 omm_cappy_##name##_get_top(struct Object *o)
 
 // Bob-omb Battlefield
 CAPTURE_BEHAVIOR(goomba);               // bhvGoomba
@@ -190,7 +191,7 @@ CAPTURE_BEHAVIOR(mips);                 // bhvMips
 CAPTURE_BEHAVIOR(yoshi);                // bhvYoshi
 
 // OMM Bowser
-CAPTURE_BEHAVIOR(flaming_bobomb);       // omm_bhv_flaming_bobomb
+CAPTURE_BEHAVIOR(flaming_bobomb);       // bhvOmmFlamingBobomb
 
 #undef CAPTURE_BEHAVIOR
 #endif // OMM_CAPTURE_ALL_H

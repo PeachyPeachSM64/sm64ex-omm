@@ -6,19 +6,20 @@
 // Init
 //
 
-bool cappy_mr_i_init(struct Object *o) {
-    if (o->oAction != 1 &&
-        o->oAction != 2) {
+bool omm_cappy_mr_i_init(struct Object *o) {
+    if (o->oBehParams2ndByte != 0 || ( // Don't capture Big Mr. I
+        o->oAction != 1 &&
+        o->oAction != 2)) {
         return false;
     }
 
     struct Object *iris = obj_get_nearest_with_behavior(o, bhvMrIBody);
     if (iris) iris->oRoom = -1;
-    gOmmData->object->state.actionTimer = 0;
+    gOmmObject->state.actionTimer = 0;
     return true;
 }
 
-void cappy_mr_i_end(struct Object *o) {
+void omm_cappy_mr_i_end(struct Object *o) {
     obj_drop_to_floor(o);
     o->oHomeX = o->oPosX;
     o->oHomeY = o->oPosY;
@@ -27,7 +28,7 @@ void cappy_mr_i_end(struct Object *o) {
     o->oAction = 1;
 }
 
-f32 cappy_mr_i_get_top(struct Object *o) {
+f32 omm_cappy_mr_i_get_top(struct Object *o) {
     return 180.f * o->oScaleY;
 }
 
@@ -35,7 +36,7 @@ f32 cappy_mr_i_get_top(struct Object *o) {
 // Update
 //
 
-s32 cappy_mr_i_update(struct Object *o) {
+s32 omm_cappy_mr_i_update(struct Object *o) {
 
     // Hitbox
     o->hitboxRadius = omm_capture_get_hitbox_radius(o);
@@ -50,7 +51,7 @@ s32 cappy_mr_i_update(struct Object *o) {
 
     // Inputs
     if (!obj_update_door(o) && !omm_mario_is_locked(gMarioState)) {
-        pobj_move(o, false, false, gOmmData->object->state.actionTimer != 0);
+        pobj_move(o, false, false, gOmmObject->state.actionTimer != 0);
         if (pobj_jump(o, 0, 1) == POBJ_RESULT_JUMP_START) {
             obj_play_sound(o, SOUND_OBJ_GOOMBA_ALERT);
         }
@@ -58,11 +59,11 @@ s32 cappy_mr_i_update(struct Object *o) {
         // Shoot
         // Hold B to shoot faster, further and with bigger projectiles
         if (POBJ_B_BUTTON_DOWN) {
-            gOmmData->object->state.actionTimer = min_s(gOmmData->object->state.actionTimer + 1, 30);
-        } else if (gOmmData->object->state.actionTimer > 0) {
-            f32 power = 1.f + 1.5f * (gOmmData->object->state.actionTimer / 30.f);
+            gOmmObject->state.actionTimer = min_s(gOmmObject->state.actionTimer + 1, 30);
+        } else if (gOmmObject->state.actionTimer > 0) {
+            f32 power = 1.f + 1.5f * (gOmmObject->state.actionTimer / 30.f);
             omm_spawn_mr_i_beam(o, power);
-            gOmmData->object->state.actionTimer = 0;
+            gOmmObject->state.actionTimer = 0;
         }
     }
 
@@ -86,8 +87,8 @@ s32 cappy_mr_i_update(struct Object *o) {
     obj_update_gfx(o);
 
     // Cappy values
-    gOmmData->object->cappy.offset[1] = 180.f;
-    gOmmData->object->cappy.scale     = 1.5f;
+    gOmmObject->cappy.offset[1] = 180.f;
+    gOmmObject->cappy.scale     = 1.5f;
 
     // OK
     POBJ_RETURN_OK;

@@ -1772,6 +1772,7 @@ void render_dialog_entries(void) {
             break;
         case DIALOG_STATE_HORIZONTAL:
             gDialogScrollOffsetY += dialog->linesPerBox * 2;
+            fix_dialog_box_text_lower_bound();
 
             if (gDialogScrollOffsetY >= dialog->linesPerBox * DIAG_VAL1) {
                 gDialogTextPos = gLastDialogPageStrPos;

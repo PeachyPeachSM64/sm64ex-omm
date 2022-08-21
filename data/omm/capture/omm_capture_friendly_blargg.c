@@ -6,18 +6,18 @@
 // Init
 //
 
-bool cappy_friendly_blargg_init(UNUSED struct Object *o) {
-    gOmmData->object->state.actionFlag = false;
+bool omm_cappy_friendly_blargg_init(UNUSED struct Object *o) {
+    gOmmObject->state.actionFlag = false;
     return true;
 }
 
-void cappy_friendly_blargg_end(struct Object *o) {
+void omm_cappy_friendly_blargg_end(struct Object *o) {
     audio_stop_shell_music();
     o->oAction = 0;
     o->oInteractStatus = 0;
 }
 
-f32 cappy_friendly_blargg_get_top(struct Object *o) {
+f32 omm_cappy_friendly_blargg_get_top(struct Object *o) {
     return 50.f * o->oScaleY;
 }
 
@@ -25,12 +25,12 @@ f32 cappy_friendly_blargg_get_top(struct Object *o) {
 // Update
 //
 
-s32 cappy_friendly_blargg_update(struct Object *o) {
+s32 omm_cappy_friendly_blargg_update(struct Object *o) {
 
     // Init
-    if (!gOmmData->object->state.actionFlag) {
+    if (!gOmmObject->state.actionFlag) {
         audio_play_shell_music();
-        gOmmData->object->state.actionFlag = true;
+        gOmmObject->state.actionFlag = true;
     }
 
     // Inputs
@@ -70,14 +70,14 @@ s32 cappy_friendly_blargg_update(struct Object *o) {
 
     // Gfx
     obj_update_gfx(o);
-    obj_make_step_sound_and_particle(o, &gOmmData->object->state.walkDistance, 0.f, 0.f, SOUND_MOVING_RIDING_SHELL_LAVA, OBJ_PARTICLE_FLAME);
+    obj_make_step_sound_and_particle(o, &gOmmObject->state.walkDistance, 0.f, 0.f, SOUND_MOVING_RIDING_SHELL_LAVA, OBJ_PARTICLE_FLAME);
     
     // Cappy values
-    gOmmData->object->cappy.offset[0] = -3.f;
-    gOmmData->object->cappy.offset[1] = 48.f + 5.f * sins(((obj_anim_get_frame(o) - 6) * 0x10000) / 30);
-    gOmmData->object->cappy.offset[2] = 44.f;
-    gOmmData->object->cappy.angle[0]  = -0x1400;
-    gOmmData->object->cappy.scale     = 0.5f;
+    gOmmObject->cappy.offset[0] = -3.f;
+    gOmmObject->cappy.offset[1] = 48.f + 5.f * sins(((obj_anim_get_frame(o) - 6) * 0x10000) / 30);
+    gOmmObject->cappy.offset[2] = 44.f;
+    gOmmObject->cappy.angle[0]  = -0x1400;
+    gOmmObject->cappy.scale     = 0.5f;
 
     // OK
     POBJ_RETURN_OK;

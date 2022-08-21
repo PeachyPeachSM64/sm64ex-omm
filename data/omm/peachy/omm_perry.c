@@ -10,14 +10,14 @@ const OmmPerryModifiers gOmmPerryModifiers[5] = {
     { { 0xFF, 0xFF, 0xFF, 0xC0, 0xFF, 0x00, 0x00, 0x80, 0x00 }, 1.00f, 1.00f, 1.00f, 1.00f, 1.00f, OBJ_INT_HEAL_MARIO, OBJ_INT_HEAL_MARIO, OBJ_INT_HEAL_MARIO },
 };
 
-struct Object *omm_peach_get_perry_object() {
-    if (gOmmPerry && gOmmPerry->activeFlags && gOmmPerry->behavior == omm_bhv_perry) {
+struct Object *omm_perry_get_object() {
+    if (gOmmPerry && gOmmPerry->activeFlags && gOmmPerry->behavior == bhvOmmPerry) {
         return gOmmPerry;
     }
     return NULL;
 }
 
-s32 omm_peach_get_perry_type(struct MarioState *m) {
+s32 omm_perry_get_type(struct MarioState *m) {
     if (omm_peach_vibe_is_active()) {
         if (omm_peach_vibe_is_joy()) return OMM_PEACH_VIBE_TYPE_JOY;
         if (omm_peach_vibe_is_rage()) return OMM_PEACH_VIBE_TYPE_RAGE;
@@ -31,8 +31,8 @@ s32 omm_peach_get_perry_type(struct MarioState *m) {
     return OMM_PEACH_VIBE_TYPE_NONE;
 }
 
-void omm_peach_update_perry_graphics(struct MarioState *m, Mat4 transform, Vec3f translation, Vec3s rotation) {
-    struct Object *o = omm_peach_get_perry_object();
+void omm_perry_update_graphics(struct MarioState *m, Mat4 transform, Vec3f translation, Vec3s rotation) {
+    struct Object *o = omm_perry_get_object();
     if (o) {
 
         // Compute Peach's right arm/hand values
@@ -47,7 +47,7 @@ void omm_peach_update_perry_graphics(struct MarioState *m, Mat4 transform, Vec3f
         vec3s_set(handRot, 0x0000, 0x0000, 0x4000);
 
         // Compute Perry's attributes based on Peach's current action
-        o->oPerryType = omm_peach_get_perry_type(m);
+        o->oPerryType = omm_perry_get_type(m);
         f32 perryScale = 0.f;
         u32 perryFlags = 0;
         switch (m->action) {

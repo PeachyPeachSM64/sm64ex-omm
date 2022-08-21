@@ -491,10 +491,10 @@ typedef struct {
         u8 a;
     } color;
     struct {
-        Gfx gfx[OMM_ARRAY_SIZE(omm_star_glow_gfx)];
+        Gfx gfx[omm_static_array_length(omm_star_glow_gfx)];
     } glow;
     struct {
-        Gfx gfx[OMM_ARRAY_SIZE(omm_star_ray_0_gfx)];
+        Gfx gfx[omm_static_array_length(omm_star_ray_0_gfx)];
         f32 scale;
         s16 angle;
         u8 alpha;
@@ -502,36 +502,39 @@ typedef struct {
 } OmmStarGeoData;
 
 static OmmStarGeoData *omm_geo_star_get_data(struct Object *o) {
-    if (o->oGeoData == NULL) {
-        OmmStarGeoData *data = omm_memory_new(gOmmMemoryPoolGeoData, sizeof(OmmStarGeoData), o);
+    if (obj_alloc_fields(o)) {
+        if (!o->oGeoData) {
+            OmmStarGeoData *data = omm_memory_new(gOmmMemoryPoolGeoData, sizeof(OmmStarGeoData), o);
 
-        // Init display lists
-        OMM_MEMCPY(data->glow.gfx, omm_star_glow_gfx, sizeof(omm_star_glow_gfx));
-        OMM_MEMCPY(data->rays[0].gfx, omm_star_ray_0_gfx, sizeof(omm_star_ray_0_gfx));
-        OMM_MEMCPY(data->rays[1].gfx, omm_star_ray_1_gfx, sizeof(omm_star_ray_1_gfx));
-        OMM_MEMCPY(data->rays[2].gfx, omm_star_ray_2_gfx, sizeof(omm_star_ray_2_gfx));
-        OMM_MEMCPY(data->rays[3].gfx, omm_star_ray_3_gfx, sizeof(omm_star_ray_3_gfx));
-        OMM_MEMCPY(data->rays[4].gfx, omm_star_ray_4_gfx, sizeof(omm_star_ray_4_gfx));
-        OMM_MEMCPY(data->rays[5].gfx, omm_star_ray_5_gfx, sizeof(omm_star_ray_5_gfx));
+            // Init display lists
+            omm_copy(data->glow.gfx, omm_star_glow_gfx, sizeof(omm_star_glow_gfx));
+            omm_copy(data->rays[0].gfx, omm_star_ray_0_gfx, sizeof(omm_star_ray_0_gfx));
+            omm_copy(data->rays[1].gfx, omm_star_ray_1_gfx, sizeof(omm_star_ray_1_gfx));
+            omm_copy(data->rays[2].gfx, omm_star_ray_2_gfx, sizeof(omm_star_ray_2_gfx));
+            omm_copy(data->rays[3].gfx, omm_star_ray_3_gfx, sizeof(omm_star_ray_3_gfx));
+            omm_copy(data->rays[4].gfx, omm_star_ray_4_gfx, sizeof(omm_star_ray_4_gfx));
+            omm_copy(data->rays[5].gfx, omm_star_ray_5_gfx, sizeof(omm_star_ray_5_gfx));
 
-        // Init rays
-        for (s32 i = 0; i != 6; ++i) {
-            data->rays[i].scale = 0.5f + (0.3f * random_float());
-            data->rays[i].angle = random_u16();
-            data->rays[i].alpha = 0x80 + (random_u16() & 0x7F);
+            // Init rays
+            for (s32 i = 0; i != 6; ++i) {
+                data->rays[i].scale = 0.5f + (0.3f * random_float());
+                data->rays[i].angle = random_u16();
+                data->rays[i].alpha = 0x80 + (random_u16() & 0x7F);
+            }
+
+            // Init data
+            data->prevTimer = 0;
+            data->counter = 0;
+            data->texture = NULL;
+            data->color.r = 0;
+            data->color.g = 0;
+            data->color.b = 0;
+            data->color.a = 0;
+            o->oGeoData = (void *) data;
         }
-
-        // Init data
-        data->prevTimer = 0;
-        data->counter = 0;
-        data->texture = NULL;
-        data->color.r = 0;
-        data->color.g = 0;
-        data->color.b = 0;
-        data->color.a = 0;
-        o->oGeoData = (void *) data;
+        return (OmmStarGeoData *) o->oGeoData;
     }
-    return (OmmStarGeoData *) o->oGeoData;
+    return NULL;
 }
 
 static void omm_geo_star_set_env_color(Gfx *displayList, u32 r, u32 g, u32 b, u32 a) {
@@ -564,9 +567,9 @@ static void omm_geo_star_compute_color(OmmStarGeoData *data, const char *texture
     }
     
     // Not found, compute new color and register it
-    OMM_STRING(filename, 256, "%s/%s/%s.png", OMM_EXE_FOLDER, OMM_GFX_FOLDER, texture);
+    omm_str_cat(filename, 256, "gfx/", texture, ".png");
     s32 w, h;
-    u8 *p = stbi_load(filename, &w, &h, NULL, 4);
+    u8 *p = fs_load_png(filename, &w, &h);
     if (p) {
         u32 r = 0;
         u32 g = 0;
@@ -580,7 +583,7 @@ static void omm_geo_star_compute_color(OmmStarGeoData *data, const char *texture
         data->color.g = (u8) (g / (w * h));
         data->color.b = (u8) (b / (w * h));
         stbi_image_free(p);
-        omm_map_add(sOmmStarTexColors, ptr, OMM_MEMDUP(texture, strlen(texture) + 1), u32, (data->color.r << 16) | (data->color.g << 8) | (data->color.b << 0));
+        omm_map_add(sOmmStarTexColors, ptr, omm_dup(texture, strlen(texture) + 1), u32, (data->color.r << 16) | (data->color.g << 8) | (data->color.b << 0));
     }
 }
 

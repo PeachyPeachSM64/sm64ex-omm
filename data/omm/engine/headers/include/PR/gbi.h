@@ -27,10 +27,10 @@
 
 // RSP commands
 #define G_NOOP                              0x00
-#define G_RDPHALF_2                         0xf1
+#define G_RDPHALF_2                         0x00 //0xf1
 #define G_SETOTHERMODE_H                    0xe3
 #define G_SETOTHERMODE_L                    0xe2
-#define G_RDPHALF_1                         0xe1
+#define G_RDPHALF_1                         0x00 //0xe1
 #define G_SPNOOP                            0xe0
 #define G_ENDDL                             0xdf
 #define G_DL                                0xde
@@ -91,10 +91,8 @@
 #define G_TRI_FILL_ZBUFF                    0xc9
 #define G_TRI_FILL                          0xc8
 
-#define G_TEXTURE_IMAGE_FRAC                2
-#define G_MAXFBZ                            0x3fff
-#define GPACK_RGBA5551(r, g, b, a)          ((((r) << 8) & 0xf800) | (((g) << 3) & 0x7c0) | (((b) >> 2) & 0x3e) | ((a) & 0x1))
-#define GPACK_ZDZ(z, dz)                    ((z) << 2 | (dz))
+// RXP commands
+#define G_SWAPCMD                           0xf1
 
 // G_MTX: parameter flags
 #define G_MTX_MODELVIEW                     0x00 
@@ -112,7 +110,11 @@
 #define G_CULL_FRONT                        0x00000200
 #define G_CULL_BACK                         0x00000400
 #define G_CULL_BOTH                         0x00000600
+#if defined(SMMS)
+#define G_FOG                               0x00000000
+#else
 #define G_FOG                               0x00010000
+#endif
 #define G_LIGHTING                          0x00020000
 #define G_TEXTURE_GEN                       0x00040000
 #define G_TEXTURE_GEN_LINEAR                0x00080000
@@ -196,6 +198,7 @@
 // Common CC cycle 1 modes
 #define G_CC_PRIMITIVE                      0, 0, 0, PRIMITIVE, 0, 0, 0, PRIMITIVE
 #define G_CC_SHADE                          0, 0, 0, SHADE, 0, 0, 0, SHADE
+#define G_CC_ENVIRONMENT                    0, 0, 0, ENVIRONMENT, 0, 0, 0, ENVIRONMENT
 #define G_CC_MODULATEI                      TEXEL0, 0, SHADE, 0, 0, 0, 0, SHADE
 #define G_CC_MODULATEIDECALA                TEXEL0, 0, SHADE, 0, 0, 0, 0, TEXEL0
 #define G_CC_MODULATEIFADE                  TEXEL0, 0, SHADE, 0, 0, 0, 0, ENVIRONMENT
@@ -293,7 +296,11 @@
 
 // G_SETOTHERMODE_H gSetCycleType
 #define G_CYC_1CYCLE                        (0 << G_MDSFT_CYCLETYPE)
+#if defined(SMMS)
+#define G_CYC_2CYCLE                        G_CYC_1CYCLE
+#else
 #define G_CYC_2CYCLE                        (1 << G_MDSFT_CYCLETYPE)
+#endif
 #define G_CYC_COPY                          (2 << G_MDSFT_CYCLETYPE)
 #define G_CYC_FILL                          (3 << G_MDSFT_CYCLETYPE)
 
@@ -700,7 +707,11 @@
 #define G_RM_OPA_CI2                        RM_OPA_CI(2)
 #define G_RM_CUSTOM_AA_ZB_XLU_SURF          RM_CUSTOM_AA_ZB_XLU_SURF(1)
 #define G_RM_CUSTOM_AA_ZB_XLU_SURF2         RM_CUSTOM_AA_ZB_XLU_SURF(2)
+#if defined(SMMS)
+#define G_RM_FOG_SHADE_A                    G_RM_AA_ZB_OPA_SURF
+#else
 #define G_RM_FOG_SHADE_A                    GBL_c1(G_BL_CLR_FOG, G_BL_A_SHADE, G_BL_CLR_IN, G_BL_1MA)
+#endif
 #define G_RM_FOG_PRIM_A                     GBL_c1(G_BL_CLR_FOG, G_BL_A_FOG, G_BL_CLR_IN, G_BL_1MA)
 #define G_RM_PASS                           GBL_c1(G_BL_CLR_IN, G_BL_0, G_BL_CLR_IN, G_BL_1)
 
@@ -720,6 +731,12 @@
 // Display list pushing
 #define G_DL_PUSH                           0x00
 #define G_DL_NOPUSH                         0x01
+
+// Texture and color stuff
+#define G_TEXTURE_IMAGE_FRAC                2
+#define G_MAXFBZ                            0x3fff
+#define GPACK_RGBA5551(r, g, b, a)          ((((r) << 8) & 0xf800) | (((g) << 3) & 0x7c0) | (((b) >> 2) & 0x3e) | ((a) & 0x1))
+#define GPACK_ZDZ(z, dz)                    ((z) << 2 | (dz))
 
 // C-specific section
 #if defined(_LANGUAGE_C) || defined(_LANGUAGE_C_PLUS_PLUS)
@@ -1526,6 +1543,13 @@ typedef union {
     gsMoveWd(G_MW_FOG, G_MWO_FOG, \
         (_SHIFTL(fm,16,16) | _SHIFTL(fo,0,16)))
 
+#if defined(SMMS)
+#define gSPFogPosition(pkt, min, max) \
+    gDPPipeSync(pkt)
+
+#define gsSPFogPosition(min, max) \
+    gsDPPipeSync()
+#else
 #define gSPFogPosition(pkt, min, max) \
     gMoveWd(pkt, G_MW_FOG, G_MWO_FOG, \
         (_SHIFTL((128000/((max)-(min))),16,16) | \
@@ -1535,6 +1559,7 @@ typedef union {
     gsMoveWd(G_MW_FOG, G_MWO_FOG, \
         (_SHIFTL((128000/((max)-(min))),16,16) | \
         _SHIFTL(((500-(min))*256/((max)-(min))),0,16)))
+#endif
 
 #define gSPTexture(pkt, s, t, level, tile, on) \
 { \
@@ -1736,8 +1761,13 @@ typedef union {
 #define gsDPSetEnvColor(r, g, b, a)         sDPRGBColor(G_SETENVCOLOR, r,g,b,a)
 #define gDPSetBlendColor(pkt, r, g, b, a)   DPRGBColor(pkt, G_SETBLENDCOLOR, r,g,b,a)
 #define gsDPSetBlendColor(r, g, b, a)       sDPRGBColor(G_SETBLENDCOLOR, r,g,b,a)
+#if defined(SMMS)
+#define gDPSetFogColor(pkt, r, g, b, a)     gDPPipeSync(pkt)
+#define gsDPSetFogColor(r, g, b, a)         gsDPPipeSync()
+#else
 #define gDPSetFogColor(pkt, r, g, b, a)     DPRGBColor(pkt, G_SETFOGCOLOR, r,g,b,a)
 #define gsDPSetFogColor(r, g, b, a)         sDPRGBColor(G_SETFOGCOLOR, r,g,b,a)
+#endif
 #define gDPSetFillColor(pkt, d)             gDPSetColor(pkt, G_SETFILLCOLOR, (d))
 #define gsDPSetFillColor(d)                 gsDPSetColor(G_SETFILLCOLOR, (d))
 #define gDPSetPrimDepth(pkt, z, dz)         gDPSetColor(pkt, G_SETPRIMDEPTH, _SHIFTL(z, 16, 16) | _SHIFTL(dz, 0, 16))
@@ -2466,7 +2496,7 @@ typedef union {
     _g2->words.w1 = (_SHIFTL(dsdx, 16, 16) | _SHIFTL(dtdy, 0, 16)); \
 }
 
-#define gsDPWord(wordhi, wordlo) \
+/*#define gsDPWord(wordhi, wordlo) \
     gsImmp1(G_RDPHALF_1, (uintptr_t)(wordhi)), \
     gsImmp1(G_RDPHALF_2, (uintptr_t)(wordlo))
 
@@ -2475,6 +2505,20 @@ typedef union {
     Gfx *_g = (Gfx *)(pkt); \
     gImmp1(pkt, G_RDPHALF_1, (uintptr_t)(wordhi)); \
     gImmp1(pkt, G_RDPHALF_2, (uintptr_t)(wordlo)); \
+}*/
+
+#define gsXPSwapCmd(cmd, func) \
+{{ \
+    _SHIFTL(G_SWAPCMD, 24, 8) | \
+    _SHIFTL(cmd, 0, 8), \
+    (uintptr_t) (func) \
+}}
+
+#define gXPSwapCmd(pkt, cmd, func) \
+{ \
+    Gfx *_g = (Gfx *)(pkt); \
+    _g->words.w0 = _SHIFTL(G_SWAPCMD, 24, 8) | _SHIFTL(cmd, 0, 8); \
+    _g->words.w1 = (uintptr_t) (func); \
 }
 
 #define gDPFullSync(pkt)        gDPNoParam(pkt, G_RDPFULLSYNC)

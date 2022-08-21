@@ -6,7 +6,7 @@
 // Object copy
 //
 
-#define copy_object_field(field) OMM_MEMCPY(&dst->field, &src->field, sizeof(src->field))
+#define copy_object_field(field) omm_copy(&dst->field, &src->field, sizeof(src->field))
 static void copy_object_data(struct Object *o, bool revert) {
     static struct Object sObjectCopy;
     struct Object *src = (revert ? &sObjectCopy : o);
@@ -66,7 +66,7 @@ static void omm_act_possession_update_star_dance(struct MarioState *m) {
         disable_background_sound();
         audio_play_course_clear();
         f32 radius = omm_capture_get_hitbox_radius(o);
-        f32 height = omm_capture_get_top(o) + 40.f * o->oScaleY * (gOmmData->object->cappy.scale / 100.f);
+        f32 height = omm_capture_get_top(o) + 40.f * o->oScaleY * (gOmmObject->cappy.scale / 100.f);
         celebStar = omm_spawn_star_celebration(m->marioObj, radius, height);
         set_time_stop_flags(TIME_STOP_ENABLED | TIME_STOP_MARIO_AND_DOORS);
         m->marioObj->activeFlags |= ACTIVE_FLAG_INITIATED_TIME_STOP;
@@ -101,7 +101,7 @@ static void omm_act_possession_update_star_dance(struct MarioState *m) {
         m->healCounter = OMM_O2_REFILL;
         starBehavior = NULL;
         omm_mario_unlock(m);
-        gOmmData->mario->capture.timer = 20;
+        gOmmMario->capture.timer = 20;
     }
 }
 
@@ -113,7 +113,7 @@ bool omm_mario_lock(struct MarioState *m, s32 duration) {
     if (m->action != ACT_OMM_POSSESSION) {
         return false;
     }
-    gOmmData->mario->capture.lockTimer = duration;
+    gOmmMario->capture.lockTimer = duration;
     return true;
 }
 
@@ -121,8 +121,8 @@ bool omm_mario_lock_star_grab(struct MarioState *m) {
     if (m->action != ACT_OMM_POSSESSION) {
         return false;
     }
-    gOmmData->mario->capture.lockTimer = -1;
-    gOmmData->mario->capture.timer = 0xFF;
+    gOmmMario->capture.lockTimer = -1;
+    gOmmMario->capture.timer = 0xFF;
     m->actionTimer = 0;
     return true;
 }
@@ -131,24 +131,24 @@ bool omm_mario_unlock(struct MarioState *m) {
     if (m->action != ACT_OMM_POSSESSION) {
         return false;
     }
-    gOmmData->mario->capture.lockTimer = 0;
+    gOmmMario->capture.lockTimer = 0;
     return true;
 }
 
 bool omm_mario_is_locked(struct MarioState *m) {
     if (m->action != ACT_OMM_POSSESSION) {
-        gOmmData->mario->capture.lockTimer = 0;
+        gOmmMario->capture.lockTimer = 0;
         return false;
     }
-    return (gOmmData->mario->capture.lockTimer != 0);
+    return (gOmmMario->capture.lockTimer != 0);
 }
 
-static void mario_cappy_update_object_and_gfx(struct MarioState *m) {
-    struct Object *cap = obj_get_first_with_behavior(omm_bhv_possessed_object_cap);
+static void omm_mario_cappy_update_object_and_gfx(struct MarioState *m) {
+    struct Object *cap = obj_get_first_with_behavior(bhvOmmPossessedObjectCap);
     struct Object *o = gOmmCapture;
 
     // Mario
-    if (gOmmData->mario->capture.timer >= 20) {
+    if (gOmmMario->capture.timer >= 20) {
         vec3f_copy(m->pos, &o->oPosX);
         vec3f_copy(m->vel, &o->oVelX);
         vec3s_set(m->faceAngle, -o->oFaceAnglePitch, o->oFaceAngleYaw, o->oFaceAngleRoll);
@@ -163,28 +163,28 @@ static void mario_cappy_update_object_and_gfx(struct MarioState *m) {
     obj_update_gfx(m->marioObj);
 
     // Cappy
-    if (cap != NULL) {
+    if (cap) {
         Vec3f dv = {
-            -gOmmData->object->cappy.offset[0] * o->oGfxScale[0],
-            +gOmmData->object->cappy.offset[1] * o->oGfxScale[1],
-            +gOmmData->object->cappy.offset[2] * o->oGfxScale[0]
+            -gOmmObject->cappy.offset[0] * o->oGfxScale[0],
+            +gOmmObject->cappy.offset[1] * o->oGfxScale[1],
+            +gOmmObject->cappy.offset[2] * o->oGfxScale[0]
         };
-        if (gOmmData->object->cappy.copyGfx) {
+        if (gOmmObject->cappy.copyGfx) {
             vec3f_rotate_zxy(dv, dv, o->oGfxAngle[0], o->oGfxAngle[1], o->oGfxAngle[2]);
             cap->oPosX           = o->oGfxPos[0] + dv[0];
             cap->oPosY           = o->oGfxPos[1] + dv[1];
             cap->oPosZ           = o->oGfxPos[2] + dv[2];
-            cap->oFaceAnglePitch = o->oGfxAngle[0] + gOmmData->object->cappy.angle[0];
-            cap->oFaceAngleYaw   = o->oGfxAngle[1] + gOmmData->object->cappy.angle[1];
-            cap->oFaceAngleRoll  = o->oGfxAngle[2] + gOmmData->object->cappy.angle[2];
+            cap->oFaceAnglePitch = o->oGfxAngle[0] + gOmmObject->cappy.angle[0];
+            cap->oFaceAngleYaw   = o->oGfxAngle[1] + gOmmObject->cappy.angle[1];
+            cap->oFaceAngleRoll  = o->oGfxAngle[2] + gOmmObject->cappy.angle[2];
         } else {
             vec3f_rotate_zxy(dv, dv, o->oFaceAnglePitch, o->oFaceAngleYaw, o->oFaceAngleRoll);
             cap->oPosX           = o->oPosX + dv[0];
             cap->oPosY           = o->oPosY + dv[1];
             cap->oPosZ           = o->oPosZ + dv[2];
-            cap->oFaceAnglePitch = o->oFaceAnglePitch + gOmmData->object->cappy.angle[0];
-            cap->oFaceAngleYaw   = o->oFaceAngleYaw   + gOmmData->object->cappy.angle[1];
-            cap->oFaceAngleRoll  = o->oFaceAngleRoll  + gOmmData->object->cappy.angle[2];
+            cap->oFaceAnglePitch = o->oFaceAnglePitch + gOmmObject->cappy.angle[0];
+            cap->oFaceAngleYaw   = o->oFaceAngleYaw   + gOmmObject->cappy.angle[1];
+            cap->oFaceAngleRoll  = o->oFaceAngleRoll  + gOmmObject->cappy.angle[2];
         }
         cap->oOpacity     = 0xFF;
         cap->oGfxPos[0]   = cap->oPosX;
@@ -193,9 +193,9 @@ static void mario_cappy_update_object_and_gfx(struct MarioState *m) {
         cap->oGfxAngle[0] = cap->oFaceAnglePitch & 0xFFFF;
         cap->oGfxAngle[1] = cap->oFaceAngleYaw   & 0xFFFF;
         cap->oGfxAngle[2] = cap->oFaceAngleRoll  & 0xFFFF;
-        cap->oGfxScale[0] = gOmmData->object->cappy.scale * o->oGfxScale[0];
-        cap->oGfxScale[1] = gOmmData->object->cappy.scale * o->oGfxScale[1];
-        cap->oGfxScale[2] = gOmmData->object->cappy.scale * o->oGfxScale[2];
+        cap->oGfxScale[0] = gOmmObject->cappy.scale * o->oGfxScale[0];
+        cap->oGfxScale[1] = gOmmObject->cappy.scale * o->oGfxScale[1];
+        cap->oGfxScale[2] = gOmmObject->cappy.scale * o->oGfxScale[2];
         cap->oNodeFlags   = GRAPH_RENDER_ACTIVE;
         cap->oNodeFlags  &= ~GRAPH_RENDER_INVISIBLE;
         cap->oNodeFlags  |= GRAPH_RENDER_INVISIBLE * ((o->oNodeFlags & GRAPH_RENDER_INVISIBLE) != 0);
@@ -208,7 +208,7 @@ static void mario_cappy_update_object_and_gfx(struct MarioState *m) {
 // 06 frames / 3: while shrinking, Mario dives into the object
 
 /*From, To, Coeff, Angle, Scale, Animation */
-static const s32 sCappyPossessAnimParams[20][6] = {
+static const s32 sOmmCappyPossessAnimParams[20][6] = {
 
     // Phase 1
     { 0, 1,  19, 0x0000, 100, MARIO_ANIM_FORWARD_SPINNING },
@@ -237,27 +237,27 @@ static const s32 sCappyPossessAnimParams[20][6] = {
     { 1, 2, 100, 0x4000,  30, MARIO_ANIM_DIVE },
 };
 
-#define xFrom(t)        (gOmmData->mario->capture.animPos[sCappyPossessAnimParams[t][0]][0])
-#define yFrom(t)        (gOmmData->mario->capture.animPos[sCappyPossessAnimParams[t][0]][1])
-#define zFrom(t)        (gOmmData->mario->capture.animPos[sCappyPossessAnimParams[t][0]][2])
-#define xTo(t)          (gOmmData->mario->capture.animPos[sCappyPossessAnimParams[t][1]][0])
-#define yTo(t)          (gOmmData->mario->capture.animPos[sCappyPossessAnimParams[t][1]][1])
-#define zTo(t)          (gOmmData->mario->capture.animPos[sCappyPossessAnimParams[t][1]][2])
-#define coeff(t)        ((f32) (sCappyPossessAnimParams[t][2]) / 100.f)
-#define angle(t)        ((s16) (sCappyPossessAnimParams[t][3]))
-#define scale(t)        ((f32) (sCappyPossessAnimParams[t][4]) / 100.f)
-#define anim(t)         (sCappyPossessAnimParams[t][5])
+#define xFrom(t)        (gOmmMario->capture.animPos[sOmmCappyPossessAnimParams[t][0]][0])
+#define yFrom(t)        (gOmmMario->capture.animPos[sOmmCappyPossessAnimParams[t][0]][1])
+#define zFrom(t)        (gOmmMario->capture.animPos[sOmmCappyPossessAnimParams[t][0]][2])
+#define xTo(t)          (gOmmMario->capture.animPos[sOmmCappyPossessAnimParams[t][1]][0])
+#define yTo(t)          (gOmmMario->capture.animPos[sOmmCappyPossessAnimParams[t][1]][1])
+#define zTo(t)          (gOmmMario->capture.animPos[sOmmCappyPossessAnimParams[t][1]][2])
+#define coeff(t)        ((f32) (sOmmCappyPossessAnimParams[t][2]) / 100.f)
+#define angle(t)        ((s16) (sOmmCappyPossessAnimParams[t][3]))
+#define scale(t)        ((f32) (sOmmCappyPossessAnimParams[t][4]) / 100.f)
+#define anim(t)         (sOmmCappyPossessAnimParams[t][5])
 #define lerp(t, a, b)   ((a) + ((b) - (a)) * (t));
 
 s32 omm_act_possession(struct MarioState *m) {
-    if (gOmmData->mario->capture.timer < 20) {
+    if (gOmmMario->capture.timer < 20) {
 
         // Play the possession animation for 20 frames
-        if (gOmmData->mario->capture.timer == 0) {
+        if (gOmmMario->capture.timer == 0) {
             omm_sound_play(OMM_SOUND_EVENT_CAPTURE, m->marioObj->oCameraToObject);
             omm_cappy_unload();
         }
-        s32 t = gOmmData->mario->capture.timer;
+        s32 t = gOmmMario->capture.timer;
         m->pos[0] = lerp(coeff(t), xFrom(t), xTo(t));
         m->pos[1] = lerp(coeff(t), yFrom(t), yTo(t));
         m->pos[2] = lerp(coeff(t), zFrom(t), zTo(t));
@@ -266,25 +266,25 @@ s32 omm_act_possession(struct MarioState *m) {
         vec3f_set(m->marioObj->oGfxScale, scale(t), scale(t), scale(t));
         obj_anim_play(m->marioObj, anim(t), 1.f);
         m->particleFlags |= PARTICLE_SPARKLES;
-        gOmmData->mario->capture.timer++;
+        gOmmMario->capture.timer++;
 
     } else {
 
         // Spawn Cappy if not spawned
-        if (obj_get_first_with_behavior(omm_bhv_possessed_object_cap) == NULL) {
-            spawn_object(m->marioObj, omm_player_get_selected_normal_cap(), omm_bhv_possessed_object_cap)->oFlags = 0;
-            gOmmData->object->state.invincTimer = 15;
+        if (!obj_get_first_with_behavior(bhvOmmPossessedObjectCap)) {
+            spawn_object(m->marioObj, omm_player_graphics_get_selected_normal_cap(), bhvOmmPossessedObjectCap)->oFlags = 0;
+            gOmmObject->state.invincTimer = 15;
         }
 
         // If Mario is locked, don't check [Z] press and zero-init inputs
         if (omm_mario_is_locked(m)) {
-            gOmmData->mario->capture.stickX        = 0;
-            gOmmData->mario->capture.stickY        = 0;
-            gOmmData->mario->capture.stickMag      = 0;
-            gOmmData->mario->capture.stickYaw      = 0;
-            gOmmData->mario->capture.buttonPressed = 0;
-            gOmmData->mario->capture.buttonDown    = 0;
-            gOmmData->mario->capture.lockTimer    -= 1;
+            gOmmMario->capture.stickX        = 0;
+            gOmmMario->capture.stickY        = 0;
+            gOmmMario->capture.stickMag      = 0;
+            gOmmMario->capture.stickYaw      = 0;
+            gOmmMario->capture.buttonPressed = 0;
+            gOmmMario->capture.buttonDown    = 0;
+            gOmmMario->capture.lockTimer    -= 1;
 
         } else {
 
@@ -296,12 +296,12 @@ s32 omm_act_possession(struct MarioState *m) {
             }
 
             // Update inputs
-            gOmmData->mario->capture.stickX        = (m->controller->stickX / 64.f);
-            gOmmData->mario->capture.stickY        = (m->controller->stickY / 64.f);
-            gOmmData->mario->capture.stickMag      = (m->controller->stickMag / 64.f);
-            gOmmData->mario->capture.stickYaw      = (m->intendedYaw);
-            gOmmData->mario->capture.buttonPressed = (m->controller->buttonPressed);
-            gOmmData->mario->capture.buttonDown    = (m->controller->buttonDown);
+            gOmmMario->capture.stickX        = (m->controller->stickX / 64.f);
+            gOmmMario->capture.stickY        = (m->controller->stickY / 64.f);
+            gOmmMario->capture.stickMag      = (m->controller->stickMag / 64.f);
+            gOmmMario->capture.stickYaw      = (m->intendedYaw);
+            gOmmMario->capture.buttonPressed = (m->controller->buttonPressed);
+            gOmmMario->capture.buttonDown    = (m->controller->buttonDown);
         }
 
         // Set possessed object position to Mario's position
@@ -311,7 +311,7 @@ s32 omm_act_possession(struct MarioState *m) {
         o->oPosZ = m->pos[2];
 
         // Do not update the possessed object during the star grab animation
-        if (gOmmData->mario->capture.timer == 0xFF) {
+        if (gOmmMario->capture.timer == 0xFF) {
             omm_act_possession_update_star_dance(m);
             m->controller->buttonPressed &= ~START_BUTTON;
             gPlayer1Controller->buttonPressed &= ~START_BUTTON;
@@ -320,24 +320,24 @@ s32 omm_act_possession(struct MarioState *m) {
         
         // Update possessed object
         else {
-            gOmmData->object->cappy.copyGfx    = false;
-            gOmmData->object->cappy.offset[2]  = 0.f;
-            gOmmData->object->cappy.offset[0]  = 0.f;
-            gOmmData->object->cappy.offset[1]  = 0.f;
-            gOmmData->object->cappy.angle[0]   = 0;
-            gOmmData->object->cappy.angle[1]   = 0;
-            gOmmData->object->cappy.angle[2]   = 0;
-            gOmmData->object->cappy.scale      = 1.f;
-            gOmmData->object->state.properties = 0;
-            gOmmData->object->state.bullyTimer = max_s(gOmmData->object->state.bullyTimer - 1, 0);
+            gOmmObject->cappy.copyGfx    = false;
+            gOmmObject->cappy.offset[2]  = 0.f;
+            gOmmObject->cappy.offset[0]  = 0.f;
+            gOmmObject->cappy.offset[1]  = 0.f;
+            gOmmObject->cappy.angle[0]   = 0;
+            gOmmObject->cappy.angle[1]   = 0;
+            gOmmObject->cappy.angle[2]   = 0;
+            gOmmObject->cappy.scale      = 1.f;
+            gOmmObject->state.properties = 0;
+            gOmmObject->state.bullyTimer = max_s(gOmmObject->state.bullyTimer - 1, 0);
             while (true) {
                 s32 res = omm_capture_update(o);
                 if (res == 0) break;
                 if (res == 1) return OMM_MARIO_ACTION_RESULT_CANCEL;
                 if (res == 2) continue;
             }
-            if (gOmmData->object->state.invincTimer > 0) {
-                if (gOmmData->object->state.invincTimer & 1) {
+            if (gOmmObject->state.invincTimer > 0) {
+                if (gOmmObject->state.invincTimer & 1) {
                     o->oNodeFlags &= ~GRAPH_RENDER_INVISIBLE;
                 } else {
                     o->oNodeFlags |= GRAPH_RENDER_INVISIBLE;
@@ -346,10 +346,10 @@ s32 omm_act_possession(struct MarioState *m) {
         }
 
 #if OMM_CODE_DEBUG
-        gOmmData->mario->capture.hitboxRadius = o->hitboxRadius;
-        gOmmData->mario->capture.hitboxHeight = o->hitboxHeight;
-        gOmmData->mario->capture.hitboxOffset = o->hitboxDownOffset;
-        gOmmData->mario->capture.hitboxWall   = o->oWallHitboxRadius;
+        gOmmMario->capture.hitboxRadius = o->hitboxRadius;
+        gOmmMario->capture.hitboxHeight = o->hitboxHeight;
+        gOmmMario->capture.hitboxOffset = o->hitboxDownOffset;
+        gOmmMario->capture.hitboxWall   = o->oWallHitboxRadius;
 #endif
 
         // Unset possessed object's hitbox to avoid undesirable interactions
@@ -362,13 +362,13 @@ s32 omm_act_possession(struct MarioState *m) {
     }
 
     // Unpossess if Mario is dead
-    if (m->health <= OMM_HEALTH_DEAD) {
+    if (omm_mario_is_dead(m)) {
         omm_mario_unpossess_object(m, OMM_MARIO_UNPOSSESS_ACT_NONE, false, 0);
         return OMM_MARIO_ACTION_RESULT_CANCEL;
     }
 
     // Update Mario and Cappy's objects and graphics
-    mario_cappy_update_object_and_gfx(m);
+    omm_mario_cappy_update_object_and_gfx(m);
     return OMM_MARIO_ACTION_RESULT_BREAK;
 }
 
@@ -388,40 +388,42 @@ s32 omm_act_possession(struct MarioState *m) {
 // Possess
 //
 
-bool omm_mario_possess_object(struct MarioState *m, struct Object *o, bool checkTangibility) {
-    if (!OMM_CAP_CAPPY_CAPTURE) {
-        return false;
+bool omm_mario_possess_object(struct MarioState *m, struct Object *o, bool checkTangibility, bool forceCapture) {
+    if (!forceCapture) {
+
+        // Don't capture things
+        if (!OMM_CAP_CAPPY_CAPTURE) {
+            return false;
+        }
+
+        // 'Press' mode: Press X to capture, hold to attack
+        // 'Hold' mode: Press X to attack, hold to capture
+        // Note that flaming bob-ombs are always captured, never attacked
+        if (o->behavior != bhvOmmFlamingBobomb) {
+            if ((OMM_CAP_CAPPY_CAPTURE_PRESS && (m->controller->buttonDown & X_BUTTON)) ||
+                (OMM_CAP_CAPPY_CAPTURE_HOLD && !(m->controller->buttonDown & X_BUTTON))) {
+                return false;
+            }
+        }
+
+        // Mario can't possess an object if he's holding or riding something
+        if (m->heldObj || m->riddenObj) {
+            return false;
+        }
+
+        // Mario can't possess the same object twice in a row
+        if (gOmmMario->capture.prev == o) {
+            return false;
+        }
     }
-    
-    // Sparkly Stars Assist mode
-    // Prevent Cappy from capturing objects if Captures are not allowed
-    if (OMM_SPARKLY_STARS_ASSIST && omm_ssc_data_flags(OMM_SSD_NO_CAPTURE)) {
-        return false;
-    }
-    
-    // Holding X prevents Cappy from capturing objects
-    // (does not prevent from capturing flaming bob-ombs)
-    if ((m->controller->buttonDown & X_BUTTON) && o->behavior != omm_bhv_flaming_bobomb) {
-        return false;
-    }
-    
+
     // Not tangible
-    if (checkTangibility && (o->oIntangibleTimer != 0)) {
+    if (checkTangibility && o->oIntangibleTimer != 0) {
         return false;
     }
 
     // Oof
-    if (m->health <= OMM_HEALTH_DEAD || m->hurtCounter != 0) {
-        return false;
-    }
-
-    // Mario can't possess an object if he's holding or riding something
-    if (m->heldObj || m->riddenObj) {
-        return false;
-    }
-
-    // Mario can't possess the same object twice in a row
-    if (gOmmData->mario->capture.prev == o) {
+    if (omm_mario_is_dead(m) || m->hurtCounter != 0) {
         return false;
     }
 
@@ -431,47 +433,45 @@ bool omm_mario_possess_object(struct MarioState *m, struct Object *o, bool check
     }
 
     // Try to capture
-    const void *data = omm_capture_get_data(o);
-    if (data == NULL) {
+    const void *data = omm_behavior_data_get_capture(o->behavior);
+    if (!data) {
         return false;
     }
 
     // Try to init
     gOmmData->resetObject();
-    gOmmData->mario->capture.data = data;
+    gOmmMario->capture.data = data;
     if (!omm_capture_init(o)) {
         return false;
     }
 
     // OK
     copy_object_data(o, false);
-    o->curBhvCommand = omm_bhv_possessed_object;
+    o->curBhvCommand = bhvOmmPossessedObject;
     o->oRoom = -1;
     o->oFlags = 0;
     o->oIntangibleTimer = 0;
     o->oNodeFlags |= GRAPH_RENDER_ACTIVE;
     o->oNodeFlags &= ~GRAPH_RENDER_INVISIBLE;
-    gOmmData->mario->capture.obj = o;
-    gOmmData->mario->capture.timer = 0;
-    gOmmData->mario->capture.lockTimer = 0;
-    struct Object *cap = obj_get_first_with_behavior(omm_bhv_possessed_object_cap);
-    if (cap != NULL) {
-        obj_mark_for_deletion(cap);
-    }
+    gOmmMario->capture.obj = o;
+    gOmmMario->capture.timer = 0;
+    gOmmMario->capture.lockTimer = 0;
+    struct Object *cap = obj_get_first_with_behavior(bhvOmmPossessedObjectCap);
+    if (cap) obj_mark_for_deletion(cap);
 
     // Init animation positions
     f32 x = o->oPosX;
     f32 y = o->oPosY + omm_capture_get_top(o);
     f32 z = o->oPosZ;
-    gOmmData->mario->capture.animPos[0][0] = m->pos[0];
-    gOmmData->mario->capture.animPos[0][1] = m->pos[1];
-    gOmmData->mario->capture.animPos[0][2] = m->pos[2];
-    gOmmData->mario->capture.animPos[1][0] = x;
-    gOmmData->mario->capture.animPos[1][1] = y + 180.f;
-    gOmmData->mario->capture.animPos[1][2] = z;
-    gOmmData->mario->capture.animPos[2][0] = x;
-    gOmmData->mario->capture.animPos[2][1] = y - 30.f;
-    gOmmData->mario->capture.animPos[2][2] = z;
+    gOmmMario->capture.animPos[0][0] = m->pos[0];
+    gOmmMario->capture.animPos[0][1] = m->pos[1];
+    gOmmMario->capture.animPos[0][2] = m->pos[2];
+    gOmmMario->capture.animPos[1][0] = x;
+    gOmmMario->capture.animPos[1][1] = y + 180.f;
+    gOmmMario->capture.animPos[1][2] = z;
+    gOmmMario->capture.animPos[2][0] = x;
+    gOmmMario->capture.animPos[2][1] = y - 30.f;
+    gOmmMario->capture.animPos[2][2] = z;
 
     // Init face angles
     m->faceAngle[0] = 0;
@@ -480,6 +480,7 @@ bool omm_mario_possess_object(struct MarioState *m, struct Object *o, bool check
 
     // Possess
     omm_capture_reset_camera();
+    mario_stop_riding_and_holding(m);
     omm_mario_set_action(m, ACT_OMM_POSSESSION, 0, Z_TRIG);
     return true;
 }
@@ -489,7 +490,7 @@ bool omm_mario_possess_object(struct MarioState *m, struct Object *o, bool check
 //
 
 /* action, actionArg, forward vel, non-zero vertical vel, come from top, invert face yaw, i-frames */
-static const s32 sMarioUnpossessActions[OMM_MARIO_UNPOSSESS_ACT_COUNT * 6][7] = {
+static const s32 sOmmMarioUnpossessActions[OMM_MARIO_UNPOSSESS_ACT_COUNT * 6][7] = {
 
     /* MARIO_UNPOSSESS_ACT_NONE */
     /* GF */ { ACT_IDLE,                    0,   0,  0, false, false, true },
@@ -558,7 +559,7 @@ static const s32 sMarioUnpossessActions[OMM_MARIO_UNPOSSESS_ACT_COUNT * 6][7] = 
 
 bool omm_mario_unpossess_object(struct MarioState *m, u8 unpossessAct, bool isBackwards, u32 objIntangibleFrames) {
     struct Object *o = gOmmCapture;
-    if (o == NULL) {
+    if (!o) {
         return false;
     }
 
@@ -568,15 +569,15 @@ bool omm_mario_unpossess_object(struct MarioState *m, u8 unpossessAct, bool isBa
     f32 objectTop    = omm_capture_get_top(o);
     s32 terrainType  = (((o->oPosY + objectTop) < find_water_level(o->oPosX, o->oPosZ)) ? 2 : (onGround ? 0 : 1));
     s32 actionIndex  = (unpossessAct * 6) + (terrainType * 2) + isBackwards;
-    u32 action       = (u32)  sMarioUnpossessActions[actionIndex][0];
-    u32 actionArg    = (u32)  sMarioUnpossessActions[actionIndex][1];
-    f32 forwardVel   = (f32)  sMarioUnpossessActions[actionIndex][2];
-    f32 verticalVel  = (f32)  sMarioUnpossessActions[actionIndex][3];
-    bool comeFromTop = (bool) sMarioUnpossessActions[actionIndex][4];
-    bool invFaceYaw  = (bool) sMarioUnpossessActions[actionIndex][5];
-    bool invFrames   = (bool) sMarioUnpossessActions[actionIndex][6];
+    u32 action       = (u32)  sOmmMarioUnpossessActions[actionIndex][0];
+    u32 actionArg    = (u32)  sOmmMarioUnpossessActions[actionIndex][1];
+    f32 forwardVel   = (f32)  sOmmMarioUnpossessActions[actionIndex][2];
+    f32 verticalVel  = (f32)  sOmmMarioUnpossessActions[actionIndex][3];
+    bool comeFromTop = (bool) sOmmMarioUnpossessActions[actionIndex][4];
+    bool invFaceYaw  = (bool) sOmmMarioUnpossessActions[actionIndex][5];
+    bool invFrames   = (bool) sOmmMarioUnpossessActions[actionIndex][6];
 
-    mario_cappy_update_object_and_gfx(m);
+    omm_mario_cappy_update_object_and_gfx(m);
     mario_set_forward_vel(m, forwardVel);
     if (verticalVel != 0.f) m->vel[1] = verticalVel;
     m->pos[1] += (comeFromTop * objectTop);
@@ -591,10 +592,8 @@ bool omm_mario_unpossess_object(struct MarioState *m, u8 unpossessAct, bool isBa
     omm_sound_play(OMM_SOUND_EVENT_UNCAPTURE, m->marioObj->oCameraToObject);
     obj_spawn_white_puff(m->marioObj, -1);
     omm_capture_reset_camera();
-    struct Object *cap = obj_get_first_with_behavior(omm_bhv_possessed_object_cap);
-    if (cap != NULL) {
-        obj_mark_for_deletion(cap);
-    }
+    struct Object *cap = obj_get_first_with_behavior(bhvOmmPossessedObjectCap);
+    if (cap) obj_mark_for_deletion(cap);
 
     // End object possession
     copy_object_data(o, true);
@@ -605,10 +604,10 @@ bool omm_mario_unpossess_object(struct MarioState *m, u8 unpossessAct, bool isBa
     o->oNodeFlags &= ~GRAPH_RENDER_INVISIBLE;
 
     // Clear fields, reset Cappy bounce
-    gOmmData->mario->capture.obj       = NULL;
-    gOmmData->mario->capture.prev      = ((onGround || !omm_capture_should_reference_object(o)) ? NULL : o);
-    gOmmData->mario->capture.timer     = 0;
-    gOmmData->mario->capture.lockTimer = 0;
-    gOmmData->mario->cappy.bounced     = false;
+    gOmmMario->capture.obj       = NULL;
+    gOmmMario->capture.prev      = ((onGround || !omm_capture_should_reference_object(o)) ? NULL : o);
+    gOmmMario->capture.timer     = 0;
+    gOmmMario->capture.lockTimer = 0;
+    gOmmMario->cappy.bounced     = false;
     return true;
 }

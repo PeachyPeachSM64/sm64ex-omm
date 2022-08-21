@@ -11,8 +11,8 @@ OMM_INLINE bool __omm_nop_eq(__OmmNoP x, __OmmNoP y) {
 OMM_INLINE void *__omm_realloc(void *p, s32 s, s32 c, s32 sot) {
     void *q = calloc(s, sot);
     if (OMM_LIKELY(p)) {
-        OMM_MEMCPY(q, p, c * sot);
-        OMM_MEMDEL(p);
+        omm_copy(q, p, c * sot);
+        omm_free(p);
     }
     return q;
 }
@@ -45,7 +45,7 @@ void __omm_array_remove(OmmArray *parr, s32 index) {
     if (index == -1) {
         parr->c = 0;
     } else if (index < parr->c) {
-        OMM_MEMMOV(parr->p + index, parr->p + index + 1, sizeof(__OmmNoP) * (parr->c - index - 1));
+        omm_move(parr->p + index, parr->p + index + 1, sizeof(__OmmNoP) * (parr->c - index - 1));
         parr->c--;
     }
 }
@@ -89,14 +89,15 @@ void __omm_map_remove(OmmMap *pmap, s32 index) {
     if (index == -1) {
         pmap->c = 0;
     } else if (index < pmap->c) {
-        OMM_MEMMOV(pmap->k + index, pmap->k + index + 1, sizeof(__OmmNoP) * (pmap->c - index - 1));
-        OMM_MEMMOV(pmap->v + index, pmap->v + index + 1, sizeof(__OmmNoP) * (pmap->c - index - 1));
+        omm_move(pmap->k + index, pmap->k + index + 1, sizeof(__OmmNoP) * (pmap->c - index - 1));
+        omm_move(pmap->v + index, pmap->v + index + 1, sizeof(__OmmNoP) * (pmap->c - index - 1));
         pmap->c--;
     }
 }
 
 //
 // OmmHMap: a sorted array of key/pointer pairs with dynamic memory allocation; its key is a u32 and its size is always a PoT.
+// Keys are stored in descending order. Empty slots are always located at the end of the buffers.
 // DO NOT USE THE FUNCTIONS OR STRUCTURES STARTING WITH UNDERSCORES.
 // DO NOT USE THE KEY 0, AS IT IS USED AS AN EMPTY SLOT.
 // ZERO CHECKS ARE OMITTED FOR FASTER PROCESSING.
@@ -124,10 +125,11 @@ void __omm_hmap_insert(OmmHMap *phmap, u32 key, void *val) {
     }
     for (s32 i = 0; i != phmap->s; ++i) {
         if (key > phmap->k[i]) {
-            OMM_MEMMOV(phmap->k + i + 1, phmap->k + i, sizeof(u32)    * (phmap->s - i - 1));
-            OMM_MEMMOV(phmap->v + i + 1, phmap->v + i, sizeof(void *) * (phmap->s - i - 1));
+            omm_move(phmap->k + i + 1, phmap->k + i, sizeof(u32)    * (phmap->s - i - 1));
+            omm_move(phmap->v + i + 1, phmap->v + i, sizeof(void *) * (phmap->s - i - 1));
             phmap->k[i] = key;
             phmap->v[i] = val;
+            phmap->c++;
             return;
         }
     }
@@ -163,7 +165,7 @@ static OmmMemoryObject *omm_memory_get_free_slot(OmmMemoryPool *omp) {
         // If that's the case, it means the block is in use, so skip it
         if (omp == gOmmMemoryPoolGeoData) {
             struct Object *o = (struct Object *) obj->owner;
-            if (o && o->oGeoData && o->oGeoData == obj->data) {
+            if (o && o->oFields && o->oGeoData && o->oGeoData == obj->data) {
                 obj = NULL;
             }
         }
@@ -178,24 +180,24 @@ void *omm_memory_new(void *pool, s32 size, void *caller) {
         OmmMemoryPool *omp = (OmmMemoryPool *) pool;
         OmmMemoryObject *obj = omm_memory_get_free_slot(omp);
         if (obj->size < size) {
-            OMM_MEMDEL(obj->data);
-            obj->data = OMM_MEMNEW(u8, size);
+            omm_free(obj->data);
+            obj->data = omm_new(u8, size);
             obj->size = size;
         } else {
-            OMM_MEMSET(obj->data, 0, size);
+            omm_zero(obj->data, size);
         }
         obj->owner = caller;
         p = obj->data;
     } else {
-        p = OMM_MEMNEW(u8, size);
+        p = omm_new(u8, size);
     }
     return p;
 }
 
 static void omm_memory_init_pool(void **pool, s32 capacity) {
-    *pool = OMM_MEMNEW(OmmMemoryPool, 1);
+    *pool = omm_new(OmmMemoryPool, 1);
     OmmMemoryPool *omp = (OmmMemoryPool *) *pool;
-    omp->objects = (OmmMemoryObject *) OMM_MEMNEW(OmmMemoryObject, capacity);
+    omp->objects = (OmmMemoryObject *) omm_new(OmmMemoryObject, capacity);
     omp->capacity = capacity;
     omp->current = 0;
 }
@@ -213,11 +215,11 @@ OMM_AT_STARTUP static void omm_memory_init_pools() {
         OmmMemoryObject *obj = &omp->objects[i];
         if (omp == gOmmMemoryPoolGeoData) {
             struct Object *o = (struct Object *) obj->owner;
-            if (o && o->oGeoData && o->oGeoData == obj->data) {
+            if (o && o->oFields && o->oGeoData && o->oGeoData == obj->data) {
                 usedCount++;
             }
         }
     }
-    OMM_PRINT_TEXT(-60, 24, "%d", omp->current);
-    OMM_PRINT_TEXT(-60, 4, "%d I %d", usedCount, omp->capacity);
+    omm_debug_text(-60, 24, "%d", omp->current);
+    omm_debug_text(-60, 4, "%d I %d", usedCount, omp->capacity);
 }*/

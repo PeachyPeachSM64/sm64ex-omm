@@ -6,18 +6,18 @@
 // Init
 //
 
-bool cappy_koopa_shell_init(struct Object *o) {
-    o->behavior = omm_bhv_possessed_koopa_shell;
-    gOmmData->object->state.actionFlag = false;
+bool omm_cappy_koopa_shell_init(struct Object *o) {
+    o->behavior = bhvOmmPossessedKoopaShell;
+    gOmmObject->state.actionFlag = false;
     return true;
 }
 
-void cappy_koopa_shell_end(struct Object *o) {
+void omm_cappy_koopa_shell_end(struct Object *o) {
     o->behavior = bhvKoopaShell;
     audio_stop_shell_music();
 }
 
-f32 cappy_koopa_shell_get_top(struct Object *o) {
+f32 omm_cappy_koopa_shell_get_top(struct Object *o) {
     return 100.f * o->oScaleY;
 }
 
@@ -25,12 +25,12 @@ f32 cappy_koopa_shell_get_top(struct Object *o) {
 // Update
 //
 
-s32 cappy_koopa_shell_update(struct Object *o) {
+s32 omm_cappy_koopa_shell_update(struct Object *o) {
 
     // Init
-    if (!gOmmData->object->state.actionFlag) {
+    if (!gOmmObject->state.actionFlag) {
         audio_play_shell_music();
-        gOmmData->object->state.actionFlag = true;
+        gOmmObject->state.actionFlag = true;
     }
 
     // Inputs
@@ -77,7 +77,7 @@ s32 cappy_koopa_shell_update(struct Object *o) {
     switch (o->oFloorType) {
         case OBJ_FLOOR_TYPE_GROUND:
             obj_make_step_sound_and_particle(o,
-                &gOmmData->object->state.walkDistance, 0.f, 0.f,
+                &gOmmObject->state.walkDistance, 0.f, 0.f,
                 SOUND_MOVING_TERRAIN_RIDING_SHELL + gMarioState->terrainSoundAddend,
                 OBJ_PARTICLE_MIST
             );
@@ -85,7 +85,7 @@ s32 cappy_koopa_shell_update(struct Object *o) {
 
         case OBJ_FLOOR_TYPE_WATER:
             obj_make_step_sound_and_particle(o,
-                &gOmmData->object->state.walkDistance, 0.f, 0.f,
+                &gOmmObject->state.walkDistance, 0.f, 0.f,
                 SOUND_MOVING_TERRAIN_RIDING_SHELL + SOUND_TERRAIN_WATER,
                 OBJ_PARTICLE_WATER_TRAIL | OBJ_PARTICLE_WATER_DROPLET
             );
@@ -93,7 +93,7 @@ s32 cappy_koopa_shell_update(struct Object *o) {
 
         case OBJ_FLOOR_TYPE_LAVA:
             obj_make_step_sound_and_particle(o,
-                &gOmmData->object->state.walkDistance, 0.f, 0.f,
+                &gOmmObject->state.walkDistance, 0.f, 0.f,
                 SOUND_MOVING_RIDING_SHELL_LAVA,
                 OBJ_PARTICLE_FLAME
             );
@@ -101,7 +101,7 @@ s32 cappy_koopa_shell_update(struct Object *o) {
     }
 
     // Cappy values
-    gOmmData->object->cappy.scale = 0.f;
+    gOmmObject->cappy.scale = 0.f;
 
     // OK
     POBJ_RETURN_OK;

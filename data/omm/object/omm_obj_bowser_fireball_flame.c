@@ -790,7 +790,7 @@ const GeoLayout omm_geo_bowser_fireball_flame[] = {
 // Behavior
 //
 
-static void omm_bhv_bowser_fireball_flame_update() {
+static void bhv_omm_bowser_fireball_flame_update() {
     struct Object *o = gCurrentObject;
     switch (o->oAction) {
 
@@ -834,7 +834,7 @@ static void omm_bhv_bowser_fireball_flame_update() {
     // Update Y position and delete if there is no valid floor
     struct Surface *floor = NULL;
     o->oPosY = find_floor(o->oPosX, o->oPosY, o->oPosZ, &floor);
-    if (!floor || floor->type == SURFACE_BURNING || floor->type == SURFACE_DEATH_PLANE) {
+    if (!floor || SURFACE_IS_LETHAL(floor->type)) {
         obj_mark_for_deletion(o);
         return;
     }
@@ -849,12 +849,12 @@ static void omm_bhv_bowser_fireball_flame_update() {
     }
 }
 
-const BehaviorScript omm_bhv_bowser_fireball_flame[] = {
+const BehaviorScript bhvOmmBowserFireballFlame[] = {
     OBJ_TYPE_GENACTOR,
     0x11010001,
     0x08000000,
     0x0F1A0001,
-    0x0C000000, (uintptr_t) omm_bhv_bowser_fireball_flame_update,
+    0x0C000000, (uintptr_t) bhv_omm_bowser_fireball_flame_update,
     0x09000000,
 };
 
@@ -863,7 +863,7 @@ const BehaviorScript omm_bhv_bowser_fireball_flame[] = {
 //
 
 struct Object *omm_spawn_bowser_fireball_flame(struct Object *o, s32 duration) {
-    struct Object *flame = obj_spawn_from_geo(o, omm_geo_bowser_fireball_flame, omm_bhv_bowser_fireball_flame);
+    struct Object *flame = obj_spawn_from_geo(o, omm_geo_bowser_fireball_flame, bhvOmmBowserFireballFlame);
     flame->oBowserFireDuration = duration;
     flame->oAnimState = random_u16() % 40;
     flame->oOpacity = 255;

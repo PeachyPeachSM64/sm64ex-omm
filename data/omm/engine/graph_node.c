@@ -21,7 +21,7 @@ struct GraphNodeHeldObject *gCurGraphNodeHeldObject = NULL;
 #define init_graph_node(typeName, typeIndex) { \
     if (!node) { \
     if (pool) { node = (struct typeName *) alloc_only_pool_alloc(pool, sizeof(struct typeName)); } \
-    else      { node = (struct typeName *) OMM_MEMNEW(struct typeName, 1); } \
+    else      { node = (struct typeName *) omm_new(struct typeName, 1); } \
     } \
     gNode->type = (typeIndex); \
     gNode->flags = GRAPH_RENDER_ACTIVE; \
@@ -101,6 +101,7 @@ struct GraphNodeCamera *init_graph_node_camera(struct AllocOnlyPool *pool, struc
     vec3f_copy(node->focus, focus);
     node->fnNode.func = func;
     node->config.mode = mode;
+    node->config.camera = NULL;
     node->roll = 0;
     node->rollScreen = 0;
     run_create();
@@ -443,23 +444,26 @@ s16 geo_update_animation_frame(struct AnimInfoStruct *animInfo, s32 *accelAssist
 //
 
 void *geo_get_geo_data(struct Object *o, s32 size, const Gfx *gfxSrc, s32 gfxSize) {
-    if (o->oGeoData == NULL) {
-        void *data = omm_memory_new(gOmmMemoryPoolGeoData, size, o);
-        OMM_MEMCPY(data, gfxSrc, gfxSize);
-        for (s32 i = 0, n = gfxSize / sizeof(const Gfx); i != n; ++i) {
-            Gfx *gfx = ((Gfx *) data) + i;
-            if (_SHIFTR(gfx->words.w0, 24, 8) == G_DL && gfx->words.w1 == (uintptr_t) null) {
-                gfx->words.w1 = (uintptr_t) (((u8 *) data) + gfxSize);
-                break;
+    if (obj_alloc_fields(o)) {
+        if (!o->oGeoData) {
+            void *data = omm_memory_new(gOmmMemoryPoolGeoData, size, o);
+            omm_copy(data, gfxSrc, gfxSize);
+            for (s32 i = 0, n = gfxSize / sizeof(const Gfx); i != n; ++i) {
+                Gfx *gfx = ((Gfx *) data) + i;
+                if (_SHIFTR(gfx->words.w0, 24, 8) == G_DL && gfx->words.w1 == (uintptr_t) null) {
+                    gfx->words.w1 = (uintptr_t) (((u8 *) data) + gfxSize);
+                    break;
+                }
             }
+            o->oGeoData = (void *) data;
         }
-        o->oGeoData = (void *) data;
+        return o->oGeoData;
     }
-    return o->oGeoData;
+    return NULL;
 }
 
 Gfx *geo_link_geo_data(s32 callContext, struct GraphNode *node, UNUSED void *context) {
-    if (gCurrGraphNodeObject && callContext == GEO_CONTEXT_RENDER) {
+    if (gCurrGraphNodeObject && gCurrGraphNodeObject->oFields && callContext == GEO_CONTEXT_RENDER) {
         struct GraphNodeDisplayList *displayListNode = (struct GraphNodeDisplayList *) node->next;
         displayListNode->displayList = gCurrGraphNodeObject->oGeoData;
     }

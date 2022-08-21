@@ -26,7 +26,7 @@ static void omm_opt_init_warp_to_level() {
             s32 stars = max_s(0x1, omm_stars_get_bits_total(level));
             for (s32 j = 0; j != 6; ++j) {
                 if ((stars >> j) & 1) {
-                    ActValues *actValues = OMM_MEMNEW(ActValues, 1);
+                    ActValues *actValues = omm_new(ActValues, 1);
                     actValues->level = level;
                     actValues->act = j + 1;
                     omm_array_add(sOmmWarpActValues[sm74_mode__omm_opt_init_warp_to_level], ptr, actValues);
@@ -35,24 +35,24 @@ static void omm_opt_init_warp_to_level() {
         }
     }
 
-    sOmmWarpLevelChoices[0] = OMM_MEMNEW(u8 *, omm_level_get_count() * 2);
+    sOmmWarpLevelChoices[0] = omm_new(u8 *, omm_level_get_count() * 2);
     sOmmWarpLevelChoices[1] = sOmmWarpLevelChoices[0];
     sOmmWarpLevelChoices[2] = sOmmWarpLevelChoices[0] + omm_level_get_count();
     for (sm74_mode__omm_opt_init_warp_to_level = 1; sm74_mode__omm_opt_init_warp_to_level <= 2; ++sm74_mode__omm_opt_init_warp_to_level) {
         for (s32 i = 0; i != omm_level_get_count(); ++i) {
             const u8 *name = omm_level_get_name(omm_level_get_list()[i], true, true);
-            sOmmWarpLevelChoices[sm74_mode__omm_opt_init_warp_to_level][i] = OMM_MEMDUP(name, omm_text_length(name) + 1);
+            sOmmWarpLevelChoices[sm74_mode__omm_opt_init_warp_to_level][i] = omm_dup(name, omm_text_length(name) + 1);
         }
     }
 
-    sOmmWarpActChoices[0] = OMM_MEMNEW(u8 *, omm_array_count(sOmmWarpActValues[1]) + omm_array_count(sOmmWarpActValues[2]));
+    sOmmWarpActChoices[0] = omm_new(u8 *, omm_array_count(sOmmWarpActValues[1]) + omm_array_count(sOmmWarpActValues[2]));
     sOmmWarpActChoices[1] = sOmmWarpActChoices[0];
     sOmmWarpActChoices[2] = sOmmWarpActChoices[0] + omm_array_count(sOmmWarpActValues[1]);
     for (sm74_mode__omm_opt_init_warp_to_level = 1; sm74_mode__omm_opt_init_warp_to_level <= 2; ++sm74_mode__omm_opt_init_warp_to_level) {
         omm_array_for_each(sOmmWarpActValues[sm74_mode__omm_opt_init_warp_to_level], p) {
             ActValues *actValues = (ActValues *) p->as_ptr;
             const u8 *name = omm_level_get_act_name(actValues->level, actValues->act, true, true);
-            sOmmWarpActChoices[sm74_mode__omm_opt_init_warp_to_level][i_p] = OMM_MEMDUP(name, omm_text_length(name) + 1);
+            sOmmWarpActChoices[sm74_mode__omm_opt_init_warp_to_level][i_p] = omm_dup(name, omm_text_length(name) + 1);
         }
     }
 }
@@ -72,7 +72,7 @@ static struct Option omm_opt_make_choice_area(UNUSED const char *label, u32 *val
     opt.type = OPT_CHOICE;
     opt.label = omm_text_convert(OMM_TEXT_SM74_OPT_WARP_EDITION, true);
     opt.uval = value;
-    opt.choices = OMM_MEMNEW(u8 *, 2);
+    opt.choices = omm_new(u8 *, 2);
     opt.numChoices = 2;
     opt.choices[0] = omm_text_convert(OMM_TEXT_SM74_OPT_WARP_NORMAL, true);
     opt.choices[1] = omm_text_convert(OMM_TEXT_SM74_OPT_WARP_EXTREME, true);

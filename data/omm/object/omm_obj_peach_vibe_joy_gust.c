@@ -125,7 +125,7 @@ const GeoLayout omm_geo_peach_vibe_joy_gust[] = {
 // Behavior
 //
 
-static void omm_bhv_peach_vibe_joy_gust_update() {
+static void bhv_omm_peach_vibe_joy_gust_update() {
     struct Object *o = gCurrentObject;
     if (o->oTimer >= 60) {
         obj_mark_for_deletion(o);
@@ -150,10 +150,10 @@ static void omm_bhv_peach_vibe_joy_gust_update() {
     omm_obj_process_interactions(o, OBJ_INT_PRESET_PEACH_VIBE_JOY_GUST);
 }
 
-const BehaviorScript omm_bhv_peach_vibe_joy_gust[] = {
+const BehaviorScript bhvOmmPeachVibeJoyGust[] = {
     OBJ_TYPE_SPECIAL,
     0x08000000,
-    0x0C000000, (uintptr_t) omm_bhv_peach_vibe_joy_gust_update,
+    0x0C000000, (uintptr_t) bhv_omm_peach_vibe_joy_gust_update,
     0x09000000,
 };
 
@@ -162,7 +162,7 @@ const BehaviorScript omm_bhv_peach_vibe_joy_gust[] = {
 //
 
 struct Object *omm_spawn_peach_vibe_joy_gust(struct Object *o, f32 fvel, s16 angle) {
-    struct Object *gust = obj_spawn_from_geo(o, omm_geo_peach_vibe_joy_gust, omm_bhv_peach_vibe_joy_gust);
+    struct Object *gust = obj_spawn_from_geo(o, omm_geo_peach_vibe_joy_gust, bhvOmmPeachVibeJoyGust);
     obj_set_vel(gust, fvel * sins(angle), 0.f, fvel * coss(angle));
     obj_set_angle(gust, 0, 0, 0);
     return gust;

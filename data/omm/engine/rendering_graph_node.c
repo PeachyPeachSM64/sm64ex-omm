@@ -30,9 +30,16 @@
 // Data
 //
 
-static Mat4 sMatStack[32][MAX_INTERPOLATED_FRAMES];
-static Mtx *sMtxStack[32][MAX_INTERPOLATED_FRAMES];
+// Previous frame matrices
+static Mat4 sMatStack0[32];
+static Mtx *sMtxStack0[32];
+
+// Current frame matrices
+static Mat4 sMatStack1[32];
+static Mtx *sMtxStack1[32];
+
 static s32 sMatStackIndex;
+static s32 sCurrObjectSlot;
 static bool sIsPreprocess;
 #define PREPROCESS if (OMM_UNLIKELY(sIsPreprocess))
 #define NOT_PREPROCESS if (OMM_LIKELY(!sIsPreprocess))
@@ -45,35 +52,162 @@ static bool sDisableRendering;
 // Frame interpolation
 //
 
-static Gfx *sPerspectivePos[MAX_INTERPOLATED_FRAMES];
-static Mtx *sPerspectiveMtx[MAX_INTERPOLATED_FRAMES];
-static OmmArray sMtxTbl[MAX_INTERPOLATED_FRAMES]; // pos, mtx, gfx
+#define check_timestamp(_ts)                        ((_ts).ts == (gGlobalTimer - 1))
+#define reset_timestamp(_ts)                        {(_ts).ts = 0;}
+#define update_timestamp_s16(_ts, x)                {(_ts).ts = gGlobalTimer; (_ts).v = (s16) (x);}
+#define update_timestamp_s32(_ts, x)                {(_ts).ts = gGlobalTimer; (_ts).v = (s32) (x);}
+#define update_timestamp_u16(_ts, x)                {(_ts).ts = gGlobalTimer; (_ts).v = (u16) (x);}
+#define update_timestamp_u32(_ts, x)                {(_ts).ts = gGlobalTimer; (_ts).v = (u32) (x);}
+#define update_timestamp_f32(_ts, x)                {(_ts).ts = gGlobalTimer; (_ts).v = (f32) (x);}
+#define update_timestamp_vec3f(_ts, x)              {(_ts).ts = gGlobalTimer; vec3f_copy((_ts).v, x);}
+#define update_timestamp_vec3s(_ts, x)              {(_ts).ts = gGlobalTimer; vec3s_copy((_ts).v, x);}
+#define update_timestamp_mtxf(_ts, x)               {(_ts).ts = gGlobalTimer; mtxf_copy((_ts).v, x);}
+#define update_timestamp_ptr(_ts, x)                {(_ts).ts = gGlobalTimer; (_ts).v = (void *) (x);}
+#define should_interpolate(_ts)                     (!sIsPreprocess && gFrameInterpolation && check_timestamp(_ts))
 
-void gfx_patch_interpolated_frame_mtx(s32 k) {
+#define _o(_ts)                                     ((_ts)[sCurrObjectSlot])
+#define check_timestamp_o(_ts)                      (_o(_ts).ts == (gGlobalTimer - 1))
+#define reset_timestamp_o(_ts)                      {_o(_ts).ts = 0;}
+#define update_timestamp_s16_o(_ts, x)              {_o(_ts).ts = gGlobalTimer; _o(_ts).v = (s16) (x);}
+#define update_timestamp_s32_o(_ts, x)              {_o(_ts).ts = gGlobalTimer; _o(_ts).v = (s32) (x);}
+#define update_timestamp_u16_o(_ts, x)              {_o(_ts).ts = gGlobalTimer; _o(_ts).v = (u16) (x);}
+#define update_timestamp_u32_o(_ts, x)              {_o(_ts).ts = gGlobalTimer; _o(_ts).v = (u32) (x);}
+#define update_timestamp_f32_o(_ts, x)              {_o(_ts).ts = gGlobalTimer; _o(_ts).v = (f32) (x);}
+#define update_timestamp_vec3f_o(_ts, x)            {_o(_ts).ts = gGlobalTimer; vec3f_copy(_o(_ts).v, x);}
+#define update_timestamp_vec3s_o(_ts, x)            {_o(_ts).ts = gGlobalTimer; vec3s_copy(_o(_ts).v, x);}
+#define update_timestamp_mtxf_o(_ts, x)             {_o(_ts).ts = gGlobalTimer; mtxf_copy(_o(_ts).v, x);}
+#define update_timestamp_ptr_o(_ts, x)              {_o(_ts).ts = gGlobalTimer; _o(_ts).v = (void *) (x);}
+#define should_interpolate_o(_ts)                   (!sIsPreprocess && gFrameInterpolation && check_timestamp_o(_ts))
 
-    // Patch perspective
-    if (sPerspectivePos[k] && sPerspectiveMtx[k]) {
-        gSPMatrix(sPerspectivePos[k], sPerspectiveMtx[k], G_MTX_PROJECTION | G_MTX_LOAD | G_MTX_NOPUSH);
+// Camera
+static Mat4  sCameraInvMat0;
+static Mat4  sCameraInvMat1;
+static Vec3f sCameraPos0;
+static Vec3f sCameraPos1;
+static Vec3f sCameraFocus0;
+static Vec3f sCameraFocus1;
+static s16   sCameraRoll;
+
+// Perspective
+static Gfx  *sPerspectivePos;
+static f32   sPerspectiveAspect;
+static f32   sPerspectiveNear;
+static f32   sPerspectiveFar;
+static f32   sPerspectiveFov0;
+static f32   sPerspectiveFov1;
+
+// Background
+static Gfx  *sBackgroundGfx;
+static void *sBackgroundNode;
+static void *sBackgroundRoot;
+static u8   *sBackgroundPoolEnd;
+static Vec3f sBackgroundCamPos0;
+static Vec3f sBackgroundCamPos1;
+static Vec3f sBackgroundCamFocus0;
+static Vec3f sBackgroundCamFocus1;
+
+// Shadows
+typedef struct {
+    Vtx *vtx;
+    Vtx vtx0[4];
+    Vtx vtx1[4];
+} InterpShadow;
+static OmmArray sShadowTbl;
+static s32 sShadowTblSize;
+
+// Display list nodes
+typedef struct {
+    Vec3f translation;
+    Vec3s rotation;
+    Vec3f shear;
+    Vec3f scale;
+} InterpMtxComponents;
+typedef struct {
+    Gfx *pos;
+    Gfx *gfx;
+    Mtx  mtx;
+    union {
+        Mtx *raw;
+        InterpMtxComponents comp;
+    } mtx0, mtx1;
+    bool interpMtxComponents;
+    bool applyCameraTransform;
+} InterpMtx;
+static OmmArray sMtxTbl;
+static s32 sMtxTblSize;
+static bool sInterpMtxComponents = false;
+
+void gfx_interpolate_frame_mtx(f32 t) {
+
+    // Interpolate perspective
+    if (sPerspectivePos) {
+        static Mtx sPerspectiveMtx[1];
+        f32 fov = lerp_f(t, sPerspectiveFov0, sPerspectiveFov1);
+        u16 perspNorm = mtxf_perspective(sPerspectiveMtx, fov, sPerspectiveAspect, sPerspectiveNear, sPerspectiveFar, 1.f);
+        gSPPerspNormalize(sPerspectivePos + 0, perspNorm);
+        gSPMatrix(sPerspectivePos + 1, sPerspectiveMtx, G_MTX_PROJECTION | G_MTX_LOAD | G_MTX_NOPUSH);
     }
 
-    // Patch matrices and display lists
-    omm_array_for_each(sMtxTbl[k], x) {
-        Gfx *pos = (Gfx *) (x + 0)->as_ptr;
-        Mtx *mtx = (Mtx *) (x + 1)->as_ptr;
-        Gfx *gfx = (Gfx *) (x + 2)->as_ptr;
-        if (OMM_LIKELY(pos && mtx && gfx)) {
-            gSPMatrix(pos++, mtx, G_MTX_MODELVIEW | G_MTX_LOAD | G_MTX_NOPUSH);
-            gSPDisplayList(pos++, gfx);
+    // Interpolate dl nodes matrices
+    omm_array_for_each(sMtxTbl, p) {
+        if (i_p >= sMtxTblSize) break;
+        InterpMtx *imtx = (InterpMtx *) p->as_ptr;
+        Gfx *pos = imtx->pos;
+        Gfx *gfx = imtx->gfx;
+        Mtx *mtx = &imtx->mtx;
+        if (OMM_LIKELY(pos && gfx)) {
+
+            // Matrix
+            if (imtx->interpMtxComponents) {
+                InterpMtxComponents comp;
+                vec3f_interpolate(comp.translation, imtx->mtx0.comp.translation, imtx->mtx1.comp.translation, t);
+                vec3s_interpolate_angles(comp.rotation, imtx->mtx0.comp.rotation, imtx->mtx1.comp.rotation, t);
+                vec3f_interpolate(comp.shear, imtx->mtx0.comp.shear, imtx->mtx1.comp.shear, t);
+                vec3f_interpolate(comp.scale, imtx->mtx0.comp.scale, imtx->mtx1.comp.scale, t);
+                mtxf_transform(mtx->m, comp.translation, comp.rotation, comp.shear, comp.scale);
+                if (imtx->applyCameraTransform) {
+                    Vec3f pos; vec3f_interpolate(pos, sCameraPos0, sCameraPos1, t);
+                    Vec3f focus; vec3f_interpolate(focus, sCameraFocus0, sCameraFocus1, t);
+                    Mat4 mat; mtxf_lookat(mat, pos, focus, sCameraRoll);
+                    mtxf_mul(mtx->m, mtx->m, mat);
+                }
+            } else {
+                mtxf_interpolate_fast(mtx->m, imtx->mtx0.raw->m, imtx->mtx1.raw->m, t);
+            }
+            gSPMatrix(pos + 0, mtx, G_MTX_MODELVIEW | G_MTX_LOAD | G_MTX_NOPUSH);
+
+            // Background
+            if (OMM_UNLIKELY(gfx == sBackgroundGfx)) {
+                gGfxPoolEnd = sBackgroundPoolEnd;
+                gCurGraphNodeRoot = sBackgroundRoot;
+                vec3f_interpolate(gLakituState.pos, sBackgroundCamPos0, sBackgroundCamPos1, t);
+                vec3f_interpolate(gLakituState.focus, sBackgroundCamFocus0, sBackgroundCamFocus1, t);
+                gfx = ((struct FnGraphNode *) sBackgroundNode)->func(GEO_CONTEXT_RENDER, (struct GraphNode *) sBackgroundNode, NULL);
+            }
+
+            // Display list
+            gSPDisplayList(pos + 1, gfx);
         }
-        i_x += 2; x += 2;
     }
 
-    // Clear values
-    sPerspectivePos[k] = NULL;
-    omm_array_clear(sMtxTbl[k]);
+    // Interpolate shadows
+    omm_array_for_each(sShadowTbl, q) {
+        if (i_q >= sShadowTblSize) break;
+        InterpShadow *ishadow = (InterpShadow *) q->as_ptr;
+        if (ishadow->vtx) {
+            for (s32 i = 0; i != 4; ++i) {
+                vtxv_interpolate((Vtx_t *) (ishadow->vtx + i), (Vtx_t *) (ishadow->vtx0 + i), (Vtx_t *) (ishadow->vtx1 + i), t);
+            }
+        }
+    }
 }
 
-#define should_interpolate(ts) (!sIsPreprocess && is_frame_interpolation_enabled() && check_timestamp(ts))
+void gfx_clear_frame_mtx() {
+    sPerspectivePos = NULL;
+    sBackgroundGfx = NULL;
+    sShadowTblSize = 0;
+    sMtxTblSize = 0;
+}
 
 //
 // Shortcuts
@@ -84,10 +218,10 @@ void gfx_patch_interpolated_frame_mtx(s32 k) {
 #define gDisplayList    (((struct GraphNodeDisplayList *) node)->displayList)
 #define gChildren       (gNode->children)
 #define gFnNode         ((struct FnGraphNode *) node)
-#define gCurrMat(k)     sMatStack[sMatStackIndex][k]
-#define gNextMat(k)     sMatStack[sMatStackIndex + 1][k]
-#define gCurrMatLast    sMatStack[sMatStackIndex][gNumInterpolatedFrames - 1]       // The current matrix of last subframe (current frame, t = 1)
-#define gNextMatLast    sMatStack[sMatStackIndex + 1][gNumInterpolatedFrames - 1]   // The next matrix of last subframe (current frame, t = 1)
+#define gCurrMat0       sMatStack0[sMatStackIndex]
+#define gNextMat0       sMatStack0[sMatStackIndex + 1]
+#define gCurrMat1       sMatStack1[sMatStackIndex]
+#define gNextMat1       sMatStack1[sMatStackIndex + 1]
 
 //
 // Mario
@@ -98,6 +232,7 @@ f32 *geo_get_marios_forearm_pos(bool isLeft) {
     return sMarioForeArmPos[isLeft];
 }
 
+enum MarioHandFlag { MHF_NOT_HAND, MHF_RIGHT_HAND, MHF_LEFT_HAND };
 static s32 sMarioHandFlag;
 static Vec3f sMarioHandPos[2];
 f32 *geo_get_marios_hand_pos(bool isLeft) {
@@ -129,6 +264,7 @@ f32 *geo_get_marios_head_right() {
     return sMarioHeadRight;
 }
 
+enum MarioRootFlag { MRF_NOT_ROOT, MRF_ROOT, MRF_ROOT_ANIM_Y_FIXED, MRF_ROOT_POS_SAVED };
 static s32 sMarioRootFlag;
 static Vec3f sMarioRootPos;
 f32 *geo_get_marios_root_pos() {
@@ -141,8 +277,8 @@ f32 geo_get_marios_height() {
 }
 
 static void geo_fix_marios_anim_translation_y(struct Object *o, f32 nodety, f32 *ty) {
-    if (o == gMarioObject && sMarioRootFlag < gNumInterpolatedFrames) {
-        sMarioRootFlag++;
+    if (o == gMarioObject && sMarioRootFlag < MRF_ROOT_ANIM_Y_FIXED) {
+        sMarioRootFlag = MRF_ROOT;
 
         // Fix current animation y translation
         if (nodety != 0) {
@@ -160,6 +296,11 @@ static void geo_fix_marios_anim_translation_y(struct Object *o, f32 nodety, f32 
         // Hanging action offset
         if (omm_mario_is_hanging(gMarioState)) {
             *ty += 2.f * (160.f - sMarioHeight);
+        }
+        
+        // Shell ride animation offset
+        if (OMM_MOVESET_ODYSSEY && (gMarioState->action & ACT_FLAG_RIDING_SHELL)) {
+            *ty += 168.f;
         }
         
         // Jumbo star cutscene animation offset
@@ -207,19 +348,14 @@ static void geo_set_animation_globals(struct GraphNodeObject *node, bool updateA
     } else {
         sCurAnimState->_frame = animInfo->animFrame;
 
-        // Don't interpolate object's angles on animation change
+        // Don't interpolate object node angles on animation change
         reset_timestamp(node->_angle);
 
-        // Don't interpolate object's pos on animation change if the position offset is too high
-        // Not very accurate as it uses the object's velocity instead of previous pos, but it should
-        // be enough to fix captured Toad animations and Peach's y offset on some animations
-        if (node == &gMarioObject->header.gfx) {
-            vec3f_copy(&((struct Object *) node)->oVelX, gMarioState->vel);
-        }
-        f32 offset = vec3f_dist(node->pos, node->_pos.v) - vec3f_length(&((struct Object *) node)->oVelX);
-        if (offset > 30.f) {
-            reset_timestamp(node->_pos);
-        }
+        // To properly interpolate object node pos on animation change,
+        // use the object's previous pos and add the current pos offset
+        vec3f_copy(node->_pos.v, node->_objPos.v);
+        vec3f_add(node->_pos.v, node->pos);
+        vec3f_sub(node->_pos.v, &((struct Object *) node)->oPosX);
     }
 NOT_PREPROCESS {
     update_timestamp_s16(animInfo->_animID, animInfo->animID);
@@ -276,32 +412,25 @@ static void geo_get_animation_translation(Vec3f dest, u8 type, u16 **attr, s16 *
 
 static struct DisplayListNode sDisplayListNodePools[DISPLAY_LISTS_NUM_LAYERS][0x2000];
 
-static void __geo_append_display_lists(Gfx **displayLists, s32 layer, bool repeatFirst) {
+static void geo_append_display_list(Gfx *displayList, s16 layer) {
 #if OMM_CODE_DEBUG
     if (sDisableRendering) return;
 #endif
 NOT_PREPROCESS {
-    if (displayLists && displayLists[0] && OMM_LIKELY(gCurGraphNodeMasterList)) {
+    if (displayList && OMM_LIKELY(gCurGraphNodeMasterList)) {
         if (OMM_UNLIKELY(!gCurGraphNodeMasterList->listHeads[layer])) {
             gCurGraphNodeMasterList->listHeads[layer] = sDisplayListNodePools[layer];
             gCurGraphNodeMasterList->listTails[layer] = sDisplayListNodePools[layer];
         }
         struct DisplayListNode *dlNode = gCurGraphNodeMasterList->listTails[layer];
-        interpolate {
-            dlNode->transform[k] = sMtxStack[sMatStackIndex][k];
-            dlNode->displayList[k] = displayLists[repeatFirst ? 0 : k];
-        }
+        dlNode->transform0 = sMtxStack0[sMatStackIndex];
+        dlNode->transform1 = sMtxStack1[sMatStackIndex];
+        dlNode->displayList = displayList;
+        dlNode->interpMtxComponents = sInterpMtxComponents;
+        dlNode->applyCameraTransform = gCurGraphNodeCamera != NULL;
         gCurGraphNodeMasterList->listTails[layer]++;
     }
 }
-}
-
-OMM_INLINE void geo_append_display_list(Gfx *displayList, s16 layer) {
-    __geo_append_display_lists(&displayList, layer, true);
-}
-
-OMM_INLINE void geo_append_display_lists(Gfx **displayLists, s16 layer) {
-    __geo_append_display_lists(displayLists, layer, false);
 }
 
 //
@@ -325,13 +454,12 @@ static void geo_process_master_list(struct GraphNodeMasterList *node) {
 
         // Gather display list nodes
         gCurGraphNodeMasterList = node;
-        OMM_MEMSET(node->listHeads, 0, sizeof(node->listHeads));
+        omm_zero(node->listHeads, sizeof(node->listHeads));
         geo_process_node_and_siblings(gChildren);
         
         // Enable Z buffer
         bool zBuffer = (node->node.flags & GRAPH_RENDER_Z_BUFFER) != 0;
         if (zBuffer) {
-            gDPPipeSync(gDisplayListHead++);
             gSPSetGeometryMode(gDisplayListHead++, G_ZBUFFER);
         }
 
@@ -342,20 +470,37 @@ static void geo_process_master_list(struct GraphNodeMasterList *node) {
                 struct DisplayListNode *head = node->listHeads[i];
                 struct DisplayListNode *tail = node->listTails[i];
                 for (struct DisplayListNode *dlNode = head; dlNode != tail; dlNode++) {
-                    interpolate1 {
-                        omm_array_add(sMtxTbl[k], ptr, gDisplayListHead);
-                        omm_array_add(sMtxTbl[k], ptr, dlNode->transform[k]);
-                        omm_array_add(sMtxTbl[k], ptr, dlNode->displayList[k]);
+                    omm_array_grow(sMtxTbl, ptr, omm_new(InterpMtx, 1), sMtxTblSize + 1);
+                    InterpMtx *imtx = (InterpMtx *) omm_array_get(sMtxTbl, ptr, sMtxTblSize);
+                    imtx->pos = gDisplayListHead;
+                    imtx->gfx = dlNode->displayList;
+                    if (dlNode->interpMtxComponents) {
+                        if (dlNode->applyCameraTransform) {
+                            Mat4 m0; mtxf_mul(m0, dlNode->transform0->m, sCameraInvMat0);
+                            Mat4 m1; mtxf_mul(m1, dlNode->transform1->m, sCameraInvMat1);
+                            mtxf_get_components(m0, imtx->mtx0.comp.translation, imtx->mtx0.comp.rotation, imtx->mtx0.comp.shear, imtx->mtx0.comp.scale);
+                            mtxf_get_components(m1, imtx->mtx1.comp.translation, imtx->mtx1.comp.rotation, imtx->mtx1.comp.shear, imtx->mtx1.comp.scale);
+                            imtx->applyCameraTransform = true;
+                        } else {
+                            mtxf_get_components(dlNode->transform0->m, imtx->mtx0.comp.translation, imtx->mtx0.comp.rotation, imtx->mtx0.comp.shear, imtx->mtx0.comp.scale);
+                            mtxf_get_components(dlNode->transform1->m, imtx->mtx1.comp.translation, imtx->mtx1.comp.rotation, imtx->mtx1.comp.shear, imtx->mtx1.comp.scale);
+                            imtx->applyCameraTransform = false;
+                        }
+                        imtx->interpMtxComponents = true;
+                    } else {
+                        imtx->mtx0.raw = dlNode->transform0;
+                        imtx->mtx1.raw = dlNode->transform1;
+                        imtx->interpMtxComponents = false;
                     }
-                    gSPMatrix(gDisplayListHead++, dlNode->transform[0], G_MTX_MODELVIEW | G_MTX_LOAD | G_MTX_NOPUSH);
-                    gSPDisplayList(gDisplayListHead++, dlNode->displayList[0]);
+                    sMtxTblSize++;
+                    gSPMatrix(gDisplayListHead++, dlNode->transform0, G_MTX_MODELVIEW | G_MTX_LOAD | G_MTX_NOPUSH);
+                    gSPDisplayList(gDisplayListHead++, dlNode->displayList);
                 }
             }
         }
 
         // Disable Z buffer
         if (zBuffer) {
-            gDPPipeSync(gDisplayListHead++);
             gSPClearGeometryMode(gDisplayListHead++, G_ZBUFFER);
         }
         gCurGraphNodeMasterList = NULL;
@@ -376,11 +521,10 @@ OMM_INLINE Gfx *geo_exec_node_func(struct FnGraphNode *node, s32 callContext, vo
 OMM_INLINE bool __geo_inc_mat_stack() {
     sMatStackIndex++;
 NOT_PREPROCESS {
-    interpolate {
-        Mtx *mtx = alloc_display_list(sizeof(Mtx));
-        OMM_MEMCPY(mtx, sMatStack[sMatStackIndex][k], sizeof(Mtx));
-        sMtxStack[sMatStackIndex][k] = mtx;
-    }
+    sMtxStack0[sMatStackIndex] = alloc_display_list(sizeof(Mtx));
+    sMtxStack1[sMatStackIndex] = alloc_display_list(sizeof(Mtx));
+    omm_copy(sMtxStack0[sMatStackIndex]->m, sMatStack0[sMatStackIndex], sizeof(Mat4));
+    omm_copy(sMtxStack1[sMatStackIndex]->m, sMatStack1[sMatStackIndex], sizeof(Mat4));
 }
     return false;
 }
@@ -483,23 +627,28 @@ static void geo_process_ortho_projection(struct GraphNodeOrthoProjection *node) 
 }
 
 static void geo_process_perspective(struct GraphNodePerspective *node) {
-    geo_exec_node_func(gFnNode, GEO_CONTEXT_RENDER, gCurrMatLast);
+    geo_exec_node_func(gFnNode, GEO_CONTEXT_RENDER, gCurrMat1);
     if (gChildren) {
         f32 aspect = (f32) gCurGraphNodeRoot->width / (f32) gCurGraphNodeRoot->height;
-        u16 perspNorm = 0;
-
-        // Compute a perspective matrix for each sub-frame
-        bool shouldInterpolate = should_interpolate(node->_fov);
-        interpolate {
-            f32 fov; interpolate_f32(fov, node->_fov.v, node->fov);
-            sPerspectivePos[k] = gDisplayListHead;
-            sPerspectiveMtx[k] = alloc_display_list(sizeof(Mtx));
-            perspNorm = mtxf_perspective(sPerspectiveMtx[k], fov, aspect, node->near, node->far, 1.f);
+        
+        // Interpolation
+        if (should_interpolate(node->_fov)) {
+            sPerspectivePos    = gDisplayListHead;
+            sPerspectiveAspect = aspect;
+            sPerspectiveNear   = node->near;
+            sPerspectiveFar    = node->far;
+            sPerspectiveFov0   = node->_fov.v;
+            sPerspectiveFov1   = node->fov;
+        } else {
+            sPerspectivePos    = NULL;
+            sPerspectiveFov0   = node->fov;
         }
-
-        // Push first sub-frame matrix and update timestamp
+        
+        // Perspective matrix
+        Mtx *mtx = alloc_display_list(sizeof(Mtx));
+        u16 perspNorm = mtxf_perspective(mtx, sPerspectiveFov0, aspect, node->near, node->far, 1.f);
         gSPPerspNormalize(gDisplayListHead++, perspNorm);
-        gSPMatrix(gDisplayListHead++, sPerspectiveMtx[0], G_MTX_PROJECTION | G_MTX_LOAD | G_MTX_NOPUSH);
+        gSPMatrix(gDisplayListHead++, mtx, G_MTX_PROJECTION | G_MTX_LOAD | G_MTX_NOPUSH);
 NOT_PREPROCESS {
         update_timestamp_f32(node->_fov, node->fov);
 }
@@ -518,22 +667,22 @@ static void geo_process_level_of_detail(struct GraphNodeLevelOfDetail *node) {
 }
 
 static void geo_process_switch(struct GraphNodeSwitchCase *node) {
-    geo_exec_node_func(gFnNode, GEO_CONTEXT_RENDER, gCurrMatLast);
+    geo_exec_node_func(gFnNode, GEO_CONTEXT_RENDER, gCurrMat1);
 PREPROCESS {
 
     // Mario forearm pos
     if (gFnNode->func == (GraphNodeFunc) geo_switch_mario_hand) {
         static bool sIsLeftHand = true;
-        sMarioHandFlag = 1 + sIsLeftHand;
-        vec3f_copy(sMarioForeArmPos[sIsLeftHand], gCurrMatLast[3]);
+        sMarioHandFlag = MHF_RIGHT_HAND + sIsLeftHand;
+        vec3f_copy(sMarioForeArmPos[sIsLeftHand], gCurrMat1[3]);
         sIsLeftHand = !sIsLeftHand;
     }
 
     // Mario head pos and vectors
     if (gFnNode->func == (GraphNodeFunc) geo_switch_mario_eyes) {
-        vec3f_copy(sMarioHeadPos, gCurrMatLast[3]);
+        vec3f_copy(sMarioHeadPos, gCurrMat1[3]);
         Mat4 rot;
-        mtxf_copy(rot, gCurrMatLast);
+        mtxf_copy(rot, gCurrMat1);
         vec3f_zero(rot[3]);
         Mat4 up = { { 1, 0, 0, 0 }, { 0, 1, 0, 0 }, { 0, 0, 1, 0 }, { 1, 0, 0, 1 } };
         mtxf_mul(up, up, rot);
@@ -557,26 +706,45 @@ PREPROCESS {
     }
     geo_process_node_and_siblings(selectedChild);
 NOT_PREPROCESS {
-    omm_cappy_gfx_draw_eyes(node, (void (*)(void *, s16)) geo_append_display_list);
+    omm_cappy_gfx_draw_eyes(&node->fnNode.node, (void (*)(void *, s16)) geo_append_display_list);
 }
 }
 
 static void geo_process_camera(struct GraphNodeCamera *node) {
-    geo_exec_node_func(gFnNode, GEO_CONTEXT_RENDER, gCurrMatLast);
+    geo_exec_node_func(gFnNode, GEO_CONTEXT_RENDER, gCurrMat1);
     
     // Roll matrix
     Mtx *mtxRoll = alloc_display_list(sizeof(Mtx));
     mtxf_rotate_xy(mtxRoll, node->rollScreen);
     gSPMatrix(gDisplayListHead++, mtxRoll, G_MTX_PROJECTION | G_MTX_MUL | G_MTX_NOPUSH);
+NOT_PREPROCESS {
+    sCameraRoll = node->roll;
+}
 
-    // Transform matrix
-    bool shouldInterpolate = should_interpolate(node->_pos);
-    interpolate {
-        Vec3f pos; interpolate_vec3f(pos, node->_pos.v, node->pos);
-        Vec3f focus; interpolate_vec3f(focus, node->_focus.v, node->focus);
-        Mat4 mat; mtxf_lookat(mat, pos, focus, node->roll);
-        mtxf_mul(gNextMat(k), mat, gCurrMat(k));
+    // Current frame
+    Mat4 mat; mtxf_lookat(mat, node->pos, node->focus, node->roll);
+    mtxf_mul(gNextMat1, mat, gCurrMat1);
+NOT_PREPROCESS {
+    vec3f_copy(sCameraPos1, node->pos);
+    vec3f_copy(sCameraFocus1, node->focus);
+}
+
+    // Previous frame
+    if (should_interpolate(node->_pos)) {
+        mtxf_lookat(mat, node->_pos.v, node->_focus.v, node->roll);
+NOT_PREPROCESS {
+        vec3f_copy(sCameraPos0, node->_pos.v);
+        vec3f_copy(sCameraFocus0, node->_focus.v);
+}
+    } else {
+NOT_PREPROCESS {
+        vec3f_copy(sCameraPos0, node->pos);
+        vec3f_copy(sCameraFocus0, node->focus);
+}
     }
+    mtxf_mul(gNextMat0, mat, gCurrMat0);
+
+    // Update timestamps
 NOT_PREPROCESS {
     update_timestamp_vec3f(node->_pos, node->pos);
     update_timestamp_vec3f(node->_focus, node->focus);
@@ -589,10 +757,13 @@ NOT_PREPROCESS {
             sDisableRendering = SHOULD_DISABLE_RENDERING;
 #endif
             gCurGraphNodeCamera = node;
-            interpolate {
-                node->lookAt[k] = &gCurrMat(k);
-            }
-            node->matrixPtr = node->lookAt[gNumInterpolatedFrames - 1];
+            node->lookAt0 = &gCurrMat0;
+            node->lookAt1 = &gCurrMat1;
+            node->matrixPtr = node->lookAt1;
+NOT_PREPROCESS {
+            mtxf_invert(sCameraInvMat0, *node->lookAt0);
+            mtxf_invert(sCameraInvMat1, *node->lookAt1);
+}
             geo_process_node_and_siblings(gChildren);
             gCurGraphNodeCamera = NULL;
         }
@@ -600,23 +771,23 @@ NOT_PREPROCESS {
 }
 
 static void geo_process_translation_rotation(struct GraphNodeTranslationRotation *node) {
-    bool shouldInterpolate = should_interpolate(node->_translation);
-    interpolate {
 
-        // Translation
-        Vec3s t3s; interpolate_vec3s(t3s, node->_translation.v, node->translation);
-        Vec3f t3f; vec3s_to_vec3f(t3f, t3s);
+    // Current frame
+    Vec3f t3f; vec3s_to_vec3f(t3f, node->translation);
+    Mat4 mat; mtxf_rotate_zxy_and_translate(mat, t3f, node->rotation);
+    mtxf_mul(gNextMat1, mat, gCurrMat1);
 
-        // Rotation
-        Vec3s rot; interpolate_angles(rot, node->_rotation.v, node->rotation);
-        Mat4 mat; mtxf_rotate_zxy_and_translate(mat, t3f, rot);
-
-        // Transform
-        mtxf_mul(gNextMat(k), mat, gCurrMat(k));
+    // Previous frame
+    if (should_interpolate_o(node->_translation)) {
+        vec3s_to_vec3f(t3f, _o(node->_translation).v);
+        mtxf_rotate_zxy_and_translate(mat, t3f, _o(node->_rotation).v);
     }
+    mtxf_mul(gNextMat0, mat, gCurrMat0);
+
+    // Update timestamps
 NOT_PREPROCESS {
-    update_timestamp_vec3s(node->_translation, node->translation);
-    update_timestamp_vec3s(node->_rotation, node->rotation);
+    update_timestamp_vec3s_o(node->_translation, node->translation);
+    update_timestamp_vec3s_o(node->_rotation, node->rotation);
 }
 
     // Process children
@@ -627,19 +798,22 @@ NOT_PREPROCESS {
 }
 
 static void geo_process_translation(struct GraphNodeTranslation *node) {
-    bool shouldInterpolate = should_interpolate(node->_translation);
-    interpolate {
 
-        // Translation
-        Vec3s t3s; interpolate_vec3s(t3s, node->_translation.v, node->translation);
-        Vec3f t3f; vec3s_to_vec3f(t3f, t3s);
-        Mat4 mat; mtxf_translate(mat, t3f);
+    // Current frame
+    Vec3f t3f; vec3s_to_vec3f(t3f, node->translation);
+    Mat4 mat; mtxf_translate(mat, t3f);
+    mtxf_mul(gNextMat1, mat, gCurrMat1);
 
-        // Transform
-        mtxf_mul(gNextMat(k), mat, gCurrMat(k));
+    // Previous frame
+    if (should_interpolate_o(node->_translation)) {
+        vec3s_to_vec3f(t3f, _o(node->_translation).v);
+        mtxf_translate(mat, t3f);
     }
+    mtxf_mul(gNextMat0, mat, gCurrMat0);
+
+    // Update timestamps
 NOT_PREPROCESS {
-    update_timestamp_vec3s(node->_translation, node->translation);
+    update_timestamp_vec3s_o(node->_translation, node->translation);
 }
 
     // Process children
@@ -650,18 +824,20 @@ NOT_PREPROCESS {
 }
 
 static void geo_process_rotation(struct GraphNodeRotation *node) {
-    bool shouldInterpolate = should_interpolate(node->_rotation);
-    interpolate {
 
-        // Rotation
-        Vec3s rot; interpolate_angles(rot, node->_rotation.v, node->rotation);
-        Mat4 mat; mtxf_rotate_zxy_and_translate(mat, gVec3fZero, rot);
+    // Current frame
+    Mat4 mat; mtxf_rotate_zxy_and_translate(mat, gVec3fZero, node->rotation);
+    mtxf_mul(gNextMat1, mat, gCurrMat1);
 
-        // Transform
-        mtxf_mul(gNextMat(k), mat, gCurrMat(k));
+    // Previous frame
+    if (should_interpolate_o(node->_rotation)) {
+        mtxf_rotate_zxy_and_translate(mat, gVec3fZero, _o(node->_rotation).v);
     }
+    mtxf_mul(gNextMat0, mat, gCurrMat0);
+
+    // Update timestamps
 NOT_PREPROCESS {
-    update_timestamp_vec3s(node->_rotation, node->rotation);
+    update_timestamp_vec3s_o(node->_rotation, node->rotation);
 }
 
     // Process children
@@ -672,17 +848,20 @@ NOT_PREPROCESS {
 }
 
 static void geo_process_scale(struct GraphNodeScale *node) {
-    bool shouldInterpolate = should_interpolate(node->_scale);
-    interpolate {
 
-        // Scale
-        f32 sf; interpolate_f32(sf, node->_scale.v, node->scale);
+    // Current frame
+    mtxf_scale_vec3f(gNextMat1, gCurrMat1, (Vec3f) { node->scale, node->scale, node->scale });
 
-        // Transform
-        mtxf_scale_vec3f(gNextMat(k), gCurrMat(k), (Vec3f) { sf, sf, sf });
+    // Previous frame
+    if (should_interpolate_o(node->_scale)) {
+        mtxf_scale_vec3f(gNextMat0, gCurrMat0, (Vec3f) { _o(node->_scale).v, _o(node->_scale).v, _o(node->_scale).v });
+    } else {
+        mtxf_scale_vec3f(gNextMat0, gCurrMat0, (Vec3f) { node->scale, node->scale, node->scale });
     }
+
+    // Update timestamps
 NOT_PREPROCESS {
-    update_timestamp_f32(node->_scale, node->scale);
+    update_timestamp_f32_o(node->_scale, node->scale);
 }
 
     // Process children
@@ -693,25 +872,30 @@ NOT_PREPROCESS {
 }
 
 static void geo_process_billboard(struct GraphNodeBillboard *node) {
-    bool shouldInterpolate = should_interpolate(node->_translation);
-    interpolate {
 
-        // Translation
-        Vec3s t3s; interpolate_vec3s(t3s, node->_translation.v, node->translation);
-        Vec3f t3f; vec3s_to_vec3f(t3f, t3s);
-
-        // Transform
-        mtxf_billboard(gNextMat(k), gCurrMat(k), t3f, gCurGraphNodeCamera->roll);
-
-        // If held object, use its scale, otherwise, use the current object scale
-        if (gCurGraphNodeHeldObject) {
-            mtxf_scale_vec3f(gNextMat(k), gNextMat(k), gCurGraphNodeHeldObject->objNode->oGfxScale);
-        } else if (gCurGraphNodeObject) {
-            mtxf_scale_vec3f(gNextMat(k), gNextMat(k), gCurGraphNodeObject->scale);
-        }
+    // Current frame
+    Vec3f t3f; vec3s_to_vec3f(t3f, node->translation);
+    mtxf_billboard(gNextMat1, gCurrMat1, t3f, gCurGraphNodeCamera->roll);
+    if (gCurGraphNodeHeldObject) {
+        mtxf_scale_vec3f(gNextMat1, gNextMat1, gCurGraphNodeHeldObject->objNode->oGfxScale);
+    } else if (gCurGraphNodeObject) {
+        mtxf_scale_vec3f(gNextMat1, gNextMat1, gCurGraphNodeObject->scale);
     }
+
+    // Previous frame
+    if (should_interpolate_o(node->_translation)) {
+        vec3s_to_vec3f(t3f, _o(node->_translation).v);
+    }
+    mtxf_billboard(gNextMat0, gCurrMat0, t3f, gCurGraphNodeCamera->roll);
+    if (gCurGraphNodeHeldObject) {
+        mtxf_scale_vec3f(gNextMat0, gNextMat0, gCurGraphNodeHeldObject->objNode->oGfxScale);
+    } else if (gCurGraphNodeObject) {
+        mtxf_scale_vec3f(gNextMat0, gNextMat0, gCurGraphNodeObject->scale);
+    }
+
+    // Update timestamps
 NOT_PREPROCESS {
-    update_timestamp_vec3s(node->_translation, node->translation);
+    update_timestamp_vec3s_o(node->_translation, node->translation);
 }
 
     // Process children
@@ -727,7 +911,14 @@ static void geo_process_display_list(struct GraphNodeDisplayList *node) {
 }
 
 static void geo_process_generated_list(struct GraphNodeGenerated *node) {
-    Gfx *gfx = geo_exec_node_func(gFnNode, GEO_CONTEXT_RENDER, gCurrMatLast);
+
+    // Avoids a crash in the palette editor
+    if (OMM_UNLIKELY(omm_is_main_menu() && gFnNode->func == (GraphNodeFunc) geo_mario_head_rotation)) {
+        static struct Camera dummy = { .mode = CAMERA_MODE_FREE_ROAM };
+        gCurGraphNodeCamera->config.camera = &dummy;
+    }
+
+    Gfx *gfx = geo_exec_node_func(gFnNode, GEO_CONTEXT_RENDER, gCurrMat1);
 PREPROCESS {
 
     // Mario head rotation
@@ -742,22 +933,36 @@ PREPROCESS {
 }
 
 static void geo_process_background(struct GraphNodeBackground *node) {
-    Gfx *gfx[MAX_INTERPOLATED_FRAMES] = { NULL };
+    Gfx *gfx = NULL;
 
     // Create a background from a function...
     if (gFnNode->func) {
-        bool shouldInterpolate = should_interpolate(node->_cameraPos);
-        Vec3f cpos; vec3f_copy(cpos, gLakituState.pos);
-        Vec3f cfocus; vec3f_copy(cfocus, gLakituState.focus);
-        interpolate {
-            Vec3f pos; interpolate_vec3f(pos, node->_cameraPos.v, cpos);
-            Vec3f focus; interpolate_vec3f(focus, node->_cameraFocus.v, cfocus);
-            vec3f_copy(gLakituState.pos, pos);
-            vec3f_copy(gLakituState.focus, focus);
-            gfx[k] = gFnNode->func(GEO_CONTEXT_RENDER, gNode, gCurrMat(k));
+        
+        // Interpolation
+        if (should_interpolate(node->_cameraPos)) {
+            sBackgroundPoolEnd = gGfxPoolEnd;
+            vec3f_copy(sBackgroundCamPos0, node->_cameraPos.v);
+            vec3f_copy(sBackgroundCamFocus0, node->_cameraFocus.v);
+        } else {
+            vec3f_copy(sBackgroundCamPos0, gLakituState.pos);
+            vec3f_copy(sBackgroundCamFocus0, gLakituState.focus);
         }
-        vec3f_copy(gLakituState.pos, cpos);
-        vec3f_copy(gLakituState.focus, cfocus);
+        vec3f_copy(sBackgroundCamPos1, gLakituState.pos);
+        vec3f_copy(sBackgroundCamFocus1, gLakituState.focus);
+
+        // Draw background
+        vec3f_copy(gLakituState.pos, sBackgroundCamPos0);
+        vec3f_copy(gLakituState.focus, sBackgroundCamFocus0);
+        gfx = gFnNode->func(GEO_CONTEXT_RENDER, gNode, NULL);
+        vec3f_copy(gLakituState.pos, sBackgroundCamPos1);
+        vec3f_copy(gLakituState.focus, sBackgroundCamFocus1);
+
+        // Save pointers
+        if (should_interpolate(node->_cameraPos)) {
+            sBackgroundGfx = gfx;
+            sBackgroundNode = node;
+            sBackgroundRoot = gCurGraphNodeRoot;
+        }
 NOT_PREPROCESS {
         update_timestamp_vec3f(node->_cameraPos, gLakituState.pos);
         update_timestamp_vec3f(node->_cameraFocus, gLakituState.focus);
@@ -765,16 +970,16 @@ NOT_PREPROCESS {
     }
 
     // ...or from a solid color
-    if (*gfx) {
-        geo_append_display_lists(gfx, gNodeLayer);
+    if (gfx) {
+        geo_append_display_list(gfx, gNodeLayer);
     } else if (gCurGraphNodeMasterList) {
-        *gfx = alloc_display_list(sizeof(Gfx) * 6);
-        geo_append_display_list(*gfx, LAYER_FORCE);
-        gDPSetCycleType((*gfx)++, G_CYC_FILL);
-        gDPSetFillColor((*gfx)++, node->background);
-        gDPFillRectangle((*gfx)++, GFX_DIMENSIONS_RECT_FROM_LEFT_EDGE(0), 0, GFX_DIMENSIONS_RECT_FROM_RIGHT_EDGE(0) - 1, SCREEN_HEIGHT - 1);
-        gDPSetCycleType((*gfx)++, G_CYC_1CYCLE);
-        gSPEndDisplayList((*gfx)++);
+        gfx = alloc_display_list(sizeof(Gfx) * 6);
+        geo_append_display_list(gfx, LAYER_FORCE);
+        gDPSetCycleType(gfx++, G_CYC_FILL);
+        gDPSetFillColor(gfx++, node->background);
+        gDPFillRectangle(gfx++, GFX_DIMENSIONS_RECT_FROM_LEFT_EDGE(0), 0, GFX_DIMENSIONS_RECT_FROM_RIGHT_EDGE(0) - 1, SCREEN_HEIGHT - 1);
+        gDPSetCycleType(gfx++, G_CYC_1CYCLE);
+        gSPEndDisplayList(gfx++);
     }
 
     // Process children
@@ -784,58 +989,61 @@ NOT_PREPROCESS {
 static void geo_process_animated_part(struct GraphNodeAnimatedPart *node) {
 
     // Animation translations (previous, current)
-    Vec3f pt3f; geo_get_animation_translation(pt3f, sCurAnimState->type, &sCurAnimState->attr, sCurAnimState->data, sCurAnimState->_frame, sCurAnimState->mult, false);
-    Vec3f ct3f; geo_get_animation_translation(ct3f, sCurAnimState->type, &sCurAnimState->attr, sCurAnimState->data, sCurAnimState->frame, sCurAnimState->mult, true);
+    Vec3f t3f0; geo_get_animation_translation(t3f0, sCurAnimState->type, &sCurAnimState->attr, sCurAnimState->data, sCurAnimState->_frame, sCurAnimState->mult, false);
+    Vec3f t3f1; geo_get_animation_translation(t3f1, sCurAnimState->type, &sCurAnimState->attr, sCurAnimState->data, sCurAnimState->frame, sCurAnimState->mult, true);
 
     // Animation rotations (previous, current)
-    Vec3s prot, crot;
+    Vec3s rot0, rot1;
     if (sCurAnimState->type != ANIM_TYPE_NONE) {
         sCurAnimState->type = ANIM_TYPE_ROTATION;
-        geo_get_animation_data_as_vec3s(prot, &sCurAnimState->attr, sCurAnimState->data, sCurAnimState->_frame, 1, 1, 1, false);
-        geo_get_animation_data_as_vec3s(crot, &sCurAnimState->attr, sCurAnimState->data, sCurAnimState->frame, 1, 1, 1, true);
+        geo_get_animation_data_as_vec3s(rot0, &sCurAnimState->attr, sCurAnimState->data, sCurAnimState->_frame, 1, 1, 1, false);
+        geo_get_animation_data_as_vec3s(rot1, &sCurAnimState->attr, sCurAnimState->data, sCurAnimState->frame, 1, 1, 1, true);
     } else {
-        vec3s_copy(prot, gVec3sZero);
-        vec3s_copy(crot, gVec3sZero);
+        vec3s_copy(rot0, gVec3sZero);
+        vec3s_copy(rot1, gVec3sZero);
+    }
+
+    // Current frame
+    Vec3f t3f; vec3s_to_vec3f(t3f, node->translation);
+    vec3f_add(t3f, t3f1);
+    geo_fix_marios_anim_translation_y(gCurrGraphNodeObject, node->translation[1], &t3f[1]);
+    Mat4 mat; mtxf_rotate_xyz_and_translate(mat, t3f, rot1);
+    mtxf_mul(gNextMat1, mat, gCurrMat1);
+    
+    // Previous frame
+    if (should_interpolate_o(node->_translation)) {
+        vec3s_to_vec3f(t3f, _o(node->_translation).v);
+        vec3f_add(t3f, t3f0);
+        geo_fix_marios_anim_translation_y(gCurrGraphNodeObject, _o(node->_translation).v[1], &t3f[1]);
+        mtxf_rotate_xyz_and_translate(mat, t3f, rot0);
+    }
+    mtxf_mul(gNextMat0, mat, gCurrMat0);
+
+    // Mario's root
+    if (sMarioRootFlag == MRF_ROOT) {
+        sMarioRootFlag = MRF_ROOT_ANIM_Y_FIXED;
     }
     
-    // Interpolation
-    bool shouldInterpolate = should_interpolate(node->_translation);
-    Vec3f t3f; Vec3s rot;
-    interpolate {
-        
-        // Translation
-        Vec3s t3s; interpolate_vec3s(t3s, node->_translation.v, node->translation);
-        Vec3f at3f; interpolate_vec3f(at3f, pt3f, ct3f);
-        vec3s_to_vec3f(t3f, t3s);
-        vec3f_add(t3f, at3f);
-        
-        // Rotation
-        interpolate_angles(rot, prot, crot);
-        
-        // Transform
-        geo_fix_marios_anim_translation_y(gCurrGraphNodeObject, t3s[1], &t3f[1]);
-        Mat4 mat; mtxf_rotate_xyz_and_translate(mat, t3f, rot);
-        mtxf_mul(gNextMat(k), mat, gCurrMat(k));
-    }
+    // Update timestamps
 NOT_PREPROCESS {
-    update_timestamp_vec3s(node->_translation, node->translation);
+    update_timestamp_vec3s_o(node->_translation, node->translation);
 }
 
 PREPROCESS {
 
     // Mario root pos
-    if (sMarioRootFlag == gNumInterpolatedFrames) {
-        vec3f_copy(sMarioRootPos, gNextMatLast[3]);
-        sMarioRootFlag++;
+    if (sMarioRootFlag == MRF_ROOT_ANIM_Y_FIXED) {
+        vec3f_copy(sMarioRootPos, gNextMat1[3]);
+        sMarioRootFlag = MRF_ROOT_POS_SAVED;
     }
     
     // Mario hand pos
-    if (sMarioHandFlag) {
-        vec3f_copy(sMarioHandPos[sMarioHandFlag - 1], gNextMatLast[3]);
-        if (sMarioHandFlag == 1 && OMM_PLAYER_IS_PEACH) { // Right hand
-            omm_peach_update_perry_graphics(gMarioState, gCurrMatLast, t3f, rot);
+    if (sMarioHandFlag != MHF_NOT_HAND) {
+        vec3f_copy(sMarioHandPos[sMarioHandFlag - MHF_RIGHT_HAND], gNextMat1[3]);
+        if (sMarioHandFlag == MHF_RIGHT_HAND && OMM_PLAYER_IS_PEACH) { // Right hand
+            omm_perry_update_graphics(gMarioState, gCurrMat1, t3f, rot1);
         }
-        sMarioHandFlag = 0;
+        sMarioHandFlag = MHF_NOT_HAND;
     }
 }
     // Process children
@@ -853,7 +1061,7 @@ NOT_PREPROCESS {
         
         // Get shadow pos and scale from held object if there's one
         if (gCurGraphNodeHeldObject) {
-            get_pos_from_transform_mtx(shadowPos, gCurrMatLast, *gCurGraphNodeCamera->matrixPtr);
+            get_pos_from_transform_mtx(shadowPos, gCurrMat1, *gCurGraphNodeCamera->matrixPtr);
             shadowScale = node->shadowScale;
         } else {
             vec3f_copy(shadowPos, gCurGraphNodeObject->pos);
@@ -893,34 +1101,42 @@ NOT_PREPROCESS {
             _shadowPos = &gCurGraphNodeObject->_shadowPos;
             _shadowScale = &gCurGraphNodeObject->_shadowScale;
         }
-        
-        // Create shadow display lists and translate
-        Gfx *shadows[MAX_INTERPOLATED_FRAMES] = { NULL };
-        bool shouldInterpolate = should_interpolate(*_shadowPos);
-        interpolate {
 
-            // Position and scale
-            Vec3f t3f; interpolate_vec3f(t3f, _shadowPos->v, shadowPos);
-            f32 scale; interpolate_f32(scale, _shadowScale->v, shadowScale);
+        // Current frame
+        s32 scale = shadowScale;
+        Vec3f t3f; vec3f_copy(t3f, shadowPos);
+        Gfx *shadow1 = create_shadow_below_xyz(t3f[0], t3f[1], t3f[2], scale, node->shadowSolidity, node->shadowType);
+        Mat4 mat; mtxf_translate(mat, t3f);
+        mtxf_mul(gNextMat1, mat, *(gCurGraphNodeCamera->lookAt1));
 
-            // Create shadow
-            shadows[k] = create_shadow_below_xyz(t3f[0], t3f[1], t3f[2], scale, node->shadowSolidity, node->shadowType);
-            if (shadows[k]) {
-                Mat4 mat; mtxf_translate(mat, t3f);
-                mtxf_mul(gNextMat(k), mat, *(gCurGraphNodeCamera->lookAt[k]));
+        // Previous frame
+        Gfx *shadow0;
+        if (should_interpolate(*_shadowPos)) {
+            scale = _shadowScale->v;
+            vec3f_copy(t3f, _shadowPos->v);
+            mtxf_translate(mat, t3f);
+            shadow0 = create_shadow_below_xyz(t3f[0], t3f[1], t3f[2], scale, node->shadowSolidity, node->shadowType);
+            if (shadow0 && shadow1) {
+                omm_array_grow(sShadowTbl, ptr, omm_new(InterpShadow, 1), sShadowTblSize + 1);
+                InterpShadow *ishadow = (InterpShadow *) omm_array_get(sShadowTbl, ptr, sShadowTblSize);
+                ishadow->vtx = (Vtx *) ((shadow0 + 1)->words.w1);
+                omm_copy(ishadow->vtx0, (Vtx *) ((shadow0 + 1)->words.w1), sizeof(Vtx) * 4);
+                omm_copy(ishadow->vtx1, (Vtx *) ((shadow1 + 1)->words.w1), sizeof(Vtx) * 4);
+                sShadowTblSize++;
             }
+        } else {
+            shadow0 = shadow1;
         }
+        mtxf_mul(gNextMat0, mat, *(gCurGraphNodeCamera->lookAt0));
+
+        // Append shadow display list
+        geo_update_mat_stack(
+            geo_append_display_list(shadow0, shadow_get_layer());
+        )
 NOT_PREPROCESS {
         update_timestamp_vec3f(*_shadowPos, shadowPos);
         update_timestamp_f32(*_shadowScale, shadowScale);
 }
-
-        // Append shadows
-        if (*shadows) {
-            geo_update_mat_stack(
-                geo_append_display_lists(shadows, shadow_get_layer());
-            )
-        }
     }
 }
     // Process children
@@ -930,6 +1146,30 @@ NOT_PREPROCESS {
 static void geo_process_object(struct Object *obj) {
     if (obj->oAreaIndex == gCurGraphNodeRoot->areaIndex) {
         struct GraphNodeObject *node = &obj->header.gfx;
+NOT_PREPROCESS {
+        // Enable matrix components interpolation only for objects with animations 
+        sInterpMtxComponents = (node->mAnimInfo.curAnim != NULL);
+}
+NOT_PREPROCESS {
+        // Don't interpolate the frame the object spawns
+        // Force a gfx update to avoid weird (0, 0, 0) interpolations on later frames
+        if (obj_alloc_fields(obj) && !obj->oGfxInited) {
+            obj_update_gfx(obj);
+            update_timestamp_vec3f(node->_pos, node->pos);
+            update_timestamp_vec3s(node->_angle, node->angle);
+            update_timestamp_vec3f(node->_scale, node->scale);
+            update_timestamp_vec3f(node->_objPos, &obj->oPosX);
+            sInterpMtxComponents = false;
+            obj->oGfxInited = true;
+        }
+
+        // Pitch around +90/-90 seems to cause a gimbal lock, making the matrix extraction return wrong yaw angles
+        // HACK: Disable matrix components interpolation for that edge case
+        if (((u16) node->angle[0] >= 0x3C00 && (u16) node->angle[0] <= 0x4400) ||
+            ((u16) node->angle[0] >= 0xBC00 && (u16) node->angle[0] <= 0xC400)) {
+            sInterpMtxComponents = false;
+        }
+}
 
         // Init animation state if the object has animations
         if (node->mAnimInfo.curAnim) {
@@ -941,77 +1181,99 @@ static void geo_process_object(struct Object *obj) {
             dynos_gfx_swap_animations(obj);
 #endif
         }
+NOT_PREPROCESS {
+        update_timestamp_vec3f(node->_objPos, &obj->oPosX);
+}
         
         // Compute the object transform matrix from its throw matrix
-        if (node->throwMatrix != NULL) {
-            bool shouldInterpolate = should_interpolate(node->_throwMatrix);
-            interpolate {
-                Mat4 mat; interpolate_mtxf(mat, node->_throwMatrix.v, *node->throwMatrix);
-                mtxf_mul(gNextMat(k), mat, gCurrMat(k));
+        if (node->throwMatrix) {
+            mtxf_mul(gNextMat1, *node->throwMatrix, gCurrMat1);
+            if (should_interpolate(node->_throwMatrix)) {
+                mtxf_mul(gNextMat0, node->_throwMatrix.v, gCurrMat0);
+            } else {
+                mtxf_mul(gNextMat0, *node->throwMatrix, gCurrMat0);
             }
+NOT_PREPROCESS {
             update_timestamp_mtxf(node->_throwMatrix, *node->throwMatrix);
+}
         }
         
         // Compute the object transform matrix from its position and cylboard
         else if (node->node.flags & GRAPH_RENDER_CYLBOARD) {
-            bool shouldInterpolate = should_interpolate(node->_pos);
-            interpolate {
-                Vec3f pos; interpolate_vec3f(pos, node->_pos.v, node->pos);
-                mtxf_cylboard(gNextMat(k), gCurrMat(k), pos, gCurGraphNodeCamera->roll);
+            mtxf_cylboard(gNextMat1, gCurrMat1, node->pos, gCurGraphNodeCamera->roll);
+            if (should_interpolate(node->_pos)) {
+                mtxf_cylboard(gNextMat0, gCurrMat0, node->_pos.v, gCurGraphNodeCamera->roll);
+            } else {
+                mtxf_cylboard(gNextMat0, gCurrMat0, node->pos, gCurGraphNodeCamera->roll);
             }
+NOT_PREPROCESS {
             update_timestamp_vec3f(node->_pos, node->pos);
+}
         }
         
         // Compute the object transform matrix from its position and billboard
         else if (node->node.flags & GRAPH_RENDER_BILLBOARD) {
-            bool shouldInterpolate = should_interpolate(node->_pos);
-            interpolate {
-                Vec3f pos; interpolate_vec3f(pos, node->_pos.v, node->pos);
-                mtxf_billboard(gNextMat(k), gCurrMat(k), pos, gCurGraphNodeCamera->roll);
+            mtxf_billboard(gNextMat1, gCurrMat1, node->pos, gCurGraphNodeCamera->roll);
+            if (should_interpolate(node->_pos)) {
+                mtxf_billboard(gNextMat0, gCurrMat0, node->_pos.v, gCurGraphNodeCamera->roll);
+            } else {
+                mtxf_billboard(gNextMat0, gCurrMat0, node->pos, gCurGraphNodeCamera->roll);
             }
+NOT_PREPROCESS {
             update_timestamp_vec3f(node->_pos, node->pos);
+}
         }
         
         // Compute the object transform matrix from its position and angle
         else {
-            bool shouldInterpolate = should_interpolate(node->_pos);
-            interpolate {
-                Vec3f pos; interpolate_vec3f(pos, node->_pos.v, node->pos);
-                Vec3s angle; interpolate_angles(angle, (check_timestamp(node->_angle) ? node->_angle.v : node->angle), node->angle);
-                Mat4 mat; mtxf_rotate_zxy_and_translate(mat, pos, angle);
-                mtxf_mul(gNextMat(k), mat, gCurrMat(k));
+            Mat4 mat; mtxf_rotate_zxy_and_translate(mat, node->pos, node->angle);
+            mtxf_mul(gNextMat1, mat, gCurrMat1);
+            if (should_interpolate(node->_pos)) {
+                if (should_interpolate(node->_angle)) {
+                    mtxf_rotate_zxy_and_translate(mat, node->_pos.v, node->_angle.v);
+                } else {
+                    mtxf_rotate_zxy_and_translate(mat, node->_pos.v, node->angle);
+                }
+            } else if (should_interpolate(node->_angle)) {
+                mtxf_rotate_zxy_and_translate(mat, node->pos, node->_angle.v);
             }
+            mtxf_mul(gNextMat0, mat, gCurrMat0);
+NOT_PREPROCESS {
             update_timestamp_vec3f(node->_pos, node->pos);
             update_timestamp_vec3s(node->_angle, node->angle);
+}
         }
         
         // Scale
-        bool shouldInterpolate = should_interpolate(node->_scale);
-        interpolate { 
-            Vec3f scale; interpolate_vec3f(scale, node->_scale.v, node->scale);
-            mtxf_scale_vec3f(gNextMat(k), gNextMat(k), scale);
-        }
-        node->throwMatrix = &gNextMatLast;
-        vec3f_copy(node->cameraToObject, gNextMatLast[3]);
+        Vec3f s0; vec3f_copy(s0, (should_interpolate(node->_scale) ? node->_scale.v : node->scale));
+        Vec3f s1; vec3f_copy(s1, node->scale);
+        mtxf_scale_vec3f(gNextMat0, gNextMat0, s0);
+        mtxf_scale_vec3f(gNextMat1, gNextMat1, s1);
+        node->throwMatrix = &gNextMat1;
+        vec3f_copy(node->cameraToObject, gNextMat1[3]);
 NOT_PREPROCESS {
         update_timestamp_vec3f(node->_scale, node->scale);
 }
 
         // Render the object if it's in view
-        if (obj_is_in_view(obj, gNextMatLast)) {
+        if (obj_is_in_view(obj, gNextMat1)) {
             geo_update_mat_stack(
                 if (node->sharedChild) {
+                    sCurrObjectSlot = (&obj->header.gfx == &gMirrorMario ? OBJECT_POOL_CAPACITY : obj_get_slot_index(obj));
                     gCurGraphNodeObject = (struct GraphNodeObject *) node;
                     node->sharedChild->parent = gNode;
+                    omm_sparkly_bowser_4_process_graph_node(obj, true, geo_process_generated_list);
                     geo_process_node_and_siblings(node->sharedChild);
+                    omm_sparkly_bowser_4_process_graph_node(obj, false, geo_process_generated_list);
                     node->sharedChild->parent = NULL;
                     gCurGraphNodeObject = NULL;
+                    sCurrObjectSlot = 0;
                 }
 
                 // Process children
                 geo_process_node_and_siblings(gChildren);
             )
-        } else if (obj != gMarioObject && obj != gOmmData->mario->capture.obj) {
+        } else if (obj != gMarioObject && obj != gOmmMario->capture.obj) {
 NOT_PREPROCESS {
             reset_timestamp(node->_angle);
             reset_timestamp(node->_pos);
@@ -1019,6 +1281,7 @@ NOT_PREPROCESS {
             reset_timestamp(node->_throwMatrix);
 }
         }
+        sInterpMtxComponents = false;
         sCurAnimState->type = ANIM_TYPE_NONE;
         node->throwMatrix = NULL;
     }
@@ -1038,38 +1301,60 @@ static void geo_process_object_parent(struct GraphNodeObjectParent *node) {
 
 static void geo_process_held_object(struct GraphNodeHeldObject *node) {
 NOT_PREPROCESS {
-    geo_exec_node_func(gFnNode, GEO_CONTEXT_RENDER, gCurrMatLast);
+    geo_exec_node_func(gFnNode, GEO_CONTEXT_RENDER, gCurrMat1);
     struct Object *heldObj = node->objNode;
     if (heldObj && heldObj->oGraphNode) {
-        bool shouldInterpolate = should_interpolate(node->_translation);
-        interpolate {
+NOT_PREPROCESS {
+        // Don't interpolate the frame the object spawns
+        // Force a gfx update to avoid weird (0, 0, 0) interpolations on later frames
+        if (obj_alloc_fields(heldObj) && !heldObj->oGfxInited) {
+            obj_update_gfx(heldObj);
+            update_timestamp_vec3s(node->_translation, node->translation);
+            update_timestamp_mtxf(node->_throwMatrix, *gCurGraphNodeObject->throwMatrix);
+            update_timestamp_vec3f(heldObj->header.gfx._scale, heldObj->oGfxScale);
+            heldObj->oGfxInited = true;
+        }
+}
 
-            // Interpolate throw matrix, copy current translation
-            interpolate_mtxf(gNextMat(k), node->_throwMatrix.v, *gCurGraphNodeObject->throwMatrix);
-            vec3f_copy(gNextMat(k)[3], gCurrMat(k)[3]);
+        // Current frame
+        mtxf_copy(gNextMat1, *gCurGraphNodeObject->throwMatrix);
+        vec3f_copy(gNextMat1[3], gCurrMat1[3]);
+        Vec3f t3f; vec3s_to_vec3f(t3f, node->translation);
+        vec3f_mul(t3f, 0.25f);
+        Mat4 mat; mtxf_translate(mat, t3f);
+        mtxf_mul(gNextMat1, mat, gNextMat1);
+        mtxf_scale_vec3f(gNextMat1, gNextMat1, heldObj->oGfxScale);
 
-            // Compute and add node translation
-            Vec3s t3s; interpolate_vec3s(t3s, node->_translation.v, node->translation);
-            Vec3f t3f; vec3s_to_vec3f(t3f, t3s);
+        // Previous frame
+        if (should_interpolate(node->_translation)) {
+            mtxf_copy(gNextMat0, node->_throwMatrix.v);
+            vec3f_copy(gNextMat0[3], gCurrMat0[3]);
+            Vec3f t3f; vec3s_to_vec3f(t3f, node->_translation.v);
             vec3f_mul(t3f, 0.25f);
             Mat4 mat; mtxf_translate(mat, t3f);
-            mtxf_mul(gNextMat(k), mat, gNextMat(k));
-
-            // Scale
-            Vec3f scale; interpolate_vec3f(scale, heldObj->header.gfx._scale.v, heldObj->oGfxScale);
-            mtxf_scale_vec3f(gNextMat(k), gNextMat(k), scale);
+            mtxf_mul(gNextMat0, mat, gNextMat0);
+            mtxf_scale_vec3f(gNextMat0, gNextMat0, heldObj->header.gfx._scale.v);
+        } else {
+            mtxf_copy(gNextMat0, *gCurGraphNodeObject->throwMatrix);
+            vec3f_copy(gNextMat0[3], gCurrMat0[3]);
+            Vec3f t3f; vec3s_to_vec3f(t3f, node->translation);
+            vec3f_mul(t3f, 0.25f);
+            Mat4 mat; mtxf_translate(mat, t3f);
+            mtxf_mul(gNextMat0, mat, gNextMat0);
+            mtxf_scale_vec3f(gNextMat0, gNextMat0, heldObj->oGfxScale);
         }
 
         // Re-execute node function with GEO_CONTEXT_HELD_OBJ
-        geo_exec_node_func(gFnNode, GEO_CONTEXT_HELD_OBJ, gNextMatLast);
+        geo_exec_node_func(gFnNode, GEO_CONTEXT_HELD_OBJ, gNextMat1);
         update_timestamp_vec3s(node->_translation, node->translation);
         update_timestamp_mtxf(node->_throwMatrix, *gCurGraphNodeObject->throwMatrix);
+        update_timestamp_vec3f(heldObj->header.gfx._scale, heldObj->oGfxScale);
 
         geo_update_mat_stack(
 
             // Make a back-up of the current anim state before processing the held object
             GeoAnimState curAnimState;
-            OMM_MEMCPY(&curAnimState, sCurAnimState, sizeof(sCurAnimState));
+            omm_copy(&curAnimState, sCurAnimState, sizeof(sCurAnimState));
 
             // Init animation state if the held object has animations
             if (heldObj->oCurrAnim) {
@@ -1083,6 +1368,9 @@ NOT_PREPROCESS {
             } else {
                 sCurAnimState->type = ANIM_TYPE_NONE;
             }
+NOT_PREPROCESS {
+            update_timestamp_vec3f(heldObj->header.gfx._objPos, &heldObj->oPosX);
+}
 
             // Process held object
             gCurGraphNodeHeldObject = node;
@@ -1090,7 +1378,7 @@ NOT_PREPROCESS {
             gCurGraphNodeHeldObject = NULL;
 
             // Recover the current anim state
-            OMM_MEMCPY(sCurAnimState, &curAnimState, sizeof(curAnimState));
+            omm_copy(sCurAnimState, &curAnimState, sizeof(curAnimState));
         )
     }
 }
@@ -1098,6 +1386,10 @@ NOT_PREPROCESS {
     geo_process_node_and_siblings(gChildren);
 }
 
+#ifdef GEO_CULLING_RADIUS
+#undef GEO_CULLING_RADIUS
+#endif
+#define GEO_CULLING_RADIUS(x) x
 static void geo_process_culling_radius(struct GraphNodeCullingRadius *node) {
 PREPROCESS {
     static Vec3f sUpVector;
@@ -1115,55 +1407,55 @@ PREPROCESS {
     switch (node->cullingRadius) {
 
         // Compute the 'up' vector
-        case 1: {
-            vec3f_copy(sUpVector, gCurrMatLast[3]);
+        case GEO_PREPROCESS_PEACH_UP_VEC: {
+            vec3f_copy(sUpVector, gCurrMat1[3]);
             vec3f_sub(sUpVector, gCurrGraphNodeObject->oGfxPos);
         } break;
 
         // Compute the 'forward' vector
-        case 2: {
-            vec3f_copy(sFwdVector, gCurrMatLast[3]);
+        case GEO_PREPROCESS_PEACH_FORWARD_VEC: {
+            vec3f_copy(sFwdVector, gCurrMat1[3]);
             vec3f_sub(sFwdVector, gCurrGraphNodeObject->oGfxPos);
         } break;
 
         // Compute the 'lateral' vector
-        case 3: {
-            vec3f_copy(sLatVector, gCurrMatLast[3]);
+        case GEO_PREPROCESS_PEACH_LATERAL_VEC: {
+            vec3f_copy(sLatVector, gCurrMat1[3]);
             vec3f_sub(sLatVector, gCurrGraphNodeObject->oGfxPos);
         } break;
 
         // Compute torso position
-        case 4: {
-            vec3f_copy(sTorsoPos, gCurrMatLast[3]);
+        case GEO_PREPROCESS_PEACH_TORSO_POS: {
+            vec3f_copy(sTorsoPos, gCurrMat1[3]);
             vec3f_sub(sTorsoPos, gCurrGraphNodeObject->oGfxPos);
         } break;
 
         // Compute left leg position
-        case 5: {
-            vec3f_copy(sLeftLegPos, gCurrMatLast[3]);
+        case GEO_PREPROCESS_PEACH_LEFT_LEG_POS: {
+            vec3f_copy(sLeftLegPos, gCurrMat1[3]);
             vec3f_sub(sLeftLegPos, gCurrGraphNodeObject->oGfxPos);
         } break;
 
         // Compute left foot position
-        case 6: {
-            vec3f_copy(sLeftFootPos, gCurrMatLast[3]);
+        case GEO_PREPROCESS_PEACH_LEFT_FOOT_POS: {
+            vec3f_copy(sLeftFootPos, gCurrMat1[3]);
             vec3f_sub(sLeftFootPos, gCurrGraphNodeObject->oGfxPos);
         } break;
 
         // Compute right leg position
-        case 7: {
-            vec3f_copy(sRightLegPos, gCurrMatLast[3]);
+        case GEO_PREPROCESS_PEACH_RIGHT_LEG_POS: {
+            vec3f_copy(sRightLegPos, gCurrMat1[3]);
             vec3f_sub(sRightLegPos, gCurrGraphNodeObject->oGfxPos);
         } break;
 
         // Compute right foot position
-        case 8: {
-            vec3f_copy(sRightFootPos, gCurrMatLast[3]);
+        case GEO_PREPROCESS_PEACH_RIGHT_FOOT_POS: {
+            vec3f_copy(sRightFootPos, gCurrMat1[3]);
             vec3f_sub(sRightFootPos, gCurrGraphNodeObject->oGfxPos);
         } break;
 
         // Compute Peach's dress rotation, set hips rotation, set legs visibility
-        case 9: {
+        case GEO_PREPROCESS_PEACH_HIPS_ROT_AND_LEGS: {
 
             // Origin (torso)
             Vec3f o = {
@@ -1296,7 +1588,7 @@ PREPROCESS {
         } break;
 
         // Set Peach's dress rotation
-        case 10: {
+        case GEO_PREPROCESS_PEACH_DRESS_ROT: {
             struct GraphNodeRotation *rotNode = (struct GraphNodeRotation *) node->node.next;
             rotNode->rotation[0] = -(sPeachDressRot[0] * 2) / 3;
             rotNode->rotation[1] = -(sPeachDressRot[1] * 2) / 3;
@@ -1304,7 +1596,7 @@ PREPROCESS {
         } break;
         
         // Compute head rotation
-        case 11: {
+        case GEO_PREPROCESS_PEACH_HEAD_ROT: {
             if (sCurAnimState->attr && sCurAnimState->type == ANIM_TYPE_ROTATION) {
                 geo_get_animation_data_as_vec3s(sMarioHeadRot, &sCurAnimState->attr, sCurAnimState->data, sCurAnimState->frame, 1, 1, 1, 0);
             } else {
@@ -1313,7 +1605,7 @@ PREPROCESS {
         } break;
 
         // Set Peach's hair rotation
-        case 12: {
+        case GEO_PREPROCESS_PEACH_HAIR_ROT: {
             struct GraphNodeRotation *rotNode = (struct GraphNodeRotation *) node->node.next;
             rotNode->rotation[0] = 0;
             rotNode->rotation[1] = -sMarioHeadRot[1] / 2;
@@ -1321,7 +1613,7 @@ PREPROCESS {
         } break;
 
         // Switch between Peach's crown and Tiara
-        case 13: {
+        case GEO_PREPROCESS_PEACH_CROWN_TIARA: {
             struct GraphNode *crownNode = node->node.next;
             struct GraphNode *tiaraNode = node->node.next->next;
             if (OMM_EXTRAS_CAPPY_AND_TIARA) {
@@ -1334,7 +1626,7 @@ PREPROCESS {
         } break;
 
         // Switch between Perry's closed and open states
-        case 14: {
+        case GEO_PREPROCESS_PEACH_PERRY_STATE: {
             struct GraphNode *closeNode = node->node.next;
             struct GraphNode *openNode = node->node.next->next;
             if (gCurrGraphNodeObject->oAction) {
@@ -1347,9 +1639,9 @@ PREPROCESS {
         } break;
 
         // Rotate Peach's hand to look like she's holding a sword
-        case 15: {
+        case GEO_PREPROCESS_PEACH_HAND_ROT: {
             struct GraphNodeRotation *rot = (struct GraphNodeRotation *) node->node.next;
-            struct Object *perry = omm_peach_get_perry_object();
+            struct Object *perry = omm_perry_get_object();
             if (perry && (perry->oPerryFlags & OBJ_INT_PERRY_SWORD)) {
                 rot->rotation[0] = perry->oPerryRightHandRot(0);
                 rot->rotation[1] = perry->oPerryRightHandRot(1);
@@ -1467,7 +1759,7 @@ void geo_process_root(struct GraphNodeRoot *node, Vp *viewport1, Vp *viewport2, 
         if (viewport1) {
             clear_framebuffer(clearColor);
             make_viewport_clip_rect(viewport1);
-            OMM_MEMCPY(viewport, viewport1, sizeof(Vp));
+            omm_copy(viewport, viewport1, sizeof(Vp));
         } else if (viewport2) {
             clear_framebuffer(clearColor);
             make_viewport_clip_rect(viewport2);
@@ -1475,14 +1767,15 @@ void geo_process_root(struct GraphNodeRoot *node, Vp *viewport1, Vp *viewport2, 
         gSPViewport(gDisplayListHead++, viewport);
 
         // Init matrix stack
-        static Mtx mtx0[MAX_INTERPOLATED_FRAMES];
+        static Mtx mtx0, mtx1;
         sMatStackIndex = 0;
-        interpolate {
-            mtxf_identity(gCurrMat(k));
-            mtxf_to_mtx(&mtx0[k], gCurrMat(k));
-            sMtxStack[sMatStackIndex][k] = &mtx0[k];
-        }
-        gSPMatrix(gDisplayListHead++, &mtx0[0], G_MTX_MODELVIEW | G_MTX_LOAD | G_MTX_NOPUSH);
+        mtxf_identity(gCurrMat0);
+        mtxf_identity(gCurrMat1);
+        mtxf_to_mtx(&mtx0, gCurrMat0);
+        mtxf_to_mtx(&mtx1, gCurrMat1);
+        sMtxStack0[sMatStackIndex] = &mtx0;
+        sMtxStack1[sMatStackIndex] = &mtx1;
+        gSPMatrix(gDisplayListHead++, &mtx1, G_MTX_MODELVIEW | G_MTX_LOAD | G_MTX_NOPUSH);
         sCurAnimState->type = ANIM_TYPE_NONE;
 
         // Process the node tree
@@ -1490,7 +1783,7 @@ void geo_process_root(struct GraphNodeRoot *node, Vp *viewport1, Vp *viewport2, 
         sDisableRendering = false;
 #endif
         sIsPreprocess = false;
-        sMarioRootFlag = 0;
+        sMarioRootFlag = MRF_NOT_ROOT;
         gCurGraphNodeRoot = node;
         geo_process_node_and_siblings(gChildren);
         gCurGraphNodeRoot = NULL;
@@ -1502,25 +1795,26 @@ void geo_process_root(struct GraphNodeRoot *node, Vp *viewport1, Vp *viewport2, 
 //
 
 static void __geo_preprocess_object_graph_node(struct Object *obj) {
-    OMM_MEMSET(sCurAnimState, 0, sizeof(sCurAnimState));
+    omm_zero(sCurAnimState, sizeof(sCurAnimState));
     sMatStackIndex = 0;
-    sMarioHandFlag = 0;
-    sMarioRootFlag = 0;
+    sMarioHandFlag = MHF_NOT_HAND;
+    sMarioRootFlag = MRF_NOT_ROOT;
 
     // Init globals
     Mat4 curGraphNodeCameraMatrix = { { 1, 0, 0, 0 }, { 0, 1, 0, 0 }, { 0, 0, 1, 0 }, { 0, 0, 0, 1 } };
     struct GraphNodeCamera curGraphNodeCamera = { .config.camera = gCamera, .matrixPtr = &curGraphNodeCameraMatrix };
     gCurGraphNodeCamera = &curGraphNodeCamera;
+    sCurrObjectSlot = (&obj->header.gfx == &gMirrorMario ? OBJECT_POOL_CAPACITY : obj_get_slot_index(obj));
     gCurGraphNodeObject = (struct GraphNodeObject *) obj;
-    mtxf_identity(gCurrMatLast);
+    mtxf_identity(gCurrMat1);
 
     // Init the base matrix
     if (obj->oThrowMatrix) {
-        mtxf_copy(gCurrMatLast, *obj->oThrowMatrix);
+        mtxf_copy(gCurrMat1, *obj->oThrowMatrix);
     } else {
-        mtxf_rotate_zxy_and_translate(gCurrMatLast, obj->oGfxPos, obj->oGfxAngle);
+        mtxf_rotate_zxy_and_translate(gCurrMat1, obj->oGfxPos, obj->oGfxAngle);
     }
-    mtxf_scale_vec3f(gCurrMatLast, gCurrMatLast, obj->oGfxScale);
+    mtxf_scale_vec3f(gCurrMat1, gCurrMat1, obj->oGfxScale);
 
     // Init animation state if the object has animations
     // Make a copy of the animation state, it will be restored at the end of preprocessing
@@ -1537,11 +1831,13 @@ static void __geo_preprocess_object_graph_node(struct Object *obj) {
     
     // Preprocess
     sIsPreprocess = true;
+    sCurrObjectSlot = (&obj->header.gfx == &gMirrorMario ? OBJECT_POOL_CAPACITY : obj_get_slot_index(obj));
     gCurGraphNodeObject = (struct GraphNodeObject *) obj;
     obj->oGraphNode->parent = &obj->header.gfx.node;
     geo_process_node_and_siblings(obj->oGraphNode);
     obj->oGraphNode->parent = NULL;
     gCurGraphNodeObject = NULL;
+    sCurrObjectSlot = 0;
     sIsPreprocess = false;
 
     // Restore animation info
@@ -1550,10 +1846,6 @@ static void __geo_preprocess_object_graph_node(struct Object *obj) {
 
 void geo_preprocess_object_graph_node(struct Object *o) {
     if (o && o->oGraphNode) {
-
-        // Disable interpolation during preprocessing
-        s32 numInterpolatedFrames = gNumInterpolatedFrames;
-        gNumInterpolatedFrames = 1;
 
         // Retrieve Mario's height
         if (o == gMarioObject) {
@@ -1565,12 +1857,12 @@ void geo_preprocess_object_graph_node(struct Object *o) {
                 // Back-up the current animation and restore it after processing
                 // Setting gMarioCurrAnimAddr to NULL forces the game to reload the DMA table
                 struct AnimInfoStruct animInfo;
-                OMM_MEMCPY(&animInfo, &o->oAnimInfo, sizeof(struct AnimInfoStruct));
+                omm_copy(&animInfo, &o->oAnimInfo, sizeof(struct AnimInfoStruct));
                 gMarioCurrAnimAddr = NULL;
                 obj_anim_play(gMarioObject, MARIO_ANIM_A_POSE, 1.f);
                 __geo_preprocess_object_graph_node(o);
                 gMarioCurrAnimAddr = NULL;
-                OMM_MEMCPY(&o->oAnimInfo, &animInfo, sizeof(struct AnimInfoStruct));
+                omm_copy(&o->oAnimInfo, &animInfo, sizeof(struct AnimInfoStruct));
 
                 // Compute and insert height for the object's graph node
                 f32 marioHeight = 35.f + (sMarioHeadPos[1] - gMarioState->pos[1]);
@@ -1582,6 +1874,5 @@ void geo_preprocess_object_graph_node(struct Object *o) {
 
         // Preprocess
         __geo_preprocess_object_graph_node(o);
-        gNumInterpolatedFrames = numInterpolatedFrames;
     }
 }

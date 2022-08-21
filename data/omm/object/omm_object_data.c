@@ -2,18 +2,19 @@
 #include "data/omm/omm_includes.h"
 #undef OMM_ALL_HEADERS
 
+struct Object gOmmObjFields[OBJECT_POOL_CAPACITY];
 struct OmmData *gOmmData = NULL;
 s32 *gOmmPeachVibeTypeRef = NULL;
 
 static void omm_data_reset_mario_fields() {
 
     // State data
-    gOmmData->mario->state.hp = 0;
+    gOmmData->mario->state.ticks = 0;
     gOmmData->mario->state.coins = 0;
     gOmmData->mario->state.o2 = 0;
     gOmmData->mario->state.airCombo = 0;
-    gOmmData->mario->state.poleTimer = 0;
     gOmmData->mario->state.peakHeight = -11000.f;
+    gOmmData->mario->state.poleObject = NULL;
     gOmmData->mario->state.freeze.dmg = 0;
     gOmmData->mario->state.freeze.gfx = 0;
     gOmmData->mario->state.freeze.sfx = 0;
@@ -50,6 +51,7 @@ static void omm_data_reset_mario_fields() {
     // Spin moves data
     gOmmData->mario->spin.yaw = 0;
     gOmmData->mario->spin.timer = 0;
+    gOmmData->mario->spin.decel = 0;
 
     // Midair spin move data
     gOmmData->mario->midairSpin.timer = 0;
@@ -121,22 +123,23 @@ static void omm_data_reset_object_fields() {
 }
 
 static void omm_data_update_mario_fields() {
+    struct MarioState *m = gMarioState;
 
     // State data
-    gOmmData->mario->state.previous.pos[0] = gMarioState->pos[0];
-    gOmmData->mario->state.previous.pos[1] = gMarioState->pos[1];
-    gOmmData->mario->state.previous.pos[2] = gMarioState->pos[2];
-    gOmmData->mario->state.previous.vel[0] = gMarioState->vel[0];
-    gOmmData->mario->state.previous.vel[1] = gMarioState->vel[1];
-    gOmmData->mario->state.previous.vel[2] = gMarioState->vel[2];
-    gOmmData->mario->state.previous.vel[3] = gMarioState->forwardVel;
-    gOmmData->mario->state.previous.angle[0] = gMarioState->faceAngle[0];
-    gOmmData->mario->state.previous.angle[1] = gMarioState->faceAngle[1];
-    gOmmData->mario->state.previous.angle[2] = gMarioState->faceAngle[2];
+    gOmmData->mario->state.previous.pos[0] = m->pos[0];
+    gOmmData->mario->state.previous.pos[1] = m->pos[1];
+    gOmmData->mario->state.previous.pos[2] = m->pos[2];
+    gOmmData->mario->state.previous.vel[0] = m->vel[0];
+    gOmmData->mario->state.previous.vel[1] = m->vel[1];
+    gOmmData->mario->state.previous.vel[2] = m->vel[2];
+    gOmmData->mario->state.previous.vel[3] = m->forwardVel;
+    gOmmData->mario->state.previous.angle[0] = m->faceAngle[0];
+    gOmmData->mario->state.previous.angle[1] = m->faceAngle[1];
+    gOmmData->mario->state.previous.angle[2] = m->faceAngle[2];
 
     // Peach-only data
     if (OMM_PLAYER_IS_PEACH) {
-        if (!omm_peach_get_perry_object()) {
+        if (!omm_perry_get_object()) {
             gOmmData->mario->peach.perry = NULL;
         }
     } else {
@@ -157,10 +160,10 @@ static void omm_data_update_mario_fields() {
     }
 
     // Capture data
-    if (gMarioState->action != ACT_OMM_POSSESSION) {
+    if (m->action != ACT_OMM_POSSESSION) {
         gOmmData->mario->capture.data = NULL;
         gOmmData->mario->capture.obj = NULL;
-        if (!(gMarioState->action & ACT_FLAG_AIR)) {
+        if (!(m->action & ACT_FLAG_AIR)) {
             gOmmData->mario->capture.prev = NULL;
         } else if (gOmmData->mario->capture.prev) {
             struct Object *o = gOmmData->mario->capture.prev;
@@ -186,7 +189,7 @@ OMM_ROUTINE_LEVEL_ENTRY(omm_data_reset_fields) {
 }
 
 OMM_AT_STARTUP static void omm_data_init() {
-    gOmmData = OMM_MEMNEW(struct OmmData, 1);
+    gOmmData = omm_new(struct OmmData, 1);
     gOmmData->reset = omm_data_reset_fields;
     gOmmData->resetMario = omm_data_reset_mario_fields;
     gOmmData->resetObject = omm_data_reset_object_fields;

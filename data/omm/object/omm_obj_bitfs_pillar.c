@@ -41,7 +41,7 @@ static const Collision omm_bitfs_pillar_collision[] = {
 // Behavior
 //
 
-const BehaviorScript omm_bhv_bitfs_pillar[] = {
+const BehaviorScript bhvOmmBitfsPillar[] = {
     OBJ_TYPE_SURFACE,
     0x2A000000, (uintptr_t) omm_bitfs_pillar_collision,
     0x08000000,
@@ -54,7 +54,7 @@ const BehaviorScript omm_bhv_bitfs_pillar[] = {
 //
 
 struct Object *omm_spawn_bitfs_pillar(struct Object *o, f32 x, f32 y, f32 z) {
-    struct Object *pillar = spawn_object(o, MODEL_NONE, omm_bhv_bitfs_pillar);
+    struct Object *pillar = spawn_object(o, MODEL_NONE, bhvOmmBitfsPillar);
     pillar->activeFlags |= ACTIVE_FLAG_INITIATED_TIME_STOP;
     obj_set_pos(pillar, x, y, z);
     obj_set_home(pillar, x, y, z);

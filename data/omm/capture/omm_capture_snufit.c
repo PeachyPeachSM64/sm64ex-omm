@@ -6,18 +6,18 @@
 // Init
 //
 
-bool cappy_snufit_init(struct Object *o) {
+bool omm_cappy_snufit_init(struct Object *o) {
     obj_scale(o, 1.f);
     obj_set_angle(o, 0, o->oFaceAngleYaw, 0);
     o->oPosY -= 60.f * o->oScaleY;
     o->oSnufitScale = 1.f;
     o->oSnufitBodyScale = 1000.f;
-    gOmmData->object->state.actionState = 0;
-    gOmmData->object->state.actionTimer = 0;
+    gOmmObject->state.actionState = 0;
+    gOmmObject->state.actionTimer = 0;
     return true;
 }
 
-void cappy_snufit_end(struct Object *o) {
+void omm_cappy_snufit_end(struct Object *o) {
     obj_scale(o, 1.f);
     obj_set_angle(o, 0, o->oFaceAngleYaw, 0);
     o->oPosY += 60.f * o->oScaleY;
@@ -35,7 +35,7 @@ void cappy_snufit_end(struct Object *o) {
     o->oHomeZ = o->oPosZ - 100.f * sins(o->oSnufitCircularPeriod);
 }
 
-f32 cappy_snufit_get_top(struct Object *o) {
+f32 omm_cappy_snufit_get_top(struct Object *o) {
     return 90.f * o->oScaleY;
 }
 
@@ -43,7 +43,7 @@ f32 cappy_snufit_get_top(struct Object *o) {
 // Update
 //
 
-s32 cappy_snufit_update(struct Object *o) {
+s32 omm_cappy_snufit_update(struct Object *o) {
 
     // Hitbox
     o->hitboxRadius = omm_capture_get_hitbox_radius(o);
@@ -57,7 +57,7 @@ s32 cappy_snufit_update(struct Object *o) {
 
     // Inputs
     if (!omm_mario_is_locked(gMarioState)) {
-        pobj_move(o, false, false, gOmmData->object->state.actionState != 0);
+        pobj_move(o, false, false, gOmmObject->state.actionState != 0);
         if (pobj_jump(o, 0, 1) == POBJ_RESULT_JUMP_START) {
             obj_play_sound(o, SOUND_OBJ_GOOMBA_ALERT);
         }
@@ -71,15 +71,15 @@ s32 cappy_snufit_update(struct Object *o) {
 
         // Hold B for at least 1 second to start to rapid-fire
         if (POBJ_B_BUTTON_DOWN) {
-            if (gOmmData->object->state.actionTimer++ >= 15) {
-                gOmmData->object->state.actionState = 1;
-                if (gOmmData->object->state.actionTimer & 1) {
+            if (gOmmObject->state.actionTimer++ >= 15) {
+                gOmmObject->state.actionState = 1;
+                if (gOmmObject->state.actionTimer & 1) {
                     omm_spawn_snufit_ball(o, 0, (random_u16() & 15) == 0);
                 }
             }
         } else {
-            gOmmData->object->state.actionState = 0;
-            gOmmData->object->state.actionTimer = 0;
+            gOmmObject->state.actionState = 0;
+            gOmmObject->state.actionTimer = 0;
         }
     }
 
@@ -100,8 +100,8 @@ s32 cappy_snufit_update(struct Object *o) {
     o->oGfxPos[1] += 60.f * o->oScaleY + yOff;
 
     // Cappy values
-    gOmmData->object->cappy.offset[1] = 90.f + yOff;
-    gOmmData->object->cappy.scale     = 0.8f;
+    gOmmObject->cappy.offset[1] = 90.f + yOff;
+    gOmmObject->cappy.scale     = 0.8f;
 
     // OK
     POBJ_RETURN_OK;

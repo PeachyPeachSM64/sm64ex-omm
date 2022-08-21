@@ -100,7 +100,7 @@ static void geo_layout_cmd_node_root(void) {
     if (sGraphNodeMemoryPool) {
         node->views = alloc_only_pool_alloc(sGraphNodeMemoryPool, sizeof(struct GraphNode *));
     } else {
-        node->views = OMM_MEMNEW(struct GraphNode *, 1);
+        node->views = omm_new(struct GraphNode *, 1);
     }
     node->numViews = 1;
     geo_layout_register_scene_graph_node(gNode);

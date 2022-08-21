@@ -29,7 +29,7 @@ void bhv_chain_chomp_update_chain_parts(struct Object *o, bool isFreed) {
             pivot->oPosY += pivot->oVelY;
             struct Surface *floor = NULL;
             f32 floorY = find_floor(pivot->oPosX, pivot->oPosY, pivot->oPosZ, &floor);
-            if (floor != NULL) {
+            if (floor) {
                 if (pivot->oPosY <= floorY) {
                     pivot->oPosY = floorY;
                     pivot->oVelY = 0.f;
@@ -56,14 +56,14 @@ void bhv_chain_chomp_update_chain_parts(struct Object *o, bool isFreed) {
         f32 sz = segment->posZ + pivot->oPosZ;
         struct Surface *floor = NULL;
         f32 floorY = find_floor(sx, sy, sz, &floor);
-        if (floor != NULL) {
+        if (floor) {
             if (sy <= floorY) {
                 segment->posY = floorY - pivot->oPosY;
                 segment->pitch = 0;
             }
         } else {
             floorY = find_floor(sx, pivot->oPosY, sz, &floor);
-            if (floor != NULL) {
+            if (floor) {
                 if (sy <= floorY) {
                     segment->posY = floorY - pivot->oPosY;
                     segment->pitch = 0;
@@ -110,7 +110,7 @@ void bhv_chain_chomp_update_chain_parts(struct Object *o, bool isFreed) {
 // Behavior
 //
 
-static void omm_bhv_chain_chomp_free_init() {
+static void bhv_omm_chain_chomp_free_init() {
     struct Object *o = gCurrentObject;
     o->oFlags = (OBJ_FLAG_COMPUTE_ANGLE_TO_MARIO | OBJ_FLAG_ACTIVE_FROM_AFAR | OBJ_FLAG_COMPUTE_DIST_TO_MARIO | OBJ_FLAG_SET_FACE_YAW_TO_MOVE_YAW | OBJ_FLAG_UPDATE_GFX_POS_AND_ANGLE);
     o->oGraphYOffset = 240.f;
@@ -128,7 +128,7 @@ static void omm_bhv_chain_chomp_free_init() {
     obj_set_params(o, INTERACT_DAMAGE, 4, 99, 0, true);
 }
 
-static void omm_bhv_chain_chomp_free_wander(struct Object* o) {
+static void bhv_omm_chain_chomp_free_wander(struct Object* o) {
     if (o->oChainChompFreeTimer > 0) {
         o->oVelX *= 0.90f;
         o->oVelZ *= 0.90f;
@@ -166,7 +166,7 @@ static void omm_bhv_chain_chomp_free_wander(struct Object* o) {
     }
 }
 
-static void omm_bhv_chain_chomp_free_chase(struct Object *o) {
+static void bhv_omm_chain_chomp_free_chase(struct Object *o) {
     o->oFaceAngleYaw = o->oAngleToMario;
     o->oMoveAngleYaw = o->oAngleToMario;
 
@@ -189,11 +189,11 @@ static void omm_bhv_chain_chomp_free_chase(struct Object *o) {
     }
 }
 
-static void omm_bhv_chain_chomp_free_update() {
+static void bhv_omm_chain_chomp_free_update() {
     struct Object *o = gCurrentObject;
     switch (o->oChainChompFreeState) {
-        case 0: omm_bhv_chain_chomp_free_wander(o); break;
-        case 1: omm_bhv_chain_chomp_free_chase(o); break;
+        case 0: bhv_omm_chain_chomp_free_wander(o); break;
+        case 1: bhv_omm_chain_chomp_free_chase(o); break;
     }
 
     if (o->oInteractStatus & (INT_STATUS_INTERACTED | INT_STATUS_ATTACKED_MARIO)) {
@@ -206,17 +206,21 @@ static void omm_bhv_chain_chomp_free_update() {
     perform_object_step(o, OBJ_STEP_UPDATE_HOME | OBJ_STEP_CHECK_ON_GROUND);
     obj_anim_play(o, 0, 1.f);
     bhv_chain_chomp_update_chain_parts(o, true);
-    obj_reset_hitbox(o, 80, 160, 80, 160, 120, 0);
+    if (OMM_MOVESET_ODYSSEY) {
+        obj_reset_hitbox(o, 100, 240, 80, 160, 120, 0);
+    } else {
+        obj_reset_hitbox(o, 80, 160, 80, 160, 120, 0);
+    }
 }
 
-const BehaviorScript omm_bhv_chain_chomp_free[] = {
+const BehaviorScript bhvOmmChainChompFree[] = {
     OBJ_TYPE_GENACTOR,
     0x1E000000,
     0x27260000, (uintptr_t) chain_chomp_seg6_anims_06025178,
     0x28000000,
     0x2D000000,
-    0x0C000000, (uintptr_t) omm_bhv_chain_chomp_free_init,
+    0x0C000000, (uintptr_t) bhv_omm_chain_chomp_free_init,
     0x08000000,
-    0x0C000000, (uintptr_t) omm_bhv_chain_chomp_free_update,
+    0x0C000000, (uintptr_t) bhv_omm_chain_chomp_free_update,
     0x09000000,
 };

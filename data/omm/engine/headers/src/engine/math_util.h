@@ -1,7 +1,9 @@
 #ifndef MATH_UTIL_H
 #define MATH_UTIL_H
 
+#include <math.h>
 #include "types.h"
+#include "libc/math.h"
 
 #define sins(x)     gSineTable[(u16) (x) >> 4]
 #define coss(x)     (gSineTable + 0x400)[(u16) (x) >> 4]
@@ -10,11 +12,16 @@
 #define sqr(x)      ((x) * (x))
 #define absx(x)     ((x) < 0 ? -(x) : (x))
 
+enum AngleOrder { XYZ, YXZ, ZXY, ZYX, YZX, XZY };
+
 extern f32 gSineTable[];
 extern Vec2f gVec2fZero;
 extern Vec2f gVec2fOne;
 extern Vec3f gVec3fZero;
 extern Vec3f gVec3fOne;
+extern Vec3f gVec3fX;
+extern Vec3f gVec3fY;
+extern Vec3f gVec3fZ;
 extern Vec3s gVec3sZero;
 extern Vec3s gVec3sOne;
 extern Vec4f gVec4fZero;
@@ -114,6 +121,8 @@ void *vec3f_transform(Vec3f dest, Vec3f v, Vec3f translation, Vec3s rotation, Ve
 void *vec3f_interpolate(Vec3f dest, Vec3f from, Vec3f to, f32 t);
 void *vec3f_interpolate3(Vec3f dest, f32 t, Vec3f p0, f32 t0, Vec3f p1, f32 t1, Vec3f p2, f32 t2);
 bool  vec3f_is_inside_cylinder(Vec3f v, Vec3f pos, f32 radius, f32 height, f32 downOffset);
+void *vec3f_get_barycentric_coords(Vec3f coords, Vec3f p, Vec3f a, Vec3f b, Vec3f c);
+void *vec3f_from_barycentric_coords(Vec3f dest, Vec3f coords, Vec3f a, Vec3f b, Vec3f c);
 void *find_vector_perpendicular_to_plane(Vec3f dest, Vec3f a, Vec3f b, Vec3f c);
 
 void *vec3s_set(Vec3s dest, s16 x, s16 y, s16 z);
@@ -135,12 +144,18 @@ void mtxf_align_terrain_normal(Mat4 dest, Vec3f upDir, Vec3f pos, s16 yaw);
 void mtxf_align_terrain_triangle(Mat4 mtx, Vec3f pos, s16 yaw, f32 radius);
 void mtxf_mul(Mat4 dest, Mat4 a, Mat4 b);
 void mtxf_scale_vec3f(Mat4 dest, Mat4 mtx, Vec3f s);
-void mtxf_interpolate(Mat4 dest, Mat4 from, Mat4 to, f32 t);
 bool mtxf_invert(Mat4 dest, Mat4 m);
 void mtxf_rotate_xy(Mtx *mtx, s16 angle);
 void mtxf_ortho(Mtx *mtx, f32 left, f32 right, f32 bottom, f32 top, f32 near, f32 far, f32 scale);
 u16  mtxf_perspective(Mtx *mtx, f32 fovy, f32 aspect, f32 near, f32 far, f32 scale);
 void get_pos_from_transform_mtx(Vec3f dest, Mat4 objMtx, Mat4 camMtx);
+void mtxf_get_rotation(Mat4 m, Vec3s rotation, enum AngleOrder order);
+void mtxf_get_components(Mat4 m, Vec3f translation, Vec3s rotation, Vec3f shear, Vec3f scale);
+void mtxf_transform(Mat4 dest, Vec3f translation, Vec3s rotation, Vec3f shear, Vec3f scale);
+void mtxf_interpolate(Mat4 dest, Mat4 from, Mat4 to, f32 t);
+void mtxf_interpolate_fast(Mat4 dest, Mat4 from, Mat4 to, f32 t);
+void vtxv_interpolate(Vtx_t *dest, Vtx_t *from, Vtx_t *to, f32 t);
+void vtxn_interpolate(Vtx_tn *dest, Vtx_tn *from, Vtx_tn *to, f32 t);
 
 s16  atan2s(f32 y, f32 x);
 s32  approach_s32(s32 current, s32 target, s32 inc, s32 dec);
@@ -149,42 +164,34 @@ void spline_get_weights(Vec4f result, f32 t, UNUSED s32 c);
 void anim_spline_init(Vec4s *keyFrames);
 s32  anim_spline_poll(Vec3f result);
 
+Gfx *gfx_create_identity_matrix(Gfx *gfx);
+Gfx *gfx_create_translation_matrix(Gfx *gfx, Mtx *mtx, bool push, f32 x, f32 y, f32 z);
+Gfx *gfx_create_rotation_matrix(Gfx *gfx, Mtx *mtx, bool push, f32 a, f32 x, f32 y, f32 z);
+Gfx *gfx_create_scale_matrix(Gfx *gfx, Mtx *mtx, bool push, f32 x, f32 y, f32 z);
+Gfx *gfx_create_ortho_matrix(Gfx *gfx);
+
+#if OMM_GAME_IS_XALO
+#include "math_util_hackersm64.h" // Not cool, AloXado
+#endif
+
 //
 // Frame interpolation
 //
 
-extern s32 gNumInterpolatedFrames;
-#define MAX_INTERPOLATED_FRAMES 12
+extern bool gFrameInterpolation;
 
-#define is_frame_interpolation_enabled()    (gNumInterpolatedFrames > 1)
-#define get_subframe_t(k)                   (((f32) ((k) + 1)) / ((f32) gNumInterpolatedFrames))
-#define interpolate                         for (s32 k = 0; k < gNumInterpolatedFrames; ++k)
-#define interpolate1                        for (s32 k = 1; k < gNumInterpolatedFrames; ++k)
+typedef struct {
+    Gfx *pos;
+    f32 x, x0, x1;
+    f32 y, y0, y1;
+    f32 z, z0, z1;
+    f32 a, a0, a1;
+    f32 s, s0, s1;
+    f32 t, t0, t1;
+    bool inited;
+} InterpData;
 
-#define check_timestamp(ts)                 (*((u32 *) &(ts)) == (gGlobalTimer - 1))
-#define reset_timestamp(ts)                 {*((u32 *) &(ts)) = 0;}
-#define update_timestamp_s16(ts, x)         {*((u32 *) &(ts)) = gGlobalTimer; (ts).v = (s16) (x);}
-#define update_timestamp_s32(ts, x)         {*((u32 *) &(ts)) = gGlobalTimer; (ts).v = (s32) (x);}
-#define update_timestamp_u16(ts, x)         {*((u32 *) &(ts)) = gGlobalTimer; (ts).v = (u16) (x);}
-#define update_timestamp_u32(ts, x)         {*((u32 *) &(ts)) = gGlobalTimer; (ts).v = (u32) (x);}
-#define update_timestamp_f32(ts, x)         {*((u32 *) &(ts)) = gGlobalTimer; (ts).v = (f32) (x);}
-#define update_timestamp_vec3f(ts, x)       {*((u32 *) &(ts)) = gGlobalTimer; vec3f_copy((ts).v, x);}
-#define update_timestamp_vec3s(ts, x)       {*((u32 *) &(ts)) = gGlobalTimer; vec3s_copy((ts).v, x);}
-#define update_timestamp_mtxf(ts, x)        {*((u32 *) &(ts)) = gGlobalTimer; mtxf_copy((ts).v, x);}
-#define update_timestamp_ptr(ts, x)         {*((u32 *) &(ts)) = gGlobalTimer; (ts).v = (void *) (x);}
-
-#define interpolate_s16(dest, from, to)     { if (shouldInterpolate) { dest = (from) + (s16) (((to) - (from)) * get_subframe_t(k)); } else { dest = to; } }
-#define interpolate_s32(dest, from, to)     { if (shouldInterpolate) { dest = (from) + (s32) (((to) - (from)) * get_subframe_t(k)); } else { dest = to; } }
-#define interpolate_u16(dest, from, to)     { if (shouldInterpolate) { dest = (from) + (u16) (((to) - (from)) * get_subframe_t(k)); } else { dest = to; } }
-#define interpolate_u32(dest, from, to)     { if (shouldInterpolate) { dest = (from) + (u32) (((to) - (from)) * get_subframe_t(k)); } else { dest = to; } }
-#define interpolate_f32(dest, from, to)     { if (shouldInterpolate) { dest = (from) + (f32) (((to) - (from)) * get_subframe_t(k)); } else { dest = to; } }
-#define interpolate_vec3f(dest, from, to)   { if (shouldInterpolate) { vec3f_interpolate(dest, from, to, get_subframe_t(k)); } else { vec3f_copy(dest, to); } }
-#define interpolate_vec3s(dest, from, to)   { if (shouldInterpolate) { vec3s_interpolate(dest, from, to, get_subframe_t(k)); } else { vec3s_copy(dest, to); } }
-#define interpolate_angles(dest, from, to)  { if (shouldInterpolate) { vec3s_interpolate_angles(dest, from, to, get_subframe_t(k)); } else { vec3s_copy(dest, to); } }
-#define interpolate_mtxf(dest, from, to)    { if (shouldInterpolate) { mtxf_interpolate(dest, from, to, get_subframe_t(k)); } else { mtxf_copy(dest, to); } }
-
-// backwards compatibility
-#define interpolate_vectors(dest, from, to)     vec3f_interpolate(dest, from, to, 1.f)
-#define interpolate_vectors_s16(dest, from, to) vec3s_interpolate(dest, from, to, 1.f)
+void interp_data_update(InterpData *data, bool shouldInterp, Gfx *pos, f32 x, f32 y, f32 z, f32 a, f32 s, f32 t);
+void interp_data_lerp(InterpData *data, f32 t);
 
 #endif

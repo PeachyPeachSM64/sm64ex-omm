@@ -6,49 +6,53 @@
 // Frame interpolation
 //
 
-static Vtx *sPaintingPos[MAX_INTERPOLATED_FRAMES][2];
-static Vtx  sPaintingVtx[MAX_INTERPOLATED_FRAMES][2 * 264 * 3];
-static Vtx  sPaintingPre[MAX_INTERPOLATED_FRAMES][2 * 264 * 3];
-static s32  sPaintingCnt[MAX_INTERPOLATED_FRAMES];
-static u32  sPaintingTs;
+typedef struct {
+    Vtx vtx[0x400];
+    s32 count;
+} VtxBuffer;
 
-void gfx_patch_interpolated_frame_paintings(s32 k) {
-    if (sPaintingPos[k][0]) {
-        if (sPaintingPos[k][1]) {
-            for (s32 i = 0; i != sPaintingCnt[k]; ++i) {
-                s32 h = sPaintingCnt[k] / 2;
-                s32 x = i / h;
-                s32 y = i % h;
-                sPaintingPos[k][x][y] = sPaintingVtx[k][i];
-            }
-        } else {
-            for (s32 i = 0; i != sPaintingCnt[k]; ++i) {
-                sPaintingPos[k][0][i] = sPaintingVtx[k][i];
+static Vtx      *sPaintingVtx[8];
+static VtxBuffer sPaintingVtx0[8];
+static VtxBuffer sPaintingVtx1[8];
+static s32       sPaintingCount = 0;
+
+void gfx_interpolate_frame_paintings(f32 t) {
+    for (s32 i = 0; i != sPaintingCount; ++i) {
+        if (sPaintingVtx[i]) {
+            Vtx       *vtx = sPaintingVtx[i];
+            VtxBuffer *vb0 = &sPaintingVtx0[i];
+            VtxBuffer *vb1 = &sPaintingVtx1[i];
+            for (s32 j = 0; j != vb0->count; ++j) {
+                vtxn_interpolate((Vtx_tn *) (vtx + j), (Vtx_tn *) (vb0->vtx + j), (Vtx_tn *) (vb1->vtx + j), t);
             }
         }
-        sPaintingPos[k][0] = NULL;
-        sPaintingPos[k][1] = NULL;
-        sPaintingCnt[k] = 0;
-        sPaintingTs = gGlobalTimer;
     }
 }
 
+void gfx_clear_frame_paintings() {
+    omm_zero(sPaintingVtx, sizeof(sPaintingVtx));
+    sPaintingCount = 0;
+}
+
 void gfx_interpolate_painting(Vtx *vtx, s32 numVtx) {
-    bool shouldInterpolate = is_frame_interpolation_enabled() && (sPaintingTs >= gGlobalTimer - 1);
-    interpolate {
-        if (sPaintingCnt[k] >= numVtx * 2) { sPaintingCnt[k] = 0; }
-        for (s32 i = 0; i != numVtx; ++i) {
-            sPaintingVtx[k][sPaintingCnt[k] + i] = vtx[i];
-            interpolate_f32(sPaintingVtx[k][sPaintingCnt[k] + i].n.ob[0], sPaintingPre[k][sPaintingCnt[k] + i].n.ob[0], vtx[i].n.ob[0]);
-            interpolate_f32(sPaintingVtx[k][sPaintingCnt[k] + i].n.ob[1], sPaintingPre[k][sPaintingCnt[k] + i].n.ob[1], vtx[i].n.ob[1]);
-            interpolate_f32(sPaintingVtx[k][sPaintingCnt[k] + i].n.ob[2], sPaintingPre[k][sPaintingCnt[k] + i].n.ob[2], vtx[i].n.ob[2]);
-            interpolate_s32(sPaintingVtx[k][sPaintingCnt[k] + i].n.n [0], sPaintingPre[k][sPaintingCnt[k] + i].n.n [0], vtx[i].n.n [0]);
-            interpolate_s32(sPaintingVtx[k][sPaintingCnt[k] + i].n.n [1], sPaintingPre[k][sPaintingCnt[k] + i].n.n [1], vtx[i].n.n [1]);
-            interpolate_s32(sPaintingVtx[k][sPaintingCnt[k] + i].n.n [2], sPaintingPre[k][sPaintingCnt[k] + i].n.n [2], vtx[i].n.n [2]);
-            sPaintingPre[k][sPaintingCnt[k] + i] = vtx[i];
+    if (gFrameInterpolation && sPaintingCount < 8) {
+        VtxBuffer *vb0 = &sPaintingVtx0[sPaintingCount];
+        VtxBuffer *vb1 = &sPaintingVtx1[sPaintingCount];
+
+        // Previous frame
+        if (vb0->count == numVtx) {
+            sPaintingVtx[sPaintingCount] = vtx;
+            omm_copy(vb0->vtx, vb1->vtx, sizeof(Vtx) * numVtx);
+        } else {
+            omm_copy(vb0->vtx, vtx, sizeof(Vtx) * numVtx);
         }
-        sPaintingPos[k][sPaintingCnt[k] / numVtx] = vtx;
+        vb0->count = numVtx;
+        
+        // Current frame
+        omm_copy(vb1->vtx, vtx, sizeof(Vtx) * numVtx);
+        vb1->count = numVtx;
+        
+        // Increase painting count
+        sPaintingCount++;
     }
-    OMM_MEMCPY(vtx, &sPaintingVtx[0][sPaintingCnt[0]], sizeof(Vtx) * numVtx);
-    interpolate { sPaintingCnt[k] += numVtx; }
 }

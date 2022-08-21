@@ -111,7 +111,7 @@ const GeoLayout omm_geo_break_particle[] = {
 // Behavior
 //
 
-static void omm_bhv_break_particle_update() {
+static void bhv_omm_break_particle_update() {
     struct Object *o = gCurrentObject;
     o->oPosX += o->oVelX;
     o->oPosY += o->oVelY;
@@ -121,11 +121,11 @@ static void omm_bhv_break_particle_update() {
     }
 }
 
-const BehaviorScript omm_bhv_break_particle[] = {
+const BehaviorScript bhvOmmBreakParticle[] = {
     OBJ_TYPE_UNIMPORTANT,
     0x11010001,
     0x08000000,
-    0x0C000000, (uintptr_t) omm_bhv_break_particle_update,
+    0x0C000000, (uintptr_t) bhv_omm_break_particle_update,
     0x09000000
 };
 
@@ -136,7 +136,7 @@ const BehaviorScript omm_bhv_break_particle[] = {
 struct Object *omm_spawn_break_particle(struct Object *o, u8 r, u8 g, u8 b, f32 offsetY, f32 velMin, f32 velMax, f32 velY, f32 scaleMin, f32 scaleMax) {
     f32 fvel                = velMin + (velMax - velMin) * random_float();
     s16 fangle              = random_u16();
-    struct Object *particle = obj_spawn_from_geo(o, omm_geo_break_particle, omm_bhv_break_particle);
+    struct Object *particle = obj_spawn_from_geo(o, omm_geo_break_particle, bhvOmmBreakParticle);
     particle->oAnimState    = random_u16() % 5;
     particle->oPosX         = o->oPosX;
     particle->oPosY         = o->oPosY + offsetY;

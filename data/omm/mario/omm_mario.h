@@ -1,7 +1,7 @@
 #ifndef OMM_MARIO_H
 #define OMM_MARIO_H
 
-#include "data/omm/omm_includes.h"
+#include "types.h"
 
 #define HANG_STEP_NONE 0
 #define HANG_STEP_HIT_WALL 1
@@ -64,14 +64,18 @@ bool omm_mario_is_reading                       (struct MarioState *m);
 bool omm_mario_is_picking_up                    (struct MarioState *m);
 bool omm_mario_is_holding                       (struct MarioState *m);
 bool omm_mario_is_hanging                       (struct MarioState *m);
+bool omm_mario_is_burning                       (struct MarioState *m);
+bool omm_mario_is_sliding                       (struct MarioState *m);
 bool omm_mario_is_stuck_in_ground_after_fall    (struct MarioState *m);
 bool omm_mario_is_star_dancing                  (struct MarioState *m);
+bool omm_mario_is_ready_for_dialog              (struct MarioState *m);
 bool omm_mario_should_walk                      (struct MarioState *m);
 bool omm_mario_should_run                       (struct MarioState *m);
 bool omm_mario_has_wing_cap                     (struct MarioState *m);
 bool omm_mario_has_vanish_cap                   (struct MarioState *m);
 bool omm_mario_has_metal_cap                    (struct MarioState *m);
-bool omm_mario_check_dead                       (struct MarioState *m, s16 hp);
+bool omm_mario_is_dead                          (struct MarioState *m);
+bool omm_mario_check_dead                       (struct MarioState *m, s32 health);
 bool omm_mario_check_death_warp                 (struct MarioState *m, s32 warpOp);
 bool omm_mario_check_grab                       (struct MarioState *m, struct Object *o, bool ignoreAngles);
 
@@ -95,7 +99,7 @@ void omm_mario_update_castle_collisions         (struct MarioState *m);
 // Capture
 //
 
-bool omm_mario_possess_object                   (struct MarioState *m, struct Object *o, bool checkTangibility);
+bool omm_mario_possess_object                   (struct MarioState *m, struct Object *o, bool checkTangibility, bool forceCapture);
 bool omm_mario_unpossess_object                 (struct MarioState *m, u8 unpossessAct, bool isBackwards, u32 objIntangibleFrames);
 bool omm_mario_lock                             (struct MarioState *m, s32 duration);
 bool omm_mario_lock_star_grab                   (struct MarioState *m);

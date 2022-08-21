@@ -34,7 +34,13 @@ bool omm_restart_level() {
 #if OMM_GAME_IS_SM74
     return omm_restart_area();
 #else
-    return omm_warp_to_level(gCurrLevelNum, 1, gCurrActNum);
+    return omm_warp_to_level(gCurrLevelNum,
+#if OMM_GAME_IS_SM64
+        (gCurrLevelNum == LEVEL_THI && gCurrAreaIndex == 2 ? 2 : 1),
+#else
+        1,
+#endif
+        gCurrActNum);
 #endif
 }
 
@@ -84,7 +90,7 @@ bool omm_exit_level() {
 }
 
 bool omm_return_to_castle(bool fadeOut, bool force) {
-    if (force || (!omm_is_game_paused() && !omm_is_transition_active() && !omm_is_warping())) {
+    if (force || (!omm_is_game_paused() && !omm_is_transition_active() && !omm_is_warping() && sCurrPlayMode != 4)) {
         initiate_warp(OMM_LEVEL_RETURN_TO_CASTLE);
         if (fadeOut) {
             fade_into_special_warp(0, 0);
@@ -224,6 +230,7 @@ void *omm_update_warp(void *cmd, bool inited) {
                     gMarioSpawnInfo->areaIndex = gCurrAreaIndex;
                     init_mario();
                     set_mario_initial_action(gMarioState, MARIO_SPAWN_UNKNOWN_02, 0);
+                    omm_health_set_max(gMarioState);
 
                     // Init transition
                     reset_camera(gCurrentArea->camera);
@@ -328,6 +335,7 @@ void *omm_update_warp(void *cmd, bool inited) {
                     gMarioSpawnInfo->areaIndex = gCurrAreaIndex;
                     init_mario();
                     set_mario_initial_action(gMarioState, spawnType, 0);
+                    omm_health_set_max(gMarioState);
 
                     // Init transition
                     reset_camera(gCurrentArea->camera);

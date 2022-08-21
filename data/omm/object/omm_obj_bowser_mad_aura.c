@@ -124,7 +124,7 @@ const GeoLayout omm_geo_bowser_mad_aura[] = {
 // Behavior
 //
 
-const BehaviorScript omm_bhv_bowser_mad_aura[] = {
+const BehaviorScript bhvOmmBowserMadAura[] = {
     OBJ_TYPE_UNIMPORTANT,
     0x11010001,
     0x08000000,

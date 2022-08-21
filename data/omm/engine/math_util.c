@@ -7,10 +7,14 @@
 // Data
 //
 
+u16 gRandomSeed = 0;
 Vec2f gVec2fZero = { 0, 0 };
 Vec2f gVec2fOne = { 1, 1 };
 Vec3f gVec3fZero = { 0, 0, 0 };
 Vec3f gVec3fOne = { 1, 1, 1 };
+Vec3f gVec3fX = { 1, 0, 0 };
+Vec3f gVec3fY = { 0, 1, 0 };
+Vec3f gVec3fZ = { 0, 0, 1 };
 Vec3s gVec3sZero = { 0, 0, 0 };
 Vec3s gVec3sOne = { 1, 1, 1 };
 Vec4f gVec4fZero = { 0, 0, 0, 0 };
@@ -24,12 +28,13 @@ Mat4 gMat4Identity = { { 1, 0, 0, 0 }, { 0, 1, 0, 0 }, { 0, 0, 1, 0 }, { 0, 0, 0
 //
 
 u16 random_u16(void) {
-    static u16 s0 = 0; u16 s1;
-    s1 = ((s0 & 0x00FF) << 8) ^ s0;
-    s0 = ((s1 & 0x00FF) << 8) + ((s1 & 0xFF00) >> 8);
-    s1 = ((s1 & 0x00FF) << 1) ^ s0;
-    s0 = ((s1 >> 1) ^ 0xFF80) ^ ((s1 & 1) ? 0x8180 : 0x1FF4);
-    return s0;
+    u16 gRandomNext;
+    gRandomNext = ((gRandomSeed & 0x00FF) << 8) ^ gRandomSeed;
+    gRandomSeed = ((gRandomNext & 0x00FF) << 8) + ((gRandomNext & 0xFF00) >> 8);
+    gRandomNext = ((gRandomNext & 0x00FF) << 1) ^ gRandomSeed;
+    gRandomSeed = ((gRandomNext >> 1) ^ 0xFF80) ^ ((gRandomNext & 1) ? 0x8180 : 0x1FF4);
+    gRandomSeed = ((gRandomSeed != 0x560A) * gRandomSeed);
+    return gRandomSeed;
 }
 
 f32 random_float(void) {
@@ -61,15 +66,12 @@ void *vec2f_to_3d_plane(Vec3f dest, Vec2f src, Vec3f o, Vec3f e1, Vec3f e1Scale,
 }
 
 void *vec2f_get_projected_point_on_line(Vec2f dest, Vec2f p, Vec2f a, Vec2f b) {
-    Vec2f vab = { b[0] - a[0], b[1] - a[1] };
-    Vec2f vap = { p[0] - a[0], p[1] - a[1] };
-    f32 dpbap = (vab[0] * vap[0]) + (vab[1] * vap[1]);
-    f32 ivabn = 1.f / sqrtf(sqr_f(vab[0]) + sqr_f(vab[1]));
-    f32 vapn = sqrtf(sqr_f(vap[0]) + sqr_f(vap[1]));
-    f32 cospab = (dpbap * ivabn) / vapn;
-    f32 vaqn = cospab * vapn;
-    dest[0] = a[0] + (vaqn * vab[0]) * ivabn;
-    dest[1] = a[1] + (vaqn * vab[1]) * ivabn;
+    Vec2f ab = { b[0] - a[0], b[1] - a[1] };
+    Vec2f ap = { p[0] - a[0], p[1] - a[1] };
+    f32 dota = (ab[0] * ap[0]) + (ab[1] * ap[1]);
+    f32 iab2 = 1.f / ((ab[0] * ab[0]) + (ab[1] * ab[1]));
+    dest[0] = a[0] + ab[0] * dota * iab2;
+    dest[1] = a[1] + ab[1] * dota * iab2;
     return dest;
 }
 
@@ -113,6 +115,14 @@ void *vec3f_sum(Vec3f dest, Vec3f a, Vec3f b) {
     dest[2] = a[2] + b[2];
     return dest;
 }
+
+#if OMM_GAME_IS_XALO
+void vec3f_sub(Vec3f dest, Vec3f a) {
+    dest[0] -= a[0];
+    dest[1] -= a[1];
+    dest[2] -= a[2];
+}
+#endif
 
 void *vec3f_dif(Vec3f dest, Vec3f a, Vec3f b) {
     dest[0] = a[0] - b[0];
@@ -177,7 +187,7 @@ void vec3f_get_dist_and_angle(Vec3f from, Vec3f to, f32 *dist, s16 *pitch, s16 *
     *yaw = atan2s(z, x);
 }
 
-void vec3f_set_dist_and_angle(Vec3f from, Vec3f to, f32  dist, s16  pitch, s16  yaw) {
+void vec3f_set_dist_and_angle(Vec3f from, Vec3f to, f32 dist, s16 pitch, s16 yaw) {
     f32 dcos = dist * coss(pitch);
     to[0] = from[0] + dcos * sins(yaw);
     to[1] = from[1] + dist * sins(pitch);
@@ -308,6 +318,27 @@ bool vec3f_is_inside_cylinder(Vec3f v, Vec3f pos, f32 radius, f32 height, f32 do
     return hDist < radius;
 }
 
+void *vec3f_get_barycentric_coords(Vec3f coords, Vec3f p, Vec3f a, Vec3f b, Vec3f c) {
+    Vec3f v0; vec3f_dif(v0, b, a);
+    Vec3f v1; vec3f_dif(v1, c, a);
+    Vec3f v2; vec3f_dif(v2, p, a);
+    f32 d00 = vec3f_dot(v0, v0);
+    f32 d01 = vec3f_dot(v0, v1);
+    f32 d11 = vec3f_dot(v1, v1);
+    f32 d20 = vec3f_dot(v2, v0);
+    f32 d21 = vec3f_dot(v2, v1);
+    f32 mul = 1.f / (d00 * d11 - d01 * d01);
+    coords[1] = (d11 * d20 - d01 * d21) * mul;
+    coords[2] = (d00 * d21 - d01 * d20) * mul;
+    coords[0] = 1.f - coords[1] - coords[2];
+}
+
+void *vec3f_from_barycentric_coords(Vec3f dest, Vec3f coords, Vec3f a, Vec3f b, Vec3f c) {
+    dest[0] = coords[0] * a[0] + coords[1] * b[0] + coords[2] * c[0];
+    dest[1] = coords[0] * a[1] + coords[1] * b[1] + coords[2] * c[1];
+    dest[2] = coords[0] * a[2] + coords[1] * b[2] + coords[2] * c[2];
+}
+
 void *find_vector_perpendicular_to_plane(Vec3f dest, Vec3f a, Vec3f b, Vec3f c) {
     f32 ba0 = b[0] - a[0];
     f32 ba1 = b[1] - a[1];
@@ -392,6 +423,7 @@ void *vec3s_interpolate_angles(Vec3s dest, Vec3s from, Vec3s to, f32 t) {
 // Mat4/Mtx
 //
 
+#define IS_ZERO(x)      ((x) > -0.0001f && (x) < +0.0001f)
 #define MTXF_ONE(m, k)  ((u32 *) (m))[k] = 0x3F800000
 #define MTXF_33_1(m)    MTXF_ONE(m, 15)
 
@@ -499,15 +531,15 @@ void mtxf_billboard(Mat4 dest, Mat4 mtx, Vec3f position, s16 angle) {
     __m128 p1 = _mm_set1_ps(position[1]);
     __m128 p2 = _mm_set1_ps(position[2]);
     __m128 p3 = _mm_set1_ps(1.f);
-    __m128 m0 = _mm_load_ps(mtx[0]);
-    __m128 m1 = _mm_load_ps(mtx[1]);
-    __m128 m2 = _mm_load_ps(mtx[2]);
-    __m128 m3 = _mm_load_ps(mtx[3]);
+    __m128 m0 = _mm_loadu_ps(mtx[0]);
+    __m128 m1 = _mm_loadu_ps(mtx[1]);
+    __m128 m2 = _mm_loadu_ps(mtx[2]);
+    __m128 m3 = _mm_loadu_ps(mtx[3]);
     __m128 d3 = _mm_add_ps(
         _mm_add_ps(_mm_mul_ps(m0, p0), _mm_mul_ps(m1, p1)),
         _mm_add_ps(_mm_mul_ps(m2, p2), _mm_mul_ps(m3, p3))
     );
-    _mm_store_ps(dest[3], d3);
+    _mm_storeu_ps(dest[3], d3);
     MTXF_33_1(dest);
 }
 
@@ -520,15 +552,15 @@ void mtxf_cylboard(Mat4 dest, Mat4 mtx, Vec3f position, s16 angle) {
     __m128 p1 = _mm_set1_ps(position[1]);
     __m128 p2 = _mm_set1_ps(position[2]);
     __m128 p3 = _mm_set1_ps(1.f);
-    __m128 m0 = _mm_load_ps(mtx[0]);
-    __m128 m1 = _mm_load_ps(mtx[1]);
-    __m128 m2 = _mm_load_ps(mtx[2]);
-    __m128 m3 = _mm_load_ps(mtx[3]);
+    __m128 m0 = _mm_loadu_ps(mtx[0]);
+    __m128 m1 = _mm_loadu_ps(mtx[1]);
+    __m128 m2 = _mm_loadu_ps(mtx[2]);
+    __m128 m3 = _mm_loadu_ps(mtx[3]);
     __m128 d3 = _mm_add_ps(
         _mm_add_ps(_mm_mul_ps(m0, p0), _mm_mul_ps(m1, p1)),
         _mm_add_ps(_mm_mul_ps(m2, p2), _mm_mul_ps(m3, p3))
     );
-    _mm_store_ps(dest[3], d3);
+    _mm_storeu_ps(dest[3], d3);
     MTXF_33_1(dest);
 }
 
@@ -587,10 +619,10 @@ void mtxf_align_terrain_triangle(Mat4 mtx, Vec3f pos, s16 yaw, f32 radius) {
 
 void mtxf_mul(Mat4 dest, Mat4 a, Mat4 b) {
     Mat4 c;
-    __m128 b0 = _mm_load_ps(b[0]);
-    __m128 b1 = _mm_load_ps(b[1]);
-    __m128 b2 = _mm_load_ps(b[2]);
-    __m128 b3 = _mm_load_ps(b[3]);
+    __m128 b0 = _mm_loadu_ps(b[0]);
+    __m128 b1 = _mm_loadu_ps(b[1]);
+    __m128 b2 = _mm_loadu_ps(b[2]);
+    __m128 b3 = _mm_loadu_ps(b[3]);
     for (s32 i = 0; i != 4; ++i) {
         __m128 a0 = _mm_set1_ps(a[i][0]);
         __m128 a1 = _mm_set1_ps(a[i][1]);
@@ -600,7 +632,7 @@ void mtxf_mul(Mat4 dest, Mat4 a, Mat4 b) {
             _mm_add_ps(_mm_mul_ps(a0, b0), _mm_mul_ps(a1, b1)),
             _mm_add_ps(_mm_mul_ps(a2, b2), _mm_mul_ps(a3, b3))
         );
-        _mm_store_ps(c[i], ci);
+        _mm_storeu_ps(c[i], ci);
     }
     mtxf_copy(dest, c);
 }
@@ -612,69 +644,29 @@ void mtxf_scale_vec3f(Mat4 dest, Mat4 mtx, Vec3f s) {
     vec3f_mul(dest[2], s[2]);
 }
 
-void mtxf_interpolate(Mat4 dest, Mat4 from, Mat4 to, f32 t) {
-    // Note: This is NOT the proper way to interpolate a
-    // transform matrix, but for the sake of simplicity
-    // and computation time, it's good enough.
-    f32 *a = (f32 *) from;
-    f32 *b = (f32 *) to;
-    f32 *c = (f32 *) dest;
-    for (s32 i = 0; i != 16; ++i, a++, b++, c++) {
-        *c = lerp_f(t, *a, *b);
-    }
-    // Note 2: The xmm version seems to crash the game
-    // on release, but runs fine on debug.
-    // I'll keep that piece of code here just in case.
-    // __m128 t4 = _mm_set1_ps(t);
-    // for (s32 i = 0; i != 4; ++i) {
-    //     __m128 a = _mm_load_ps(from[i]);
-    //     __m128 b = _mm_load_ps(to[i]);
-    //     __m128 c = _mm_add_ps(a, _mm_mul_ps(_mm_sub_ps(b, a), t4));
-    //     _mm_store_ps(dest[i], c);
-    // }
-}
-
+// This assumes the last row is always [0, 0, 0, 1]
 bool mtxf_invert(Mat4 dest, Mat4 m) {
-    f32 A2323 = m[2][2] * m[3][3] - m[3][2] * m[2][3];
-    f32 A1323 = m[1][2] * m[3][3] - m[3][2] * m[1][3];
-    f32 A1223 = m[1][2] * m[2][3] - m[2][2] * m[1][3];
-    f32 A0323 = m[0][2] * m[3][3] - m[3][2] * m[0][3];
-    f32 A0223 = m[0][2] * m[2][3] - m[2][2] * m[0][3];
-    f32 A0123 = m[0][2] * m[1][3] - m[1][2] * m[0][3];
-    f32 A2313 = m[2][1] * m[3][3] - m[3][1] * m[2][3];
-    f32 A1313 = m[1][1] * m[3][3] - m[3][1] * m[1][3];
-    f32 A1213 = m[1][1] * m[2][3] - m[2][1] * m[1][3];
-    f32 A2312 = m[2][1] * m[3][2] - m[3][1] * m[2][2];
-    f32 A1312 = m[1][1] * m[3][2] - m[3][1] * m[1][2];
-    f32 A1212 = m[1][1] * m[2][2] - m[2][1] * m[1][2];
-    f32 A0313 = m[0][1] * m[3][3] - m[3][1] * m[0][3];
-    f32 A0213 = m[0][1] * m[2][3] - m[2][1] * m[0][3];
-    f32 A0312 = m[0][1] * m[3][2] - m[3][1] * m[0][2];
-    f32 A0212 = m[0][1] * m[2][2] - m[2][1] * m[0][2];
-    f32 A0113 = m[0][1] * m[1][3] - m[1][1] * m[0][3];
-    f32 A0112 = m[0][1] * m[1][2] - m[1][1] * m[0][2];
-    f32 det   = m[0][0] * (m[1][1] * A2323 - m[2][1] * A1323 + m[3][1] * A1223) 
-              - m[1][0] * (m[0][1] * A2323 - m[2][1] * A0323 + m[3][1] * A0223) 
-              + m[2][0] * (m[0][1] * A1323 - m[1][1] * A0323 + m[3][1] * A0123) 
-              - m[3][0] * (m[0][1] * A1223 - m[1][1] * A0223 + m[2][1] * A0123);
+    f32 det = m[0][0] * (m[1][1] * m[2][2] - m[2][1] * m[1][2]) 
+            - m[1][0] * (m[0][1] * m[2][2] - m[2][1] * m[0][2]) 
+            + m[2][0] * (m[0][1] * m[1][2] - m[1][1] * m[0][2]);
     if (det != 0.f) {
         det = 1.f / det;
-        dest[0][0] = det *  (m[1][1] * A2323 - m[2][1] * A1323 + m[3][1] * A1223);
-        dest[1][0] = det * -(m[1][0] * A2323 - m[2][0] * A1323 + m[3][0] * A1223);
-        dest[2][0] = det *  (m[1][0] * A2313 - m[2][0] * A1313 + m[3][0] * A1213);
-        dest[3][0] = det * -(m[1][0] * A2312 - m[2][0] * A1312 + m[3][0] * A1212);
-        dest[0][1] = det * -(m[0][1] * A2323 - m[2][1] * A0323 + m[3][1] * A0223);
-        dest[1][1] = det *  (m[0][0] * A2323 - m[2][0] * A0323 + m[3][0] * A0223);
-        dest[2][1] = det * -(m[0][0] * A2313 - m[2][0] * A0313 + m[3][0] * A0213);
-        dest[3][1] = det *  (m[0][0] * A2312 - m[2][0] * A0312 + m[3][0] * A0212);
-        dest[0][2] = det *  (m[0][1] * A1323 - m[1][1] * A0323 + m[3][1] * A0123);
-        dest[1][2] = det * -(m[0][0] * A1323 - m[1][0] * A0323 + m[3][0] * A0123);
-        dest[2][2] = det *  (m[0][0] * A1313 - m[1][0] * A0313 + m[3][0] * A0113);
-        dest[3][2] = det * -(m[0][0] * A1312 - m[1][0] * A0312 + m[3][0] * A0112);
-        dest[0][3] = det * -(m[0][1] * A1223 - m[1][1] * A0223 + m[2][1] * A0123);
-        dest[1][3] = det *  (m[0][0] * A1223 - m[1][0] * A0223 + m[2][0] * A0123);
-        dest[2][3] = det * -(m[0][0] * A1213 - m[1][0] * A0213 + m[2][0] * A0113);
-        dest[3][3] = det *  (m[0][0] * A1212 - m[1][0] * A0212 + m[2][0] * A0112);
+        dest[0][0] = det * (m[1][1] * m[2][2] - m[2][1] * m[1][2]);
+        dest[0][1] = det * (m[2][1] * m[0][2] - m[0][1] * m[2][2]);
+        dest[0][2] = det * (m[0][1] * m[1][2] - m[1][1] * m[0][2]);
+        dest[0][3] = 0;
+        dest[1][0] = det * (m[2][0] * m[1][2] - m[1][0] * m[2][2]);
+        dest[1][1] = det * (m[0][0] * m[2][2] - m[2][0] * m[0][2]);
+        dest[1][2] = det * (m[1][0] * m[0][2] - m[0][0] * m[1][2]);
+        dest[1][3] = 0;
+        dest[2][0] = det * (m[1][0] * m[2][1] - m[2][0] * m[1][1]);
+        dest[2][1] = det * (m[2][0] * m[0][1] - m[0][0] * m[2][1]);
+        dest[2][2] = det * (m[0][0] * m[1][1] - m[1][0] * m[0][1]);
+        dest[2][3] = 0;
+        dest[3][0] = -m[3][0] * dest[0][0] - m[3][1] * dest[1][0] - m[3][2] * dest[2][0];
+        dest[3][1] = -m[3][0] * dest[0][1] - m[3][1] * dest[1][1] - m[3][2] * dest[2][1];
+        dest[3][2] = -m[3][0] * dest[0][2] - m[3][1] * dest[1][2] - m[3][2] * dest[2][2];
+        MTXF_33_1(dest);
         return true;
     }
     return false;
@@ -724,6 +716,180 @@ void get_pos_from_transform_mtx(Vec3f dest, Mat4 objMtx, Mat4 camMtx) {
     dest[0] = vec3f_dot(v, camMtx[0]);
     dest[1] = vec3f_dot(v, camMtx[1]);
     dest[2] = vec3f_dot(v, camMtx[2]);
+}
+
+#define ANGLES(o, a0, a0x, a0m, a1, a1x, a1mY, a1mX, a2, a2x, a2mY, a2mX, a1e, a1ex, a1emY, a1emX, a2e) \
+if (order == o) { \
+    f32 ax, ay, az; \
+    a0 = asinf(a0x * clamp_f(a0m, -1, 1)); \
+    if (abs_f(a0m) < 0.999999f) { \
+        a1 = atan2f(a1x * a1mY, a1mX); \
+        a2 = atan2f(a2x * a2mY, a2mX); \
+    } else { \
+        a1e = atan2f(a1ex * a1emY, a1emX); \
+        a2e = 0; \
+    } \
+    vec3s_set(rotation, ax * RAD_TO_S16, ay * RAD_TO_S16, az * RAD_TO_S16); \
+    return; \
+}
+
+// Credits to https://github.com/mrdoob/three.js/blob/dev/src/math/Euler.js#L105
+// This code assumes that 'm' is a pure rotation matrix (i.e. no scaling, no shearing)
+void mtxf_get_rotation(Mat4 m, Vec3s rotation, enum AngleOrder order) {
+    static const f32 RAD_TO_S16 = 0x8000 / M_PI;
+    f32 m00 = m[0][0]; f32 m10 = m[1][0]; f32 m20 = m[2][0];
+    f32 m01 = m[0][1]; f32 m11 = m[1][1]; f32 m21 = m[2][1];
+    f32 m02 = m[0][2]; f32 m12 = m[1][2]; f32 m22 = m[2][2];
+    ANGLES(XYZ, ay, +1, m20, ax, -1, m21, m22, az, -1, m10, m00, ax, +1, m12, m11, az);
+    ANGLES(YXZ, ax, -1, m21, ay, +1, m20, m22, az, +1, m01, m11, ay, -1, m02, m00, az);
+    ANGLES(ZXY, ax, +1, m12, ay, -1, m02, m22, az, -1, m10, m11, az, +1, m01, m00, ay);
+    ANGLES(ZYX, ay, -1, m02, ax, +1, m12, m22, az, +1, m01, m00, az, -1, m10, m11, ax);
+    ANGLES(YZX, az, +1, m01, ax, -1, m21, m11, ay, -1, m02, m00, ay, +1, m20, m22, ax);
+    ANGLES(XZY, az, -1, m10, ax, +1, m12, m11, ay, +1, m20, m00, ax, -1, m21, m22, ay);
+}
+
+#define vec3f_ortho(v1, v2, shear)          { v1[0] -= v2[0] * (shear); v1[1] -= v2[1] * (shear); v1[2] -= v2[2] * (shear); }
+#define vec3f_unscale(v, scale, default)    if (IS_ZERO(scale)) { vec3f_copy(v, default); } else { vec3f_mul(v, 1.f / (scale)); }
+#define shear_unscale(shear, scale)         if (IS_ZERO(scale)) { shear = 0; } else { shear /= (scale); }
+
+// Credits to https://webdocs.cs.ualberta.ca/~graphics/books/GraphicsGems/gemsii/unmatrix.c
+void mtxf_get_components(Mat4 m, Vec3f translation, Vec3s rotation, Vec3f shear, Vec3f scale) {
+
+    // Translation
+    vec3f_copy(translation, m[3]);
+
+    // Axes
+    Vec3f xAxis, yAxis, zAxis;
+    vec3f_copy(xAxis, m[0]);
+    vec3f_copy(yAxis, m[1]);
+    vec3f_copy(zAxis, m[2]);
+
+    // X scale
+    scale[0] = vec3f_length(xAxis);
+    vec3f_unscale(xAxis, scale[0], gVec3fX);
+    
+    // XY shear
+    shear[0] = vec3f_dot(xAxis, yAxis);
+    vec3f_ortho(yAxis, xAxis, shear[0]);
+    
+    // Y scale
+    scale[1] = vec3f_length(yAxis);
+    vec3f_unscale(yAxis, scale[1], gVec3fY);
+    shear_unscale(shear[0], scale[1]);
+
+    // XZ shear
+    shear[1] = vec3f_dot(xAxis, zAxis);
+    vec3f_ortho(zAxis, xAxis, shear[1]);
+
+    // YZ shear
+    shear[2] = vec3f_dot(yAxis, zAxis);
+    vec3f_ortho(zAxis, yAxis, shear[2]);
+
+    // Z scale
+    scale[2] = vec3f_length(zAxis);
+    vec3f_unscale(zAxis, scale[2], gVec3fZ);
+    shear_unscale(shear[1], scale[2]);
+    shear_unscale(shear[2], scale[2]);
+
+    // (xAxis, yAxis, zAxis) is now an orthonormal coordinate system.
+    // Check for a system flip, and if that's the case, negate axes and scaling.
+    Vec3f yzCross;
+    if (vec3f_dot(xAxis, vec3f_cross(yzCross, yAxis, zAxis)) < 0.f) {
+        vec3f_mul(scale, -1);
+        vec3f_mul(xAxis, -1);
+        vec3f_mul(yAxis, -1);
+        vec3f_mul(zAxis, -1);
+    }
+
+    // Rotation
+    Mat4 mRot;
+    mtxf_identity(mRot);
+    vec3f_copy(mRot[0], xAxis);
+    vec3f_copy(mRot[1], yAxis);
+    vec3f_copy(mRot[2], zAxis);
+    mtxf_get_rotation(mRot, rotation, YXZ);
+}
+
+void mtxf_transform(Mat4 dest, Vec3f translation, Vec3s rotation, Vec3f shear, Vec3f scale) {
+    mtxf_zero(dest);
+    MTXF_33_1(dest);
+
+    // Scale
+    dest[0][0] = scale[0];
+    dest[1][1] = scale[1];
+    dest[2][2] = scale[2];
+
+    // Shear
+    dest[1][0] = dest[1][1] * shear[0];
+    dest[2][0] = dest[2][2] * shear[1];
+    dest[2][1] = dest[2][2] * shear[2];
+
+    // Rotate
+    Mat4 mRot;
+    mtxf_rotate_zxy_and_translate(mRot, gVec3fZero, rotation);
+    mtxf_mul(dest, dest, mRot);
+
+    // Translate
+    vec3f_copy(dest[3], translation);
+}
+
+void mtxf_interpolate(Mat4 dest, Mat4 from, Mat4 to, f32 t) {
+    Vec3f translation0, translation1, translationT;
+    Vec3s rotation0, rotation1, rotationT;
+    Vec3f shear0, shear1, shearT;
+    Vec3f scale0, scale1, scaleT;
+
+    // Extract matrix components
+    mtxf_get_components(from, translation0, rotation0, shear0, scale0);
+    mtxf_get_components(to, translation1, rotation1, shear1, scale1);
+
+    // Interpolate components
+    vec3f_interpolate(translationT, translation0, translation1, t);
+    vec3s_interpolate_angles(rotationT, rotation0, rotation1, t);
+    vec3f_interpolate(shearT, shear0, shear1, t);
+    vec3f_interpolate(scaleT, scale0, scale1, t);
+
+    // Build interpolated matrix
+    mtxf_transform(dest, translationT, rotationT, shearT, scaleT);
+}
+
+void mtxf_interpolate_fast(Mat4 dest, Mat4 from, Mat4 to, f32 t) {
+    // Note: This is NOT the proper way to interpolate a
+    // transform matrix, but for the sake of simplicity
+    // and computation time, it's good enough.
+    // f32 *a = (f32 *) from;
+    // f32 *b = (f32 *) to;
+    // f32 *c = (f32 *) dest;
+    // for (s32 i = 0; i != 16; ++i, a++, b++, c++) {
+    //     *c = lerp_f(t, *a, *b);
+    // }
+    __m128 t4 = _mm_set1_ps(t);
+    for (s32 i = 0; i != 4; ++i) {
+        __m128 a = _mm_loadu_ps(from[i]);
+        __m128 b = _mm_loadu_ps(to[i]);
+        __m128 c = _mm_add_ps(a, _mm_mul_ps(_mm_sub_ps(b, a), t4));
+        _mm_storeu_ps(dest[i], c);
+    }
+}
+
+void vtxv_interpolate(Vtx_t *dest, Vtx_t *from, Vtx_t *to, f32 t) {
+    vec3f_interpolate(dest->ob, from->ob, to->ob, t);
+    dest->tc[0] = (s16) lerp_f(t, from->tc[0], to->tc[0]);
+    dest->tc[1] = (s16) lerp_f(t, from->tc[1], to->tc[1]);
+    dest->cn[0] = (u8)  lerp_f(t, from->cn[0], to->cn[0]);
+    dest->cn[1] = (u8)  lerp_f(t, from->cn[1], to->cn[1]);
+    dest->cn[2] = (u8)  lerp_f(t, from->cn[2], to->cn[2]);
+    dest->cn[3] = (u8)  lerp_f(t, from->cn[3], to->cn[3]);
+}
+
+void vtxn_interpolate(Vtx_tn *dest, Vtx_tn *from, Vtx_tn *to, f32 t) {
+    vec3f_interpolate(dest->ob, from->ob, to->ob, t);
+    dest->tc[0] = (s16) lerp_f(t, from->tc[0], to->tc[0]);
+    dest->tc[1] = (s16) lerp_f(t, from->tc[1], to->tc[1]);
+    dest->n[0]  = (s8)  lerp_f(t, from->n[0], to->n[0]);
+    dest->n[1]  = (s8)  lerp_f(t, from->n[1], to->n[1]);
+    dest->n[2]  = (s8)  lerp_f(t, from->n[2], to->n[2]);
+    dest->a     = (u8)  lerp_f(t, from->a, to->a);
 }
 
 //
@@ -889,3 +1055,98 @@ s32 anim_spline_poll(Vec3f result) {
     }
     return hasEnded;
 }
+
+//
+// Gfx stuff
+//
+
+Gfx *gfx_create_identity_matrix(Gfx *gfx) {
+    static const Mtx sIdentityMatrix = { {
+        { 1.f, 0.f, 0.f, 0.f },
+        { 0.f, 1.f, 0.f, 0.f },
+        { 0.f, 0.f, 1.f, 0.f },
+        { 0.f, 0.f, 0.f, 1.f },
+    } };
+    gSPMatrix(gfx++, &sIdentityMatrix, G_MTX_MODELVIEW | G_MTX_LOAD | G_MTX_NOPUSH);
+    gSPMatrix(gfx++, &sIdentityMatrix, G_MTX_PROJECTION | G_MTX_LOAD | G_MTX_NOPUSH);
+    return gfx;
+}
+
+Gfx *gfx_create_translation_matrix(Gfx *gfx, Mtx *mtx, bool push, f32 x, f32 y, f32 z) {
+    guTranslate(mtx, x, y, z);
+    gSPMatrix(gfx++, mtx, G_MTX_MODELVIEW | G_MTX_MUL | (push ? G_MTX_PUSH : G_MTX_NOPUSH));
+    return gfx;
+}
+
+Gfx *gfx_create_rotation_matrix(Gfx *gfx, Mtx *mtx, bool push, f32 a, f32 x, f32 y, f32 z) {
+    guRotate(mtx, a, x, y, z);
+    gSPMatrix(gfx++, mtx, G_MTX_MODELVIEW | G_MTX_MUL | (push ? G_MTX_PUSH : G_MTX_NOPUSH));
+    return gfx;
+}
+
+Gfx *gfx_create_scale_matrix(Gfx *gfx, Mtx *mtx, bool push, f32 x, f32 y, f32 z) {
+    guScale(mtx, x, y, z);
+    gSPMatrix(gfx++, mtx, G_MTX_MODELVIEW | G_MTX_MUL | (push ? G_MTX_PUSH : G_MTX_NOPUSH));
+    return gfx;
+}
+
+Gfx *gfx_create_ortho_matrix(Gfx *gfx) {
+    static const Mtx sOrthoMatrix = { {
+        { 2.f / SCREEN_WIDTH, 0.f, 0.f, 0.f },
+        { 0.f, 2.f / SCREEN_HEIGHT, 0.f, 0.f },
+        { 0.f, 0.f, -0.1f, 0.f },
+        { -1.f, -1.f, 0.f, 1.f },
+    } };
+    gSPPerspNormalize(gfx++, 0xFFFF);
+    gfx = gfx_create_identity_matrix(gfx);
+    gSPMatrix(gfx++, &sOrthoMatrix, G_MTX_PROJECTION | G_MTX_MUL | G_MTX_NOPUSH);
+    return gfx;
+}
+
+//
+// Frame interpolation
+//
+
+void interp_data_update(InterpData *data, bool shouldInterp, Gfx *pos, f32 x, f32 y, f32 z, f32 a, f32 s, f32 t) {
+
+    // Previous frame
+    if (gFrameInterpolation && shouldInterp && data->inited) {
+        data->pos = pos;
+        data->x0 = data->x1;
+        data->y0 = data->y1;
+        data->z0 = data->z1;
+        data->a0 = data->a1;
+        data->s0 = data->s1;
+        data->t0 = data->t1;
+    } else {
+        data->pos = NULL;
+        data->x0 = x;
+        data->y0 = y;
+        data->z0 = z;
+        data->a0 = a;
+        data->s0 = s;
+        data->t0 = t;
+    }
+
+    // Current frame
+    data->x1 = x;
+    data->y1 = y;
+    data->z1 = z;
+    data->a1 = a;
+    data->s1 = s;
+    data->t1 = t;
+    data->inited = true;
+}
+
+void interp_data_lerp(InterpData *data, f32 t) {
+    data->x = lerp_f(t, data->x0, data->x1);
+    data->y = lerp_f(t, data->y0, data->y1);
+    data->z = lerp_f(t, data->z0, data->z1);
+    data->a = lerp_f(t, data->a0, data->a1);
+    data->s = lerp_f(t, data->s0, data->s1);
+    data->t = lerp_f(t, data->t0, data->t1);
+}
+
+// Legacy
+void interpolate_vectors(Vec3f res, UNUSED Vec3f a, Vec3f b) { vec3f_copy(res, b); }
+void interpolate_vectors_s16(Vec3s res, UNUSED Vec3s a, Vec3s b) { vec3s_copy(res, b); }

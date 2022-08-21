@@ -6,15 +6,15 @@
 // Init
 //
 
-bool cappy_crazy_box_init(UNUSED struct Object *o) {
-    gOmmData->object->state.actionState = 0;
+bool omm_cappy_crazy_box_init(UNUSED struct Object *o) {
+    gOmmObject->state.actionState = 0;
     return true;
 }
 
-void cappy_crazy_box_end(UNUSED struct Object *o) {
+void omm_cappy_crazy_box_end(UNUSED struct Object *o) {
 }
 
-f32 cappy_crazy_box_get_top(struct Object *o) {
+f32 omm_cappy_crazy_box_get_top(struct Object *o) {
     return 200.f * o->oScaleY;
 }
 
@@ -22,7 +22,7 @@ f32 cappy_crazy_box_get_top(struct Object *o) {
 // Update
 //
 
-s32 cappy_crazy_box_update(struct Object *o) {
+s32 omm_cappy_crazy_box_update(struct Object *o) {
 
     // Hitbox
     o->hitboxRadius = omm_capture_get_hitbox_radius(o);
@@ -36,7 +36,7 @@ s32 cappy_crazy_box_update(struct Object *o) {
 
     // Inputs
     if (!omm_mario_is_locked(gMarioState)) {
-        if (obj_is_on_ground(o) && (gOmmData->object->state.actionState == 3)) {
+        if (obj_is_on_ground(o) && (gOmmObject->state.actionState == 3)) {
             omm_mario_unpossess_object(gMarioState, OMM_MARIO_UNPOSSESS_ACT_JUMP_OUT, false, 0);
             obj_destroy(o);
             POBJ_RETURN_UNPOSSESS;
@@ -48,7 +48,7 @@ s32 cappy_crazy_box_update(struct Object *o) {
             } break;
             case POBJ_RESULT_HOP_LARGE: {
                 if (POBJ_B_BUTTON_DOWN) {
-                    o->oVelY = omm_capture_get_jump_velocity(o) * POBJ_JUMP_MULTIPLIER * (1.50f + 0.25f * (gOmmData->object->state.actionState++)); // 1.50, 1.75, 2.00
+                    o->oVelY = omm_capture_get_jump_velocity(o) * POBJ_PHYSICS_JUMP * (1.50f + 0.25f * (gOmmObject->state.actionState++)); // 1.50, 1.75, 2.00
                     obj_spawn_white_puff(o, SOUND_GENERAL_BOING2);
                 } else {
                     obj_play_sound(o, SOUND_GENERAL_BOING1);
@@ -73,8 +73,8 @@ s32 cappy_crazy_box_update(struct Object *o) {
     obj_update_gfx(o);
 
     // Cappy values
-    gOmmData->object->cappy.offset[1] = 200.f;
-    gOmmData->object->cappy.scale     = 2.f;
+    gOmmObject->cappy.offset[1] = 200.f;
+    gOmmObject->cappy.scale     = 2.f;
 
     // OK
     POBJ_RETURN_OK;

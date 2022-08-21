@@ -3,13 +3,17 @@
 
 #include "types.h"
 
+#define MAX_REFERENCED_WALLS 4 // DO NOT INCREASE THIS VALUE, THIS COULD CAUSE A BUFFER OVERFLOW IN collide_with_walls()
+#define MAX_RAYCAST_COL_HITS 16
+#define MAX_COLLISION_RADIUS 200
+
 struct WallCollisionData {
     f32 x, y, z;
     f32 offsetY;
     f32 radius;
     s16 unk14;
     s16 numWalls;
-    struct Surface *walls[16];
+    struct Surface *walls[MAX_REFERENCED_WALLS];
 };
 
 struct FloorGeometry {
@@ -22,13 +26,13 @@ struct FloorGeometry {
 
 typedef struct {
     Vec3f pos;
-    f32 dist;
-    f32 ratio;
+    f32 dist; // from focus to hit pos
+    f32 ratio; // dist / maxDist
     struct Surface *surf;
 } RayHit;
 
 typedef struct {
-    RayHit hits[16];
+    RayHit hits[MAX_RAYCAST_COL_HITS];
     s32 count;
 } RayCollisionData;
 
@@ -38,6 +42,9 @@ typedef struct {
 #define RAYCAST_FLAG_WALLS      (1 << 3)
 #define RAYCAST_FLAGS_SURFACES  (RAYCAST_FLAG_FLOORS | RAYCAST_FLAG_CEILS | RAYCAST_FLAG_WALLS)
 #define RAYCAST_FLAGS_CAMERA    (RAYCAST_FLAG_NO_CAM_COL | RAYCAST_FLAG_FLOORS | RAYCAST_FLAG_CEILS | RAYCAST_FLAG_WALLS)
+
+f32 get_surface_height_at_pos(f32 x, f32 z, struct Surface *surf);
+bool recompute_surface_parameters(struct Surface *surf);
 
 s32 find_wall_collisions(struct WallCollisionData *data);
 s32 f32_find_wall_collision(f32 *x, f32 *y, f32 *z, f32 offsetY, f32 radius);

@@ -6,7 +6,7 @@
 // Behavior
 //
 
-static void omm_bhv_goomba_stack_update() {
+static void bhv_omm_goomba_stack_update() {
     struct Object *o = gCurrentObject;
     struct Object *p = o->oGoombaStackParent;
 
@@ -15,7 +15,6 @@ static void omm_bhv_goomba_stack_update() {
         gCurBhvCommand = o->behavior - 2;
         o->curBhvCommand = o->behavior;
         o->bhvStackIndex = 0;
-        o->parentObj = o;
         o->oAction = 0;
         return;
     }
@@ -40,14 +39,14 @@ static void omm_bhv_goomba_stack_update() {
     obj_update_blink_state(o, &o->oGoombaBlinkTimer, 30, 50, 5);
 }
 
-const BehaviorScript omm_bhv_goomba_stack[] = {
+const BehaviorScript bhvOmmGoombaStack[] = {
     OBJ_TYPE_GENACTOR,
     0x08000000,
-    0x0C000000, (uintptr_t) omm_bhv_goomba_stack_update,
+    0x0C000000, (uintptr_t) bhv_omm_goomba_stack_update,
     0x09000000,
 };
 
-const BehaviorScript omm_bhv_goomba_stack_capture[] = {
+const BehaviorScript bhvOmmGoombaStackCapture[] = {
     OBJ_TYPE_GENACTOR,
     0x08000000,
     0x09000000,
@@ -58,10 +57,10 @@ const BehaviorScript omm_bhv_goomba_stack_capture[] = {
 //
 
 bool omm_obj_is_goomba_stack(struct Object *o) {
-    return (o->curBhvCommand >= omm_bhv_goomba_stack &&
-            o->curBhvCommand <  omm_bhv_goomba_stack + OMM_ARRAY_SIZE(omm_bhv_goomba_stack)) || (
-            o->curBhvCommand >= omm_bhv_goomba_stack_capture &&
-            o->curBhvCommand <  omm_bhv_goomba_stack_capture + OMM_ARRAY_SIZE(omm_bhv_goomba_stack_capture));
+    return (o->curBhvCommand >= bhvOmmGoombaStack &&
+            o->curBhvCommand <  bhvOmmGoombaStack + omm_static_array_length(bhvOmmGoombaStack)) || (
+            o->curBhvCommand >= bhvOmmGoombaStackCapture &&
+            o->curBhvCommand <  bhvOmmGoombaStackCapture + omm_static_array_length(bhvOmmGoombaStackCapture));
 }
 
 //

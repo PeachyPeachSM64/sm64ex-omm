@@ -14,7 +14,7 @@ const GeoLayout omm_geo_bowser_mine[] = {
 // Behavior
 //
 
-const BehaviorScript omm_bhv_bowser_mine[] = {
+const BehaviorScript bhvOmmBowserMine[] = {
     OBJ_TYPE_GENACTOR,
     0x110100C1,
     0x08000000,
@@ -26,7 +26,7 @@ const BehaviorScript omm_bhv_bowser_mine[] = {
 //
 
 struct Object *omm_spawn_bowser_mine(struct Object *o, f32 x, f32 y, f32 z, s16 yaw) {
-    struct Object *mine = obj_spawn_from_geo(o, omm_geo_bowser_mine, omm_bhv_bowser_mine);
+    struct Object *mine = obj_spawn_from_geo(o, omm_geo_bowser_mine, bhvOmmBowserMine);
     mine->oPosX         = x;
     mine->oPosY         = y;
     mine->oPosZ         = z;

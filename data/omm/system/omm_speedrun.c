@@ -1,17 +1,18 @@
 #define OMM_ALL_HEADERS
 #include "data/omm/omm_includes.h"
 #undef OMM_ALL_HEADERS
-#pragma GCC push_options
-#pragma GCC optimize ("O0")
 
 //
 // LiveSplit auto-splitter support
 // The file 'omm.asl' is needed to make it work
 //
 
+#pragma GCC push_options
+#pragma GCC optimize ("O0")
 static volatile u8 sOmmSplitFlags[16] = { 'O', 'M', 'M', 'A', 'U', 'T', 'O', 'S', 'P', 'L', 'I', 'T', 0, 0, 0, 0 };
 static volatile s32 *sOmmSplitIndex = (s32 *) (&sOmmSplitFlags[12]);
 static OmmArray sOmmSplits = omm_array_zero;
+#pragma GCC pop_options
 
 void omm_speedrun_split(s32 numStars) {
     if (0 <= *sOmmSplitIndex && *sOmmSplitIndex < omm_array_count(sOmmSplits) && omm_array_get(sOmmSplits, s32, *sOmmSplitIndex) == numStars) {
@@ -45,8 +46,8 @@ static const char *omm_speedrun_lss_get_data(const char *line, const char *begin
     if (begin && end) {
         begin += strlen(beginsWith);
         s32 length = (s32) (end - begin);
-        OMM_MEMSET(data, 0, sizeof(data));
-        OMM_MEMCPY(data, begin, max_s(0, length));
+        omm_zero(data, sizeof(data));
+        omm_copy(data, begin, max_s(0, length));
         return data;
     }
     return NULL;
@@ -79,10 +80,10 @@ static bool omm_speedrun_split_data_is_bowser(const char *split) {
 }
 
 OMM_AT_STARTUP static void omm_speedrun_init() {
-    OMM_STRING(filename, 256, "%s/%s", OMM_EXE_FOLDER, "splits.lss");
+    omm_cat_paths(filename, 256, sys_exe_path(), "splits.lss");
     FILE *f = fopen(filename, "r");
     if (f) {
-        printf("\nExtracting split data from file: %s\n", filename);
+        omm_log("Extracting split data from file: %s\n",, filename);
 
         // Looking for game info and splits
         OmmArray splits = omm_array_zero;
@@ -93,14 +94,14 @@ OMM_AT_STARTUP static void omm_speedrun_init() {
             // Game name
             const char *gameName = omm_speedrun_lss_get_data(buffer, "<GameName>", "</GameName>");
             if (gameName) {
-                printf("Game: %s\n", gameName);
+                omm_printf("Game: %s\n",, gameName);
                 continue;
             }
             
             // Category name
             const char *categoryName = omm_speedrun_lss_get_data(buffer, "<CategoryName>", "</CategoryName>");
             if (categoryName) {
-                printf("Category: %s\n", categoryName);
+                omm_printf("Category: %s\n",, categoryName);
                 continue;
             }
 
@@ -120,35 +121,33 @@ OMM_AT_STARTUP static void omm_speedrun_init() {
             if (isSegment) {
                 const char *splitName = omm_speedrun_lss_get_data(buffer, "<Name>", "</Name>");
                 if (splitName) {
-                    omm_array_add(splits, ptr, OMM_MEMDUP(splitName, strlen(splitName) + 1));
+                    omm_array_add(splits, ptr, omm_dup(splitName, strlen(splitName) + 1));
                 }
             }
         }
 
         // Generating splits
-        printf("Splits:\n");
+        omm_printf("Splits:\n");
         omm_array_for_each(splits, p) {
             const char *split = (const char *) p->as_ptr;
             s32 numStars = omm_speedrun_split_data_get_stars(split);
             if (numStars != -1) {
                 omm_array_add(sOmmSplits, s32, numStars);
-                printf("- %d Star split: %s\n", numStars, split);
+                omm_printf("- %d Star split: %s\n",, numStars, split);
             } else if (i_p == omm_array_count(splits) - 1) {
                 omm_array_add(sOmmSplits, s32, -1);
-                printf("- Grand Star split: %s\n", split);
+                omm_printf("- Grand Star split: %s\n",, split);
             } else if (omm_speedrun_split_data_is_bowser(split)) {
                 omm_array_add(sOmmSplits, s32, -1);
-                printf("- Bowser key split: %s\n", split);
+                omm_printf("- Bowser key split: %s\n",, split);
             } else {
-                printf("[!] Invalid split format: %s\n", split);
+                omm_printf("[!] Invalid split format: %s\n",, split);
             }
         }
 
         // Done
-        printf("Data successfully extracted. Closing file.\n\n");
+        omm_log("Data successfully extracted. Closing file.\n\n");
         fflush(stdout);
         fclose(f);
     }
 }
-
-#pragma GCC pop_options

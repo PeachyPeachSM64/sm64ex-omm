@@ -334,7 +334,7 @@ const GeoLayout omm_geo_menu_button_wario[] = {
 // Behavior
 //
 
-const BehaviorScript omm_bhv_menu_character_select_button[] = {
+const BehaviorScript bhvOmmMenuCharacterSelectButton[] = {
     OBJ_TYPE_LEVEL,
     0x04000000, (uintptr_t) bhvMenuButton
 };

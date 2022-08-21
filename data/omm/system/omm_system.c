@@ -1,7 +1,6 @@
 #define OMM_ALL_HEADERS
 #include "data/omm/omm_includes.h"
 #undef OMM_ALL_HEADERS
-s16 gOmm1HPMode = FALSE;
 
 //
 // Data
@@ -9,6 +8,7 @@ s16 gOmm1HPMode = FALSE;
 
 typedef void (*OmmRoutine)(void);
 static OmmArray sOmmRoutines[OMM_ROUTINE_TYPES] = { omm_array_zero, omm_array_zero, omm_array_zero };
+static bool sOmmSkipIntro = false;
 static bool sOmmIsMainMenu = true;
 static bool sOmmIsLevelEntry = false;
 static bool sOmmIsEndingCutscene = false;
@@ -25,41 +25,6 @@ static const u16 sOmmCompleteSaveButtons[] = { U_CBUTTONS, U_CBUTTONS, D_CBUTTON
 static s32 sOmmCompleteSaveSequenceIndex = 0;
 extern void omm_set_complete_save_file(s32 fileIndex);
 extern void omm_stars_init_bits();
-
-//
-// Paths
-//
-
-const char *omm_exe_path() {
-    static char *sOmmExePath = NULL;
-    if (!sOmmExePath) {
-        sOmmExePath = SDL_GetBasePath();
-        if (sOmmExePath) {
-            s32 length = strlen(sOmmExePath);
-            for (char *sep = sOmmExePath + length - 1; *sep == '/' || *sep == '\\'; --sep) {
-                *sep = 0;
-            }
-        }
-    }
-    return sOmmExePath;
-}
-
-const char *omm_user_path() {
-    static char *sOmmUserPath = NULL;
-    if (!sOmmUserPath) {
-        sOmmUserPath = SDL_GetPrefPath("", "sm64ex");
-        if (sOmmUserPath) {
-            s32 length = strlen(sOmmUserPath);
-            for (char *sep = sOmmUserPath + length - 1; *sep == '/' || *sep == '\\'; --sep) {
-                *sep = 0;
-            }
-            if (!fs_sys_dir_exists(sOmmUserPath)) {
-                fs_sys_mkdir(sOmmUserPath);
-            }
-        }
-    }
-    return sOmmUserPath;
-}
 
 //
 // Routines
@@ -90,10 +55,11 @@ void omm_select_save_file(s32 saveFileNum) {
     sOmmIsMainMenu = false;
     sOmmIsLevelEntry = false;
     sOmmIsEndingCutscene = false;
-    if (sOmmCompleteSaveSequenceIndex == OMM_ARRAY_SIZE(sOmmCompleteSaveButtons) - 1) {
+    if (sOmmCompleteSaveSequenceIndex == omm_static_array_length(sOmmCompleteSaveButtons) - 1) {
         omm_set_complete_save_file(saveFileNum - 1);
     }
     sOmmCompleteSaveSequenceIndex = 0;
+    sOmmSkipIntro = (gPlayer1Controller->buttonPressed & START_BUTTON) != 0;
 }
 
 void omm_return_to_main_menu() {
@@ -126,11 +92,7 @@ void omm_update() {
             if ((buttonPressed & buttonRequired) == buttonRequired) {
                 sOmmCompleteSaveSequenceIndex++;
                 if (sOmmCompleteSaveButtons[sOmmCompleteSaveSequenceIndex] == A_BUTTON) {
-#if OMM_GAME_IS_R96A
-                    play_sound(SOUND_MENU_STAR_SOUND | 0xFF00, gGlobalSoundArgs); // For some reason the 'right answer' sound effect doesn't play
-#else
                     play_sound(SOUND_GENERAL2_RIGHT_ANSWER | 0xFF00, gGlobalSoundArgs);
-#endif
                 }
             } else {
                 sOmmCompleteSaveSequenceIndex = 0;
@@ -142,7 +104,7 @@ void omm_update() {
 
     // Inhibit inputs (except camera controls) during a transition
     if (omm_is_transition_active() || omm_is_warping()) {
-        for (s32 i = 0; i != OMM_ARRAY_SIZE(gControllers); ++i) {
+        for (s32 i = 0; i != omm_static_array_length(gControllers); ++i) {
             gControllers[i].rawStickX      = 0;
             gControllers[i].rawStickY      = 0;
             gControllers[i].stickX         = 0;
@@ -153,9 +115,19 @@ void omm_update() {
         }
     }
 
+    // Auto-update display options
+    static ConfigWindow sConfigWindow;
+    configWindow.settings_changed = sConfigWindow.fullscreen != configWindow.fullscreen || sConfigWindow.vsync != configWindow.vsync;
+    sConfigWindow = configWindow;
+
     // Misc stuff
     sOmmTimerReturnToMainMenu--;
     gPrevFrameObjectCount = 0;
+
+    // Disable Star Road Hard Mode to use OMM's
+#if OMM_GAME_IS_SMSR
+    gStarRoadHardMode = FALSE;
+#endif
 }
 
 //
@@ -172,9 +144,9 @@ static void omm_pre_render_update_stars_models() {
                 if (!obj_is_dormant(star) &&
                     star->behavior != bhvBowserKey &&
                     star->behavior != bhvGrandStar &&
-                    star->behavior != omm_bhv_sparkly_star) {
+                    star->behavior != bhvOmmSparklyStar) {
                     bool numberSpawned = false;
-                    for_each_object_with_behavior(obj, omm_bhv_star_number) {
+                    for_each_object_with_behavior(obj, bhvOmmStarNumber) {
                         if (obj->activeFlags && obj->parentObj == star) {
                             numberSpawned = true;
                             break;
@@ -253,10 +225,10 @@ static void omm_pre_render_update_stars_models() {
 
 static void omm_pre_render_update_caps_models() {
     static s32 (*sCapFunctions[])(s32) = {
-        omm_player_get_normal_cap,
-        omm_player_get_wing_cap,
-        omm_player_get_metal_cap,
-        omm_player_get_winged_metal_cap,
+        omm_player_graphics_get_normal_cap,
+        omm_player_graphics_get_wing_cap,
+        omm_player_graphics_get_metal_cap,
+        omm_player_graphics_get_winged_metal_cap,
     };
     s32 playerIndex = omm_player_get_selected_index();
     omm_array_for_each(omm_obj_get_cap_behaviors(), p) {
@@ -287,10 +259,11 @@ void omm_pre_render() {
         gMarioState->marioBodyState->modelState |= 0x100;
     }
 
-    // Crystal sparkles
-    if (gMarioObject && OMM_EXTRAS_CRYSTAL_STARS_REWARD) {
-        if (!omm_is_game_paused() && ((gGlobalTimer & 1) || vec3f_dist(gMarioState->pos, gOmmData->mario->state.previous.pos) > 20.f)) {
-            omm_spawn_sparkly_star_sparkle_mario(gMarioObject, OMM_SSM_HARD, 60.f, 10.f, 0.5f, 30.f);
+    // Sparkly Stars sparkles
+    if (OMM_EXTRAS_SPARKLY_STARS_REWARD && gMarioObject && get_dialog_id() == -1 && !omm_is_game_paused()) {
+        f32 vel = vec3f_dist(gMarioState->pos, gOmmMario->state.previous.pos);
+        if (gGlobalTimer % (3 - clamp_s(vel / 25.f, 0, 2)) == 0) {
+            omm_spawn_sparkly_star_sparkle_mario(gMarioObject, OMM_EXTRAS_SPARKLY_STARS_REWARD, 60.f, 10.f, 0.4f, 30.f);
         }
     }
 
@@ -336,9 +309,30 @@ void *omm_update_cmd(void *cmd, s32 reg) {
         sOmmIsEndingCakeScreen = false;
     }
 
+    // Loading screen
+    if (cmd == level_script_entry_point) {
+        extern void omm_loading_screen_start();
+        omm_loading_screen_start();
+        return NULL;
+    }
+
+    // Palette editor
+    if (!omm_is_transition_active()) {
+        switch (gOmmPaletteEditorState) {
+            case OMM_PALETTE_EDITOR_STATE_OPENING: { gOmmPaletteEditorState = OMM_PALETTE_EDITOR_STATE_OPEN;   return (void *) omm_level_palette_editor; }
+            case OMM_PALETTE_EDITOR_STATE_CLOSING: { gOmmPaletteEditorState = OMM_PALETTE_EDITOR_STATE_CLOSED; return (void *) level_script_file_select; }
+        }
+    }
+
+    // Skip Intro cutscene (NOT Lakitu and Bowser's laugh)
+    static const uintptr_t cmd_lvl_init_from_save_file[] = { CALL(0, lvl_init_from_save_file) };
+    if (omm_same(cmd, cmd_lvl_init_from_save_file, sizeof(cmd_lvl_init_from_save_file))) {
+        configSkipIntro = sOmmSkipIntro;
+    }
+
     // Level Entry
     static const uintptr_t cmd_level_entry[] = { CALL(0, lvl_init_or_update) };
-    if (OMM_MEMCMP(cmd, cmd_level_entry, sizeof(cmd_level_entry))) {
+    if (omm_same(cmd, cmd_level_entry, sizeof(cmd_level_entry))) {
         sOmmIsMainMenu = false;
         sOmmIsLevelEntry = true;
         sOmmIsEndingCakeScreen = false;
@@ -347,7 +341,11 @@ void *omm_update_cmd(void *cmd, s32 reg) {
 
     // Star Select
     static const uintptr_t cmd_star_select[] = { EXECUTE(0x14, _menuSegmentRomStart, _menuSegmentRomEnd, level_script_star_select) };
-    if (OMM_MEMCMP(cmd, cmd_star_select, sizeof(cmd_star_select)) && OMM_STARS_NON_STOP_NOT_ENDING_CUTSCENE) {
+    if (omm_same(cmd, cmd_star_select, sizeof(cmd_star_select)) && (OMM_STARS_NON_STOP_NOT_ENDING_CUTSCENE
+#if OMM_GAME_IS_SMSR
+        || (reg == LEVEL_CCM && sWarpDest.nodeId == 0x02) // Chuckya Harbor secret entrance
+#endif
+    )) {
         gCurrLevelNum = reg;
         gCurrCourseNum = omm_level_get_course(reg);
         gCurrActNum = 1;
@@ -382,6 +380,16 @@ void *omm_update_cmd(void *cmd, s32 reg) {
         sOmmIsEndingCutscene = true;
     }
 
+    // Skip Ending
+    if (!sOmmIsEndingCakeScreen && (
+        gMarioState->action == ACT_END_WAVING_CUTSCENE ||
+        gMarioState->action == ACT_END_PEACH_CUTSCENE ||
+        gMarioState->action == ACT_CREDITS_CUTSCENE) && (
+        gPlayer1Controller->buttonPressed & START_BUTTON)) {
+        play_transition(WARP_TRANSITION_FADE_INTO_STAR, 30, 0, 0, 0);
+        sOmmTimerReturnToMainMenu = 45;
+    }
+
     // Ending return to Main Menu
     switch (sOmmTimerReturnToMainMenu) {
 
@@ -392,7 +400,7 @@ void *omm_update_cmd(void *cmd, s32 reg) {
                 sOmmIsEndingCakeScreen = true;
             }
             static const uintptr_t cmd_ending_cake_sound[] = { CALL(0, lvl_play_the_end_screen_sound) };
-            if (OMM_MEMCMP(cmd, cmd_ending_cake_sound, sizeof(cmd_ending_cake_sound))) {
+            if (omm_same(cmd, cmd_ending_cake_sound, sizeof(cmd_ending_cake_sound))) {
                 sOmmTimerReturnToMainMenu = 300;
             }
         } break;

@@ -2,31 +2,7 @@
 #include "data/omm/omm_includes.h"
 #undef OMM_ALL_HEADERS
 
-static void omm_common_ground_knockback_action(struct MarioState *m, s32 animID, bool playHeavyLandingSound) {
-
-    // Animation
-    obj_anim_play(m->marioObj, animID, 1.25f);
-    m->actionTimer++;
-
-    // Sound effects
-    if (playHeavyLandingSound) play_mario_heavy_landing_sound_once(m, SOUND_ACTION_TERRAIN_BODY_HIT_GROUND);
-    play_sound_if_no_flag(m, m->actionArg > 0 ? SOUND_MARIO_ATTACKED : SOUND_MARIO_OOOF2, MARIO_MARIO_SOUND_PLAYED);
-
-    // Step
-    mario_set_forward_vel(m, clamp_f(m->forwardVel * 0.9f, -32.f, 32.f));
-    if (perform_ground_step(m) == GROUND_STEP_LEFT_GROUND) {
-        omm_mario_set_action(m, m->forwardVel >= 0.f ? ACT_FORWARD_AIR_KB : ACT_BACKWARD_AIR_KB, m->actionArg, 0);
-    } else if (obj_anim_is_at_end(m->marioObj)) {
-        if (m->health <= OMM_HEALTH_DEAD) {
-            omm_mario_set_action(m, ACT_STANDING_DEATH, 0, 0);
-        } else {
-            m->invincTimer = 30 * (m->actionArg > 0);
-            omm_mario_set_action(m, ACT_IDLE, 0, 0);
-        }
-    }
-}
-
-static void anim_and_audio_for_walk(struct MarioState *m) {
+static void omm_act_walking_anim_and_audio(struct MarioState *m) {
     f32 walkingSpeed = max_3_f(4.f, m->forwardVel, m->intendedMag);
     struct {
         bool condToTipToe;
@@ -121,9 +97,17 @@ static void anim_and_audio_for_walk(struct MarioState *m) {
     }
 }
 
-//
-// Actions
-//
+//////////
+// SM64 //
+//////////
+
+static s32 omm_act_moving_cancels__cappy_roll_punch_spin(struct MarioState *m) {
+    action_cappy(1, ACT_OMM_CAPPY_THROW_GROUND, 0, RETURN_CANCEL);
+    action_zb_pressed(OMM_MOVESET_ODYSSEY, ACT_OMM_ROLL, 0, RETURN_CANCEL);
+    action_b_pressed(OMM_MOVESET_ODYSSEY, ACT_MOVE_PUNCHING, 0, RETURN_CANCEL);
+    action_spin(OMM_MOVESET_ODYSSEY, ACT_OMM_SPIN_GROUND, 0, RETURN_CANCEL);
+    return OMM_MARIO_ACTION_RESULT_CONTINUE;
+}
 
 static s32 omm_act_walking(struct MarioState *m) {
     mario_drop_held_object(m);
@@ -152,7 +136,7 @@ static s32 omm_act_walking(struct MarioState *m) {
                 obj_anim_play(m->marioObj, MARIO_ANIM_RUNNING, max_f(1.f, abs_f(m->forwardVel / 2.f)));
                 play_step_sound(m, 9, 45);
             } else {
-                anim_and_audio_for_walk(m);
+                omm_act_walking_anim_and_audio(m);
             }
             if (m->intendedMag - m->forwardVel > 16.f) {
                 m->particleFlags |= PARTICLE_DUST;
@@ -165,118 +149,93 @@ static s32 omm_act_walking(struct MarioState *m) {
         } break;
 
         case GROUND_STEP_HIT_WALL: {
-            push_or_sidle_wall(m, gOmmData->mario->state.previous.pos);
+            push_or_sidle_wall(m, gOmmMario->state.previous.pos);
             m->actionTimer = 0;
         } break;
     }
     check_ledge_climb_down(m);
-    tilt_body_walking(m, gOmmData->mario->state.previous.angle[1]);
+    tilt_body_walking(m, gOmmMario->state.previous.angle[1]);
     return OMM_MARIO_ACTION_RESULT_BREAK;
 }
 
-static s32 omm_act_turning_around(struct MarioState *m) {
-    action_cappy(1, ACT_OMM_CAPPY_THROW_GROUND, 0, RETURN_CANCEL);
-    action_zb_pressed(OMM_MOVESET_ODYSSEY, ACT_OMM_ROLL, 0, RETURN_CANCEL);
-    action_b_pressed(OMM_MOVESET_ODYSSEY, ACT_MOVE_PUNCHING, 0, RETURN_CANCEL);
-    action_spin(OMM_MOVESET_ODYSSEY, ACT_OMM_SPIN_GROUND, 0, RETURN_CANCEL);
-    return OMM_MARIO_ACTION_RESULT_CONTINUE;
-}
+static s32 omm_act_riding_shell_ground(struct MarioState *m) {
+    if (!OMM_MOVESET_ODYSSEY) return OMM_MARIO_ACTION_RESULT_CONTINUE;
+    action_a_pressed(1, ACT_RIDING_SHELL_JUMP, 1, RETURN_CANCEL, play_mario_sound(m, SOUND_ACTION_TERRAIN_JUMP, 0););
+    action_z_pressed(1, ACT_WALKING, 0, RETURN_CANCEL, mario_stop_riding_object(m););
+    action_cappy(1, ACT_RIDING_SHELL_GROUND, 0xFF, NO_RETURN);
 
-static s32 omm_act_finish_turning_around(struct MarioState *m) {
-    action_cappy(1, ACT_OMM_CAPPY_THROW_GROUND, 0, RETURN_CANCEL);
-    action_zb_pressed(OMM_MOVESET_ODYSSEY, ACT_OMM_ROLL, 0, RETURN_CANCEL);
-    action_spin(OMM_MOVESET_ODYSSEY, ACT_OMM_SPIN_GROUND, 0, RETURN_CANCEL);
-    return OMM_MARIO_ACTION_RESULT_CONTINUE;
-}
-
-static s32 omm_act_braking(struct MarioState *m) {
-    action_cappy(1, ACT_OMM_CAPPY_THROW_GROUND, 0, RETURN_CANCEL);
-    action_zb_pressed(OMM_MOVESET_ODYSSEY, ACT_OMM_ROLL, 0, RETURN_CANCEL);
-    action_spin(OMM_MOVESET_ODYSSEY, ACT_OMM_SPIN_GROUND, 0, RETURN_CANCEL);
-    if (omm_peach_vibe_is_gloom() && !(m->input & INPUT_NONZERO_ANALOG)) {
-        mario_set_forward_vel(m, m->forwardVel * 0.9f);
+    // Make sure the shell stays above water
+    if (m->floorHeight < m->waterLevel) {
+        m->floorHeight = m->waterLevel;
+        m->floor = &gWaterSurfacePseudoFloor;
+        m->floor->originOffset = -m->waterLevel;
     }
-    return OMM_MARIO_ACTION_RESULT_CONTINUE;
-}
 
-static s32 omm_act_decelerating(struct MarioState *m) {
-    action_cappy(1, ACT_OMM_CAPPY_THROW_GROUND, 0, RETURN_CANCEL);
-    action_zb_pressed(OMM_MOVESET_ODYSSEY, ACT_OMM_ROLL, 0, RETURN_CANCEL);
-    action_b_pressed(OMM_MOVESET_ODYSSEY, ACT_MOVE_PUNCHING, 0, RETURN_CANCEL);
-    action_spin(OMM_MOVESET_ODYSSEY, ACT_OMM_SPIN_GROUND, 0, RETURN_CANCEL);
-    if (omm_peach_vibe_is_gloom() && !(m->input & INPUT_NONZERO_ANALOG)) {
-        mario_set_forward_vel(m, m->forwardVel * 0.9f);
+    // Update velocity
+    f32 targetVel = clamp_f(m->intendedMag * 2.5f, OMM_MARIO_SHELL_RIDE_MIN_SPEED, OMM_MARIO_SHELL_RIDE_MAX_SPEED);
+    m->forwardVel += (m->forwardVel <= targetVel ? 1.5f * (1.f - clamp_f(m->forwardVel, 0.f, targetVel) / OMM_MARIO_SHELL_RIDE_MAX_SPEED) : -1.f * (m->floor->normal.y >= 0.95f));
+    m->forwardVel = min_f(m->forwardVel, OMM_MARIO_SHELL_RIDE_MAX_SPEED); // Keep the shell backwards hyperspeed
+
+    // Update yaw
+    s16 prevYaw = m->faceAngle[1];
+    s32 handling = lerp_f(sqrtf(invlerp_0_1_f(abs_f(m->forwardVel), 0.f, OMM_MARIO_SHELL_RIDE_MAX_SPEED)), 0x2000, 0x800);
+    m->faceAngle[1] = m->intendedYaw - approach_s32((s16) (m->intendedYaw - m->faceAngle[1]), 0, handling, handling);
+    apply_slope_accel(m);
+
+    // Update tilt
+    s16 deltaYaw = clamp_s((s16) (m->faceAngle[1] - prevYaw), -0x800, +0x800);
+    s16 currTilt = (s16) (m->actionTimer & 0xFFFC);
+    s16 cTiltDir = (s16) (m->actionTimer & 0x0003);
+    if (abs_s(deltaYaw) > 0x400) {
+        currTilt = approach_s32(currTilt, deltaYaw, 0x100, 0x100);
+        if (currTilt > 0) cTiltDir = 1;
+        else if (currTilt < 0) cTiltDir = 2;
+        else cTiltDir = 0;
+    } else {
+        switch (cTiltDir) {
+            case 0: currTilt = approach_s32(currTilt,  0x000, 0x100, 0x100); break;
+            case 1: currTilt = approach_s32(currTilt, +0x400, 0x100, 0x100); break;
+            case 2: currTilt = approach_s32(currTilt, -0x400, 0x100, 0x100); break;
+        }
+        if (abs_s(currTilt) == 0x400) cTiltDir = 0;
     }
-    return OMM_MARIO_ACTION_RESULT_CONTINUE;
-}
+    m->actionTimer = (u16) ((((u16) currTilt) & 0xFFFC) | (((u16) cTiltDir) & 0x0003));
+    
+    // Perform step
+    s32 step = perform_ground_step(m);
+    action_condition(step == GROUND_STEP_LEFT_GROUND, ACT_RIDING_SHELL_FALL, 0, RETURN_BREAK, play_mario_sound(m, SOUND_ACTION_TERRAIN_JUMP, 0););
+    action_condition(step == GROUND_STEP_HIT_WALL && m->forwardVel > OMM_MARIO_SHELL_RIDE_BONK_SPEED, ACT_BACKWARD_GROUND_KB, 0, RETURN_BREAK,
+        mario_stop_riding_object(m);
+        play_sound((m->flags & MARIO_METAL_CAP) ? SOUND_ACTION_METAL_BONK : SOUND_ACTION_BONK, m->marioObj->oCameraToObject);
+        m->particleFlags |= PARTICLE_VERTICAL_STAR;
+    );
 
-static s32 omm_act_crawling(struct MarioState *m) {
-    action_cappy(1, ACT_OMM_CAPPY_THROW_GROUND, 0, RETURN_CANCEL);
-    action_b_pressed(OMM_MOVESET_ODYSSEY, ACT_OMM_ROLL, 0, RETURN_CANCEL);
-    return OMM_MARIO_ACTION_RESULT_CONTINUE;
-}
-
-static s32 omm_act_crouch_slide(struct MarioState *m) {
-    action_cappy(1, ACT_OMM_CAPPY_THROW_GROUND, 0, RETURN_CANCEL);
-    action_b_pressed(OMM_MOVESET_ODYSSEY, ACT_OMM_ROLL, 0, RETURN_CANCEL);
-    return OMM_MARIO_ACTION_RESULT_CONTINUE;
-}
-
-static s32 omm_act_jump_land(struct MarioState *m) {
-    action_cappy(1, ACT_OMM_CAPPY_THROW_GROUND, 0, RETURN_CANCEL);
-    action_zb_pressed(OMM_MOVESET_ODYSSEY, ACT_OMM_ROLL, 0, RETURN_CANCEL);
-    return OMM_MARIO_ACTION_RESULT_CONTINUE;
-}
-
-static s32 omm_act_freefall_land(struct MarioState *m) {
-    action_cappy(1, ACT_OMM_CAPPY_THROW_GROUND, 0, RETURN_CANCEL);
-    action_zb_pressed(OMM_MOVESET_ODYSSEY, ACT_OMM_ROLL, 0, RETURN_CANCEL);
-    return OMM_MARIO_ACTION_RESULT_CONTINUE;
-}
-
-static s32 omm_act_double_jump_land(struct MarioState *m) {
-    action_cappy(1, ACT_OMM_CAPPY_THROW_GROUND, 0, RETURN_CANCEL);
-    action_zb_pressed(OMM_MOVESET_ODYSSEY, ACT_OMM_ROLL, 0, RETURN_CANCEL);
-    return OMM_MARIO_ACTION_RESULT_CONTINUE;
-}
-
-static s32 omm_act_side_flip_land(struct MarioState *m) {
-    action_cappy(1, ACT_OMM_CAPPY_THROW_GROUND, 0, RETURN_CANCEL);
-    action_zb_pressed(OMM_MOVESET_ODYSSEY, ACT_OMM_ROLL, 0, RETURN_CANCEL);
-    return OMM_MARIO_ACTION_RESULT_CONTINUE;
-}
-
-static s32 omm_act_triple_jump_land(struct MarioState *m) {
-    action_cappy(1, ACT_OMM_CAPPY_THROW_GROUND, 0, RETURN_CANCEL);
-    action_zb_pressed(OMM_MOVESET_ODYSSEY, ACT_OMM_ROLL, 0, RETURN_CANCEL);
-    return OMM_MARIO_ACTION_RESULT_CONTINUE;
-}
-
-static s32 omm_act_backflip_land(struct MarioState *m) {
-    action_cappy(1, ACT_OMM_CAPPY_THROW_GROUND, 0, RETURN_CANCEL);
-    action_zb_pressed(OMM_MOVESET_ODYSSEY, ACT_OMM_ROLL, 0, RETURN_CANCEL);
-    return OMM_MARIO_ACTION_RESULT_CONTINUE;
-}
-
-static s32 omm_act_quicksand_jump_land(struct MarioState *m) {
-    action_cappy(1, ACT_OMM_CAPPY_THROW_GROUND, 0, RETURN_CANCEL);
-    action_zb_pressed(OMM_MOVESET_ODYSSEY, ACT_OMM_ROLL, 0, RETURN_CANCEL);
-    return OMM_MARIO_ACTION_RESULT_CONTINUE;
-}
-
-static s32 omm_act_long_jump_land(struct MarioState *m) {
-#if !OMM_GAME_IS_R96A
-    if (OMM_CHEAT_BLJ_ANYWHERE_REQ) {
-        action_a_pressed(1, ACT_LONG_JUMP, 0, RETURN_CANCEL, m->vel[1] = -50.f;);
-    }
+    // Animation and sound
+    if (m->actionArg != 0xFF) {
+#if OMM_GAME_IS_R96X
+        obj_anim_play(m->marioObj, OMM_PLAYER_IS_WARIO ? MARIO_ANIM_RIDING_SHELL : MARIO_ANIM_BEND_KNESS_RIDING_SHELL, 1.f);
+#else
+        obj_anim_play(m->marioObj, MARIO_ANIM_BEND_KNESS_RIDING_SHELL, 1.f);
 #endif
-    action_condition(!OMM_CHEAT_BLJ_ANYWHERE_REQ && omm_mario_is_roll_landing(m), ACT_OMM_ROLL, 0, RETURN_CANCEL);
-    action_cappy(1, ACT_OMM_CAPPY_THROW_GROUND, 0, RETURN_CANCEL);
-    return OMM_MARIO_ACTION_RESULT_CONTINUE;
+        obj_anim_loop(m->marioObj);
+        tilt_body_ground_shell(m, m->faceAngle[1] - currTilt);
+        m->marioObj->oGfxPos[1] -= 45.f;
+    } else {
+        vec3s_zero(m->marioBodyState->torsoAngle);
+        vec3s_zero(m->marioBodyState->headAngle);
+    }
+    if (m->floor->type == SURFACE_BURNING) {
+        play_sound(SOUND_MOVING_RIDING_SHELL_LAVA, m->marioObj->oCameraToObject);
+    } else {
+        play_sound(SOUND_MOVING_TERRAIN_RIDING_SHELL + m->terrainSoundAddend, m->marioObj->oCameraToObject);
+    }
+    adjust_sound_for_speed(m);
+    return OMM_MARIO_ACTION_RESULT_BREAK;
 }
 
-static s32 omm_act_dive_slide(struct MarioState *m) {
-    action_condition(omm_mario_is_roll_landing(m), ACT_OMM_ROLL, 0, RETURN_CANCEL);
+static s32 omm_act_crouching_crawling(struct MarioState *m) {
+    action_cappy(1, ACT_OMM_CAPPY_THROW_GROUND, 0, RETURN_CANCEL);
+    action_b_pressed(OMM_MOVESET_ODYSSEY, ACT_OMM_ROLL, 0, RETURN_CANCEL);
     return OMM_MARIO_ACTION_RESULT_CONTINUE;
 }
 
@@ -288,78 +247,20 @@ static s32 omm_act_burning_ground(struct MarioState *m) {
     return OMM_MARIO_ACTION_RESULT_CONTINUE;
 }
 
-static s32 omm_act_hard_backward_ground_kb(struct MarioState *m) {
-    if (OMM_MOVESET_CLASSIC || m->health <= OMM_HEALTH_ODYSSEY_DEAD) {
-        return OMM_MARIO_ACTION_RESULT_CONTINUE;
+static s32 omm_act_decelerating(struct MarioState *m) {
+    if (omm_peach_vibe_is_gloom() && !(m->input & INPUT_NONZERO_ANALOG)) {
+        mario_set_forward_vel(m, m->forwardVel * 0.9f);
     }
-
-    omm_common_ground_knockback_action(m, MARIO_ANIM_FALL_OVER_BACKWARDS, true);
-    if (m->actionTimer == 43 && m->prevAction == ACT_SPECIAL_DEATH_EXIT) {
-        play_sound(SOUND_MARIO_MAMA_MIA, m->marioObj->oCameraToObject);
-    }
-    if (m->actionTimer == 55) {
-        play_mario_landing_sound_once(m, SOUND_ACTION_TERRAIN_LANDING);
-    }
-
-    return OMM_MARIO_ACTION_RESULT_BREAK;
+    return omm_act_moving_cancels__cappy_roll_punch_spin(m);
 }
 
-static s32 omm_act_hard_forward_ground_kb(struct MarioState *m) {
-    if (OMM_MOVESET_CLASSIC || m->health <= OMM_HEALTH_ODYSSEY_DEAD) {
-        return OMM_MARIO_ACTION_RESULT_CONTINUE;
+static s32 omm_act_slide(struct MarioState *m) {
+    action_condition(omm_mario_is_roll_landing(m), ACT_OMM_ROLL, 0, RETURN_CANCEL);
+    if (!m->heldObj && !(m->input & INPUT_ABOVE_SLIDE) && (m->action & ACT_FLAG_DIVING)) {
+        action_a_pressed(OMM_MOVESET_ODYSSEY, m->forwardVel > 0 ? ACT_FORWARD_ROLLOUT : ACT_BACKWARD_ROLLOUT, 0, RETURN_CANCEL);
+        action_b_pressed(OMM_MOVESET_ODYSSEY, m->forwardVel > 0 ? ACT_FORWARD_ROLLOUT : ACT_BACKWARD_ROLLOUT, 0, RETURN_CANCEL);
     }
-
-    omm_common_ground_knockback_action(m, MARIO_ANIM_LAND_ON_STOMACH, true);
-    return OMM_MARIO_ACTION_RESULT_BREAK;
-}
-
-static s32 omm_act_backward_ground_kb(struct MarioState *m) {
-    if (OMM_MOVESET_CLASSIC || m->health <= OMM_HEALTH_ODYSSEY_DEAD) {
-        return OMM_MARIO_ACTION_RESULT_CONTINUE;
-    }
-
-    omm_common_ground_knockback_action(m, MARIO_ANIM_BACKWARD_KB, true);
-    return OMM_MARIO_ACTION_RESULT_BREAK;
-}
-
-static s32 omm_act_forward_ground_kb(struct MarioState *m) {
-    if (OMM_MOVESET_CLASSIC || m->health <= OMM_HEALTH_ODYSSEY_DEAD) {
-        return OMM_MARIO_ACTION_RESULT_CONTINUE;
-    }
-
-    omm_common_ground_knockback_action(m, MARIO_ANIM_FORWARD_KB, true);
-    return OMM_MARIO_ACTION_RESULT_BREAK;
-}
-
-static s32 omm_act_soft_backward_ground_kb(struct MarioState *m) {
-    if (OMM_MOVESET_CLASSIC || m->health <= OMM_HEALTH_ODYSSEY_DEAD) {
-        return OMM_MARIO_ACTION_RESULT_CONTINUE;
-    }
-
-    omm_common_ground_knockback_action(m, MARIO_ANIM_SOFT_BACK_KB, false);
-    return OMM_MARIO_ACTION_RESULT_BREAK;
-}
-
-static s32 omm_act_soft_forward_ground_kb(struct MarioState *m) {
-    if (OMM_MOVESET_CLASSIC || m->health <= OMM_HEALTH_ODYSSEY_DEAD) {
-        return OMM_MARIO_ACTION_RESULT_CONTINUE;
-    }
-
-    omm_common_ground_knockback_action(m, MARIO_ANIM_SOFT_FRONT_KB, false);
-    return OMM_MARIO_ACTION_RESULT_BREAK;
-}
-
-static s32 omm_act_ground_bonk(struct MarioState *m) {
-    if (OMM_MOVESET_CLASSIC || m->health <= OMM_HEALTH_ODYSSEY_DEAD) {
-        return OMM_MARIO_ACTION_RESULT_CONTINUE;
-    }
-
-    omm_common_ground_knockback_action(m, MARIO_ANIM_GROUND_BONK, true);
-    if (m->actionTimer == 25) {
-        play_mario_landing_sound(m, SOUND_ACTION_TERRAIN_LANDING);
-    }
-
-    return OMM_MARIO_ACTION_RESULT_BREAK;
+    return OMM_MARIO_ACTION_RESULT_CONTINUE;
 }
 
 static s32 omm_act_move_punching(struct MarioState *m) {
@@ -368,7 +269,61 @@ static s32 omm_act_move_punching(struct MarioState *m) {
     return OMM_MARIO_ACTION_RESULT_CONTINUE;
 }
 
-#if OMM_GAME_IS_R96A
+static s32 omm_act_knockback_ground(struct MarioState *m, s32 animID, u16 landingSoundTimer, bool playHeavyLandingSound) {
+    if (OMM_MOVESET_CLASSIC || omm_mario_is_dead(m)) {
+        return OMM_MARIO_ACTION_RESULT_CONTINUE;
+    }
+
+    // Animation
+    obj_anim_play(m->marioObj, animID, 1.25f);
+    m->actionTimer++;
+
+    // Heavy landing sound
+    if (playHeavyLandingSound) {
+        play_mario_heavy_landing_sound_once(m, SOUND_ACTION_TERRAIN_BODY_HIT_GROUND);
+    }
+
+    // Landing sound
+    if (m->actionTimer == landingSoundTimer) {
+        play_mario_landing_sound(m, SOUND_ACTION_TERRAIN_LANDING);
+    }
+
+    // Death exit sound
+    if (m->actionTimer == 43 && m->prevAction == ACT_SPECIAL_DEATH_EXIT) {
+        play_sound(SOUND_MARIO_MAMA_MIA, m->marioObj->oCameraToObject);
+    }
+
+    // Attacked sound
+    play_sound_if_no_flag(m, m->actionArg > 0 ? SOUND_MARIO_ATTACKED : SOUND_MARIO_OOOF2, MARIO_MARIO_SOUND_PLAYED);
+
+    // Step
+    mario_set_forward_vel(m, clamp_f(m->forwardVel * 0.9f, -32.f, 32.f));
+    s32 step = perform_ground_step(m);
+    if (step == GROUND_STEP_LEFT_GROUND) {
+        omm_mario_set_action(m, m->forwardVel >= 0.f ? ACT_FORWARD_AIR_KB : ACT_BACKWARD_AIR_KB, m->actionArg, 0);
+    } else if (obj_anim_is_at_end(m->marioObj)) {
+        if (omm_mario_is_dead(m)) {
+            omm_mario_set_action(m, ACT_STANDING_DEATH, 0, 0);
+        } else {
+            m->invincTimer = 30 * (m->actionArg > 0);
+            omm_mario_set_action(m, ACT_IDLE, 0, 0);
+        }
+    }
+    return OMM_MARIO_ACTION_RESULT_BREAK;
+}
+
+static s32 omm_act_long_jump_land(struct MarioState *m) {
+#if !OMM_GAME_IS_R96X
+    if (OMM_CHEAT_BLJ_ANYWHERE_REQ) {
+        action_a_pressed(1, ACT_LONG_JUMP, 0, RETURN_CANCEL, m->vel[1] = -50.f;);
+    }
+#endif
+    action_condition(!OMM_CHEAT_BLJ_ANYWHERE_REQ && omm_mario_is_roll_landing(m), ACT_OMM_ROLL, 0, RETURN_CANCEL);
+    action_cappy(1, ACT_OMM_CAPPY_THROW_GROUND, 0, RETURN_CANCEL);
+    return OMM_MARIO_ACTION_RESULT_CONTINUE;
+}
+
+#if OMM_GAME_IS_R96X
 static s32 omm_act_wario_charge(struct MarioState *m) {
     extern s32 charge_count;
     action_cappy(1, ACT_OMM_CAPPY_THROW_GROUND, 0, RETURN_CANCEL, charge_count = 0;);
@@ -376,6 +331,10 @@ static s32 omm_act_wario_charge(struct MarioState *m) {
     return OMM_MARIO_ACTION_RESULT_CONTINUE;
 }
 #endif
+
+/////////////
+// Odyssey //
+/////////////
 
 static s32 omm_act_roll(struct MarioState *m) {
     bool superRoll = (m->prevAction == ACT_GROUND_POUND_LAND) || (m->prevAction == ACT_OMM_SPIN_POUND_LAND) || ((m->prevAction == ACT_OMM_ROLL) && (m->forwardVel >= 45.f));
@@ -457,6 +416,7 @@ static s32 omm_act_cappy_throw_ground(struct MarioState *m) {
     action_zb_pressed(OMM_MOVESET_ODYSSEY, ACT_OMM_ROLL, 0, RETURN_CANCEL);
     action_a_pressed(OMM_MOVESET_ODYSSEY, ACT_JUMP, 0, RETURN_CANCEL);
     action_spin(OMM_MOVESET_ODYSSEY, ACT_OMM_SPIN_GROUND, 0, RETURN_CANCEL);
+
     f32 f = coss(abs_s(m->faceAngle[1] - m->intendedYaw)) * m->controller->stickMag / 64.f;
     mario_set_forward_vel(m, m->forwardVel * clamp_f(f, 0.80f, 0.98f));
     s32 step = perform_ground_step(m);
@@ -465,9 +425,9 @@ static s32 omm_act_cappy_throw_ground(struct MarioState *m) {
     return OMM_MARIO_ACTION_RESULT_CONTINUE;
 }
 
-//
-// Moving
-//
+////////////
+// Moving //
+////////////
 
 static bool omm_check_common_moving_cancels(struct MarioState *m) {
 
@@ -484,7 +444,7 @@ static bool omm_check_common_moving_cancels(struct MarioState *m) {
     }
 
     // Dead
-    if ((m->health <= OMM_HEALTH_DEAD) && !(m->action & (ACT_FLAG_INTANGIBLE | ACT_FLAG_INVULNERABLE))) {
+    if (omm_mario_is_dead(m) && !(m->action & (ACT_FLAG_INTANGIBLE | ACT_FLAG_INVULNERABLE))) {
         drop_and_set_mario_action(m, ACT_STANDING_DEATH, 0);
         return true;
     }
@@ -493,11 +453,11 @@ static bool omm_check_common_moving_cancels(struct MarioState *m) {
 }
 
 s32 omm_mario_execute_moving_action(struct MarioState *m) {
-    gOmmData->mario->wallSlide.jumped = false;
-    gOmmData->mario->peach.floated = false;
-    gOmmData->mario->cappy.bounced = false;
-    gOmmData->mario->state.airCombo = 0;
-    gOmmData->mario->midairSpin.counter = 0;
+    gOmmMario->wallSlide.jumped = false;
+    gOmmMario->peach.floated = false;
+    gOmmMario->cappy.bounced = false;
+    gOmmMario->state.airCombo = 0;
+    gOmmMario->midairSpin.counter = 0;
 
     // Cancels
     if (omm_check_common_moving_cancels(m)) {
@@ -518,32 +478,49 @@ s32 omm_mario_execute_moving_action(struct MarioState *m) {
 
     // Actions
     switch (m->action) {
+
+        // SM64
         case ACT_WALKING:                   return omm_act_walking(m);
-        case ACT_TURNING_AROUND:            return omm_act_turning_around(m);
-        case ACT_FINISH_TURNING_AROUND:     return omm_act_finish_turning_around(m);
-        case ACT_BRAKING:                   return omm_act_braking(m);
-        case ACT_CRAWLING:                  return omm_act_crawling(m);
-        case ACT_DECELERATING:              return omm_act_decelerating(m);
-        case ACT_CROUCH_SLIDE:              return omm_act_crouch_slide(m);
-        case ACT_JUMP_LAND:                 return omm_act_jump_land(m);
-        case ACT_FREEFALL_LAND:             return omm_act_freefall_land(m);
-        case ACT_DOUBLE_JUMP_LAND:          return omm_act_double_jump_land(m);
-        case ACT_SIDE_FLIP_LAND:            return omm_act_side_flip_land(m);
-        case ACT_TRIPLE_JUMP_LAND:          return omm_act_triple_jump_land(m);
-        case ACT_BACKFLIP_LAND:             return omm_act_backflip_land(m);
-        case ACT_QUICKSAND_JUMP_LAND:       return omm_act_quicksand_jump_land(m);
-        case ACT_LONG_JUMP_LAND:            return omm_act_long_jump_land(m);
-        case ACT_DIVE_SLIDE:                return omm_act_dive_slide(m);
+        case ACT_HOLD_WALKING:              return OMM_MARIO_ACTION_RESULT_CONTINUE;
+        case ACT_TURNING_AROUND:            return omm_act_moving_cancels__cappy_roll_punch_spin(m);
+        case ACT_FINISH_TURNING_AROUND:     return omm_act_moving_cancels__cappy_roll_punch_spin(m);
+        case ACT_BRAKING:                   return omm_act_decelerating(m);
+        case ACT_RIDING_SHELL_GROUND:       return omm_act_riding_shell_ground(m);
+        case ACT_HOLD_HEAVY_WALKING:        return OMM_MARIO_ACTION_RESULT_CONTINUE;
+        case ACT_CRAWLING:                  return omm_act_crouching_crawling(m);
         case ACT_BURNING_GROUND:            return omm_act_burning_ground(m);
-        case ACT_HARD_BACKWARD_GROUND_KB:   return omm_act_hard_backward_ground_kb(m);
-        case ACT_HARD_FORWARD_GROUND_KB:    return omm_act_hard_forward_ground_kb(m);
-        case ACT_BACKWARD_GROUND_KB:        return omm_act_backward_ground_kb(m);
-        case ACT_FORWARD_GROUND_KB:         return omm_act_forward_ground_kb(m);
-        case ACT_SOFT_BACKWARD_GROUND_KB:   return omm_act_soft_backward_ground_kb(m);
-        case ACT_SOFT_FORWARD_GROUND_KB:    return omm_act_soft_forward_ground_kb(m);
-        case ACT_GROUND_BONK:               return omm_act_ground_bonk(m);
+        case ACT_DECELERATING:              return omm_act_decelerating(m);
+        case ACT_HOLD_DECELERATING:         return OMM_MARIO_ACTION_RESULT_CONTINUE;
+        case ACT_BEGIN_SLIDING:             return OMM_MARIO_ACTION_RESULT_CONTINUE;
+        case ACT_HOLD_BEGIN_SLIDING:        return OMM_MARIO_ACTION_RESULT_CONTINUE;
+        case ACT_BUTT_SLIDE:                return omm_act_slide(m);
+        case ACT_STOMACH_SLIDE:             return omm_act_slide(m);
+        case ACT_HOLD_BUTT_SLIDE:           return OMM_MARIO_ACTION_RESULT_CONTINUE;
+        case ACT_HOLD_STOMACH_SLIDE:        return OMM_MARIO_ACTION_RESULT_CONTINUE;
+        case ACT_DIVE_SLIDE:                return omm_act_slide(m);
         case ACT_MOVE_PUNCHING:             return omm_act_move_punching(m);
-#if OMM_GAME_IS_R96A
+        case ACT_CROUCH_SLIDE:              return omm_act_crouching_crawling(m);
+        case ACT_SLIDE_KICK_SLIDE:          return omm_act_slide(m);
+        case ACT_HARD_BACKWARD_GROUND_KB:   return omm_act_knockback_ground(m, MARIO_ANIM_FALL_OVER_BACKWARDS, 55, true);
+        case ACT_HARD_FORWARD_GROUND_KB:    return omm_act_knockback_ground(m, MARIO_ANIM_LAND_ON_STOMACH, 0, true);
+        case ACT_BACKWARD_GROUND_KB:        return omm_act_knockback_ground(m, MARIO_ANIM_BACKWARD_KB, 0, true);
+        case ACT_FORWARD_GROUND_KB:         return omm_act_knockback_ground(m, MARIO_ANIM_FORWARD_KB, 0, true);
+        case ACT_SOFT_BACKWARD_GROUND_KB:   return omm_act_knockback_ground(m, MARIO_ANIM_SOFT_BACK_KB, 0, false);
+        case ACT_SOFT_FORWARD_GROUND_KB:    return omm_act_knockback_ground(m, MARIO_ANIM_SOFT_FRONT_KB, 0, false);
+        case ACT_GROUND_BONK:               return omm_act_knockback_ground(m, MARIO_ANIM_GROUND_BONK, 25, true);
+        case ACT_DEATH_EXIT_LAND:           return OMM_MARIO_ACTION_RESULT_CONTINUE;
+        case ACT_JUMP_LAND:                 return omm_act_moving_cancels__cappy_roll_punch_spin(m);
+        case ACT_FREEFALL_LAND:             return omm_act_moving_cancels__cappy_roll_punch_spin(m);
+        case ACT_DOUBLE_JUMP_LAND:          return omm_act_moving_cancels__cappy_roll_punch_spin(m);
+        case ACT_SIDE_FLIP_LAND:            return omm_act_moving_cancels__cappy_roll_punch_spin(m);
+        case ACT_HOLD_JUMP_LAND:            return OMM_MARIO_ACTION_RESULT_CONTINUE;
+        case ACT_HOLD_FREEFALL_LAND:        return OMM_MARIO_ACTION_RESULT_CONTINUE;
+        case ACT_QUICKSAND_JUMP_LAND:       return omm_act_moving_cancels__cappy_roll_punch_spin(m);
+        case ACT_HOLD_QUICKSAND_JUMP_LAND:  return OMM_MARIO_ACTION_RESULT_CONTINUE;
+        case ACT_TRIPLE_JUMP_LAND:          return omm_act_moving_cancels__cappy_roll_punch_spin(m);
+        case ACT_LONG_JUMP_LAND:            return omm_act_long_jump_land(m);
+        case ACT_BACKFLIP_LAND:             return omm_act_moving_cancels__cappy_roll_punch_spin(m);
+#if OMM_GAME_IS_R96X
         case ACT_WARIO_CHARGE:              return omm_act_wario_charge(m);
 #endif
 

@@ -1,7 +1,8 @@
 #ifndef OMM_OBJECT_FIELDS_H
 #define OMM_OBJECT_FIELDS_H
 
-#include "data/omm/omm_includes.h"
+#include "types.h"
+#include "object_fields.h"
 
 struct OmmData {
     void (*reset)(void);
@@ -16,12 +17,12 @@ struct OmmData {
 
         // State data
         struct {
-            s32 hp;
+            s32 ticks;
             s32 coins;
             s32 o2;
             s32 airCombo;
-            s32 poleTimer;
             f32 peakHeight;
+            void *poleObject;
             struct {
                 s32 dmg;
                 s32 gfx;
@@ -63,6 +64,7 @@ struct OmmData {
         struct {
             s16 yaw;
             s32 timer;
+            s32 decel;
         } spin;
 
         // Midair spin move data
@@ -109,9 +111,15 @@ struct OmmData {
         // Sparkly stars data
         struct {
             s32 mode;
-            s32 flags;
             s32 ending;
             s32 cheats[4];
+            bool starBlock;
+            bool grandStar;
+            bool gamePaused;
+            bool timeStop;
+            bool transition;
+            bool marioUpdated;
+            bool cheatDetected;
         } sparkly;
     } mario[1];
 
@@ -186,6 +194,7 @@ struct OmmData {
             struct {
                 s32 interactedTimer;
                 bool interactedFire;
+                bool captureDuringAscent;
             } flaming_bobomb;
 
             // Swoop
@@ -213,8 +222,35 @@ struct OmmData {
     } object[1];
 };
 extern struct OmmData *gOmmData;
-#define gOmmCappy gOmmData->mario->cappy.cappy
-#define gOmmPerry gOmmData->mario->peach.perry
-#define gOmmCapture gOmmData->mario->capture.obj
+#define gOmmMario      gOmmData->mario
+#define gOmmPeach    (&gOmmData->mario->peach)
+#define gOmmCappy      gOmmData->mario->cappy.cappy
+#define gOmmPerry      gOmmData->mario->peach.perry
+#define gOmmCapture    gOmmData->mario->capture.obj
+#define gOmmObject     gOmmData->object
+
+#define oFields             OBJECT_FIELD_OBJ(0x48)
+#define oGfxInited          oFields->OBJECT_FIELD_U32(0x00)
+#define oGeoData            oFields->OBJECT_FIELD_VPTR(0x01)
+#define oBhvPointer         oFields->OBJECT_FIELD_CVPTR(0x02)
+#define oBhvCommand         oFields->OBJECT_FIELD_CVPTR(0x03)
+#define oBhvStackIndex      oFields->OBJECT_FIELD_U32(0x04)
+#define oBhvTypes           oFields->OBJECT_FIELD_U32(0x05)
+#define oSafeStepInited     oFields->OBJECT_FIELD_U32(0x06)
+#define oSafeStepIgnore     oFields->OBJECT_FIELD_U32(0x07)
+#define oSafeStepHeight     oFields->OBJECT_FIELD_F32(0x08)
+#define oSafeStepIndex      oFields->OBJECT_FIELD_S32(0x09)
+#define oSafeStepCoordA     oFields->OBJECT_FIELD_F32(0x0A)
+#define oSafeStepCoordB     oFields->OBJECT_FIELD_F32(0x0B)
+#define oSafeStepCoordC     oFields->OBJECT_FIELD_F32(0x0C)
+#define oSafeStepCoords     oSafeStepCoordA
+
+#ifndef OBJECT_FIELDS_INDEX_DIRECTLY
+extern struct Object gOmmObjFields[OBJECT_POOL_CAPACITY];
+OMM_INLINE bool obj_alloc_fields(struct Object *o) {
+    u32 objSlot = (u32) (o - gObjectPool);
+    return (objSlot < OBJECT_POOL_CAPACITY) && (o->oFields || (o->oFields = (struct Object *) omm_zero(gOmmObjFields + objSlot, sizeof(struct Object))) != NULL);
+}
+#endif
 
 #endif // OMM_OBJECT_FIELDS_H

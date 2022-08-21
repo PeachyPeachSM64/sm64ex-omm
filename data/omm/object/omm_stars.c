@@ -2,8 +2,13 @@
 #include "data/omm/omm_includes.h"
 #undef OMM_ALL_HEADERS
 
+#if OMM_GAME_IS_XALO
+#include "macro_presets.inc.c"
+#define MacroObjectPresets sMacroObjectPresets
+#else
 struct MacroPreset { const BehaviorScript *behavior; s16 model; s16 param; };
 extern struct MacroPreset MacroObjectPresets[];
+#endif
 
 //
 // Data
@@ -16,7 +21,7 @@ typedef struct {
 static OmmStarData **sOmmStarsData[LEVEL_COUNT][8] = { { NULL } };
 
 static void omm_stars_add_data(s32 level, s32 area, s32 index, const BehaviorScript *behavior, s32 behParams) {
-    sOmmStarsData[level][area][index] = OMM_MEMNEW(OmmStarData, 1);
+    sOmmStarsData[level][area][index] = omm_new(OmmStarData, 1);
     sOmmStarsData[level][area][index]->behavior = behavior;
     sOmmStarsData[level][area][index]->behParams = behParams;
 }
@@ -176,7 +181,7 @@ static s32 omm_stars_preprocess_level_cmd(u8 type, void *cmd) {
 
 static void omm_stars_load_data(s32 level, s32 area) {
     if (!sOmmStarsData[level][area]) {
-        sOmmStarsData[level][area] = OMM_MEMNEW(OmmStarData *, 8);
+        sOmmStarsData[level][area] = omm_new(OmmStarData *, 8);
 
         // Level Stars
         sOmmStarsTargetLevelNum = level;
@@ -210,7 +215,7 @@ static u8 omm_stars_get_bits_per_area(s32 level, s32 area) {
 static u32 omm_stars_get_color_per_course(s32 course) {
     static u32 *sOmmStarsColors = NULL;
     if (!sOmmStarsColors) {
-        sOmmStarsColors = OMM_MEMNEW(u32, 18);
+        sOmmStarsColors = omm_new(u32, 18);
         static const char *sOmmStarsTextures[] = {
             OMM_TEXTURE_STAR_BODY_0,  OMM_TEXTURE_STAR_BODY_1,  OMM_TEXTURE_STAR_BODY_2,
             OMM_TEXTURE_STAR_BODY_3,  OMM_TEXTURE_STAR_BODY_4,  OMM_TEXTURE_STAR_BODY_5,
@@ -220,9 +225,9 @@ static u32 omm_stars_get_color_per_course(s32 course) {
             OMM_TEXTURE_STAR_BODY_15, OMM_TEXTURE_STAR_BODY_16, OMM_TEXTURE_STAR_BODY_17,
         };
         for (s32 i = 0; i != 18; ++i) {
-            OMM_STRING(filename, 256, "%s/%s/%s.png", OMM_EXE_FOLDER, OMM_GFX_FOLDER, sOmmStarsTextures[i]);
+            omm_str_cat(filename, 256, "gfx/", sOmmStarsTextures[i], ".png");
             s32 w, h;
-            u8 *p = stbi_load(filename, &w, &h, NULL, 4);
+            u8 *p = fs_load_png(filename, &w, &h);
             if (p) {
                 u32 r = 0;
                 u32 g = 0;
@@ -326,7 +331,7 @@ static void unload_objects_with_param(const BehaviorScript *behavior, s32 behPar
     for (bool done = false; !done;) {
         done = true;
         for_each_object_with_behavior(obj, behavior) {
-            if (obj->oBehParams2ndByte == behParams2ndByte) {
+            if (obj->oBhvArgs2ndByte == behParams2ndByte) {
                 unload_object(obj);
                 done = false;
                 break;
@@ -345,7 +350,7 @@ OMM_ROUTINE_UPDATE(omm_stars_update) {
         (gMarioState->action != ACT_OMM_STAR_DANCE) &&
         (gMarioState->action != ACT_OMM_SPARKLY_STAR_DANCE) &&
         (gMarioState->action != ACT_OMM_TRANSITION_WF_TOWER) &&
-        (gMarioState->action != ACT_OMM_POSSESSION || gOmmData->mario->capture.timer != 0xFF)) {
+        (gMarioState->action != ACT_OMM_POSSESSION || gOmmMario->capture.timer != 0xFF)) {
 
         // Check and update for each star bit
         // Unload objects or set actions to prevent already collected stars from respawning
@@ -356,7 +361,7 @@ OMM_ROUTINE_UPDATE(omm_stars_update) {
                 for (bool done = false; !done;) {
                     done = true;
                     for_each_object_with_behavior(o, starData->behavior) {
-                        if (starData->behParams == o->oBehParams) {
+                        if (starData->behParams == o->oBhvArgs) {
 
                             // Unload the object
                             if (starData->behavior == bhvExclamationBox ||

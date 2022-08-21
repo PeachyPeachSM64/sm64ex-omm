@@ -593,16 +593,6 @@ ACTION_END_NEXT_COMBO(),
 {
 ACTION_START(),
 ACTION_CLONE_START(),
-ACTION_JUMP(30, 1, 15),
-ACTION_JUMP(29, 1, 15),
-ACTION_JUMP(28, 1, 15),
-ACTION_JUMP(27, 1, 15),
-ACTION_JUMP(26, 1, 15),
-ACTION_JUMP(25, 1, 15),
-ACTION_JUMP(24, 1, 15),
-ACTION_JUMP(23, 1, 15),
-ACTION_JUMP(22, 1, 15),
-ACTION_JUMP(21, 1, 15),
 ACTION_JUMP(20, 1, 15),
 ACTION_JUMP(19, 1, 15),
 ACTION_JUMP(18, 1, 15),
@@ -622,6 +612,16 @@ ACTION_JUMP(5, 1, 15),
 ACTION_JUMP(4, 1, 15),
 ACTION_JUMP(3, 1, 15),
 ACTION_JUMP(2, 1, 15),
+ACTION_JUMP(1, 1, 15),
+ACTION_JUMP(1, 1, 15),
+ACTION_JUMP(1, 1, 15),
+ACTION_JUMP(1, 1, 15),
+ACTION_JUMP(1, 1, 15),
+ACTION_JUMP(1, 1, 15),
+ACTION_JUMP(1, 1, 15),
+ACTION_JUMP(1, 1, 15),
+ACTION_JUMP(1, 1, 15),
+ACTION_JUMP(1, 1, 15),
 ACTION_JUMP_MINE(1, 1, 15),
 ACTION_CLONE_END(),
 ACTION_EXHAUSTED(90),
@@ -681,9 +681,7 @@ typedef struct OmmBowser {
 } OmmBowser;
 static OmmBowser sOmmBowsers[2];
 
-#define is_bowser_clone (bowser != bowser->real)
-
-static void omm_bhv_bowser_init(OmmBowser *bowser) {
+static void bhv_omm_bowser_init(OmmBowser *bowser) {
     if (gCurrLevelNum == LEVEL_BOWSER_1) {
         bowser->index = 0;
         bowser->bowserType = 0;
@@ -709,7 +707,7 @@ static void omm_bhv_bowser_init(OmmBowser *bowser) {
         bowser->mineRadius = 3600;
         bowser->grabMultiplier = 1.08f;
     } else {
-        bowser->index = gOmmSSM + 2;
+        bowser->index = gOmmSparklyMode + 2;
         bowser->bowserType = 2;
         bowser->numMines = 8;
         bowser->setupDuration = 5;
@@ -759,7 +757,7 @@ static void omm_bhv_bowser_init(OmmBowser *bowser) {
 }
 
 #define omm_bowser_current_action (&sOmmBowserActions[bowser->index][bowser->phase][bowser->combo][bowser->action])
-
+#define is_bowser_clone (bowser != bowser->real)
 
 #define OMM_BOWSER_CLONE_CODE(...) \
 __VA_ARGS__; \
@@ -769,12 +767,17 @@ if (bowser->clone) { \
     bowser = bowser->real; \
 } \
 
+#if OMM_CODE_DEV
+static OmmBowser __sOmmBowsers[2];
+void sOmmBowsers__save_state() { omm_copy(__sOmmBowsers, sOmmBowsers, sizeof(sOmmBowsers)); }
+void sOmmBowsers__load_state() { omm_copy(sOmmBowsers, __sOmmBowsers, sizeof(sOmmBowsers)); }
+#endif
 
 //
 // Sub-actions
 //
 
-static s32 omm_bhv_bowser_get_jump_index(OmmBowser *bowser, bool ignoreMines) {
+static s32 bhv_omm_bowser_get_jump_index(OmmBowser *bowser, bool ignoreMines) {
     for (;;) {
         s32 i = (random_u16() % bowser->numMines);
 
@@ -790,7 +793,7 @@ static s32 omm_bhv_bowser_get_jump_index(OmmBowser *bowser, bool ignoreMines) {
 
         // Is there a mine?
         // Bowser's clone treats JUMP_MINE actions as JUMP
-        if (!is_bowser_clone && !ignoreMines && bowser->mines[i] == NULL) {
+        if (!is_bowser_clone && !ignoreMines && !bowser->mines[i]) {
             continue;
         }
 
@@ -808,7 +811,7 @@ static s32 omm_bhv_bowser_get_jump_index(OmmBowser *bowser, bool ignoreMines) {
     return 0;
 }
 
-static void omm_bhv_bowser_turn_to_target(OmmBowser *bowser, f32 x, f32 z, s16 angleVel, s32 animIdle, s32 animWalk) {
+static void bhv_omm_bowser_turn_to_target(OmmBowser *bowser, f32 x, f32 z, s16 angleVel, s32 animIdle, s32 animWalk) {
     static s32 sSoundWalkTimer = 0;
     s16 angleToTarget = atan2s(z - bowser->obj->oPosZ, x - bowser->obj->oPosX);
     u16 diff = (u16) abs_s(bowser->obj->oFaceAngleYaw - angleToTarget);
@@ -836,13 +839,13 @@ static void omm_bhv_bowser_turn_to_target(OmmBowser *bowser, f32 x, f32 z, s16 a
 //
 
 // Increase current sub-action index and init the next sub-action
-static void omm_bhv_bowser_update_action(OmmBowser *bowser, s32 nextSubAction) {
+static void bhv_omm_bowser_update_action(OmmBowser *bowser, s32 nextSubAction) {
     bowser->subAction = nextSubAction;
     bowser->timer = -1;
 }
 
 // Increase current combo action index and init the next action
-static void omm_bhv_bowser_update_combo(OmmBowser *bowser) {
+static void bhv_omm_bowser_update_combo(OmmBowser *bowser) {
 
     // Increase action index
     bowser->action++;
@@ -899,7 +902,7 @@ static void omm_bhv_bowser_update_combo(OmmBowser *bowser) {
 OMM_BOWSER_CLONE_CODE(
             bowser->jumpPosX = bowser->obj->oPosX;
             bowser->jumpPosZ = bowser->obj->oPosZ;
-            bowser->jumpIndex = omm_bhv_bowser_get_jump_index(bowser, true);
+            bowser->jumpIndex = bhv_omm_bowser_get_jump_index(bowser, true);
             bowser->jumpWaves = omm_bowser_current_action->count;
             bowser->jumpAngle = atan2s(
                 (bowser->landRadius * -coss(bowser->jumpIndex * bowser->jumpDeltaAngle)) - bowser->obj->oPosZ,
@@ -912,7 +915,7 @@ OMM_BOWSER_CLONE_CODE(
 OMM_BOWSER_CLONE_CODE(
             bowser->jumpPosX = bowser->obj->oPosX;
             bowser->jumpPosZ = bowser->obj->oPosZ;
-            bowser->jumpIndex = omm_bhv_bowser_get_jump_index(bowser, false);
+            bowser->jumpIndex = bhv_omm_bowser_get_jump_index(bowser, false);
             bowser->jumpWaves = omm_bowser_current_action->count;
             bowser->jumpAngle = atan2s(
                 (bowser->landRadius * -coss(bowser->jumpIndex * bowser->jumpDeltaAngle)) - bowser->obj->oPosZ,
@@ -931,17 +934,17 @@ OMM_BOWSER_CLONE_CODE(
     }
 
     // Init sub-action and timer
-    omm_bhv_bowser_update_action(bowser, 0);
+    bhv_omm_bowser_update_action(bowser, 0);
 }
 
 // Cancel current action to jump away from Mario if he's too close
-static void omm_bhv_bowser_check_emergency_jump(OmmBowser *bowser) {
+static void bhv_omm_bowser_check_emergency_jump(OmmBowser *bowser) {
     if (obj_get_horizontal_distance(bowser->obj, gMarioObject) > 600.f) {
         return;
     }
 
     // Doesn't trigger if Mario is possessing a flaming bob-omb
-    if (gMarioState->action == ACT_OMM_POSSESSION && gOmmCapture->behavior == omm_bhv_flaming_bobomb) {
+    if (gMarioState->action == ACT_OMM_POSSESSION && gOmmCapture->behavior == bhvOmmFlamingBobomb) {
         return;
     }
     
@@ -960,7 +963,7 @@ static void omm_bhv_bowser_check_emergency_jump(OmmBowser *bowser) {
         case OMM_BOWSER_ACTION_BOMBS: {
             for (bool ok = false; !ok;) {
                 ok = true;
-                for_each_object_with_behavior(bobomb, omm_bhv_flaming_bobomb) {
+                for_each_object_with_behavior(bobomb, bhvOmmFlamingBobomb) {
                     if (bobomb->oAction == 0) {
                         obj_mark_for_deletion(bobomb->oFlamingBobombAura);
                         obj_destroy(bobomb);
@@ -973,7 +976,7 @@ static void omm_bhv_bowser_check_emergency_jump(OmmBowser *bowser) {
 
         // Extinguish the flames
         case OMM_BOWSER_ACTION_FLAMETHROWER: {
-            for_each_object_with_behavior(flame, omm_bhv_bowser_flame) {
+            for_each_object_with_behavior(flame, bhvOmmBowserFlame) {
                 flame->oAction = 2;
                 flame->oTimer = 0;
             }
@@ -985,7 +988,7 @@ static void omm_bhv_bowser_check_emergency_jump(OmmBowser *bowser) {
 
     // Trigger an emergency jump
     bowser->action = -1;
-    omm_bhv_bowser_update_combo(bowser);
+    bhv_omm_bowser_update_combo(bowser);
 }
 
 //
@@ -994,7 +997,7 @@ static void omm_bhv_bowser_check_emergency_jump(OmmBowser *bowser) {
 
 // Bowser jumps to a distant point
 // Launches a fire shockwave when landing
-static void omm_bhv_bowser_jump(OmmBowser *bowser) {
+static void bhv_omm_bowser_jump(OmmBowser *bowser) {
     switch (bowser->subAction) {
 
         // Bowser turns to the direction of the landing point
@@ -1013,7 +1016,7 @@ OMM_BOWSER_CLONE_CODE(
                 bowser->obj->oFaceAngleYaw = bowser->jumpAngle;
 );
                 play_sound(SOUND_OBJ2_BOWSER_ROAR, bowser->obj->oCameraToObject);
-                omm_bhv_bowser_update_action(bowser, 1);
+                bhv_omm_bowser_update_action(bowser, 1);
             }
         } break;
 
@@ -1040,7 +1043,7 @@ OMM_BOWSER_CLONE_CODE(
                 obj_anim_play_with_sound(bowser->obj, OMM_BOWSER_ANIM_LAND, 1.f, 0, false);
                 obj_spawn_white_puff(bowser->obj, SOUND_OBJ_BOWSER_WALK);
 );
-                omm_bhv_bowser_update_action(bowser, 2);
+                bhv_omm_bowser_update_action(bowser, 2);
             }
         } break;
 
@@ -1055,14 +1058,14 @@ OMM_BOWSER_CLONE_CODE(
                 }
 );
             } else {
-                omm_bhv_bowser_update_action(bowser, 3);
+                bhv_omm_bowser_update_action(bowser, 3);
             }
         } break;
 
         // Landed, next action
         case 3: {
             if (obj_anim_is_near_end(bowser->obj)) {
-                omm_bhv_bowser_update_combo(bowser);
+                bhv_omm_bowser_update_combo(bowser);
             }
         } break;
     }
@@ -1070,25 +1073,25 @@ OMM_BOWSER_CLONE_CODE(
 
 // Bowser inhales and throw large fast fire balls at Mario
 // These fire balls cannot be captured or deflected, and Bowser will try to predict Mario's movement to hit him
-static void omm_bhv_bowser_fireballs(OmmBowser *bowser) {
+static void bhv_omm_bowser_fireballs(OmmBowser *bowser) {
     switch (bowser->subAction) {
 
         // Targets Mario
         case 0: {
             if (bowser->timer < bowser->setupDuration) {
-                omm_bhv_bowser_turn_to_target(bowser, gMarioState->pos[0], gMarioState->pos[2], bowser->setupAngleVel, OMM_BOWSER_ANIM_IDLE, OMM_BOWSER_ANIM_WALK);
+                bhv_omm_bowser_turn_to_target(bowser, gMarioState->pos[0], gMarioState->pos[2], bowser->setupAngleVel, OMM_BOWSER_ANIM_IDLE, OMM_BOWSER_ANIM_WALK);
             } else {
                 obj_anim_play_with_sound(bowser->obj, OMM_BOWSER_ANIM_INHALE_AND_THROW, 1.5f, SOUND_OBJ_BOWSER_INHALING, true);
-                omm_bhv_bowser_update_action(bowser, 1);
+                bhv_omm_bowser_update_action(bowser, 1);
             }
         } break;
 
         // Inhales (fast)
         case 1: {
-            omm_bhv_bowser_turn_to_target(bowser, gMarioState->pos[0], gMarioState->pos[2], 0x800, -1, -1);
+            bhv_omm_bowser_turn_to_target(bowser, gMarioState->pos[0], gMarioState->pos[2], 0x800, -1, -1);
             if (obj_anim_get_frame(bowser->obj) >= 42) {
                 obj_anim_play_with_sound(bowser->obj, OMM_BOWSER_ANIM_THROW_FIRE_BALL, 1.f, 0, true);
-                omm_bhv_bowser_update_action(bowser, 2);
+                bhv_omm_bowser_update_action(bowser, 2);
             }
         } break;
 
@@ -1139,7 +1142,7 @@ static void omm_bhv_bowser_fireballs(OmmBowser *bowser) {
                     bowser->obj->oFaceAngleYaw
                 );
                 bowser->counter--;
-                omm_bhv_bowser_update_action(bowser, 3);
+                bhv_omm_bowser_update_action(bowser, 3);
             }
         } break;
 
@@ -1154,33 +1157,33 @@ static void omm_bhv_bowser_fireballs(OmmBowser *bowser) {
                 s16 angleVel = (s16) (0xC000 / delay);
                 s32 animIdle = (bowser->obj->oAnimID == OMM_BOWSER_ANIM_THROW_FIRE_BALL ? -1 : OMM_BOWSER_ANIM_IDLE);
                 s32 animWalk = (bowser->obj->oAnimID == OMM_BOWSER_ANIM_THROW_FIRE_BALL ? -1 : OMM_BOWSER_ANIM_WALK);
-                omm_bhv_bowser_turn_to_target(bowser, gMarioState->pos[0], gMarioState->pos[2], angleVel, animIdle, animWalk);
+                bhv_omm_bowser_turn_to_target(bowser, gMarioState->pos[0], gMarioState->pos[2], angleVel, animIdle, animWalk);
             } else if (bowser->counter <= 0) {
-                omm_bhv_bowser_update_action(bowser, 4);
+                bhv_omm_bowser_update_action(bowser, 4);
             } else {
                 obj_anim_play_with_sound(bowser->obj, OMM_BOWSER_ANIM_THROW_FIRE_BALL, 1.f, 0, true);
-                omm_bhv_bowser_update_action(bowser, 2);
+                bhv_omm_bowser_update_action(bowser, 2);
             }
         } break;
 
         // Next action
         case 4: {
-            omm_bhv_bowser_update_combo(bowser);
+            bhv_omm_bowser_update_combo(bowser);
         } break;
     }
 }
 
 // Bowser summons and throw flaming bob-ombs at Mario
 // When landing, bombs explode in a blue fire shockwave
-static void omm_bhv_bowser_bombs(OmmBowser *bowser) {
+static void bhv_omm_bowser_bombs(OmmBowser *bowser) {
     switch (bowser->subAction) {
 
         // Targets Mario
         case 0: {
             if (bowser->timer < bowser->setupDuration) {
-                omm_bhv_bowser_turn_to_target(bowser, gMarioState->pos[0], gMarioState->pos[2], bowser->setupAngleVel, OMM_BOWSER_ANIM_IDLE, OMM_BOWSER_ANIM_WALK);
+                bhv_omm_bowser_turn_to_target(bowser, gMarioState->pos[0], gMarioState->pos[2], bowser->setupAngleVel, OMM_BOWSER_ANIM_IDLE, OMM_BOWSER_ANIM_WALK);
             } else {
-                omm_bhv_bowser_update_action(bowser, 1);
+                bhv_omm_bowser_update_action(bowser, 1);
             }
         } break;
 
@@ -1200,14 +1203,14 @@ static void omm_bhv_bowser_bombs(OmmBowser *bowser) {
                 );
             }
             obj_anim_play_with_sound(bowser->obj, OMM_BOWSER_ANIM_RAISE_ARM, 1.f, SOUND_OBJ2_BOWSER_TELEPORT, true);
-            omm_bhv_bowser_update_action(bowser, 2);
+            bhv_omm_bowser_update_action(bowser, 2);
         } break;
 
         // Wait
         case 2: {
             obj_anim_extend(bowser->obj);
             if (bowser->timer >= 20) {
-                omm_bhv_bowser_update_action(bowser, 3);
+                bhv_omm_bowser_update_action(bowser, 3);
             }
         } break;
 
@@ -1217,21 +1220,21 @@ static void omm_bhv_bowser_bombs(OmmBowser *bowser) {
 
                 // If Mario manages to capture a flaming bob-omb during its ascending state,
                 // Bowser gets mad instantly and throw all other bombs at once
-                if (gMarioState->action == ACT_OMM_POSSESSION && gOmmCapture->behavior == omm_bhv_flaming_bobomb && gOmmCapture->oAction == 1) {
-                    for_each_object_with_behavior(bobomb, omm_bhv_flaming_bobomb) {
+                if (gMarioState->action == ACT_OMM_POSSESSION && gOmmCapture->behavior == bhvOmmFlamingBobomb && gOmmObject->flaming_bobomb.captureDuringAscent) {
+                    for_each_object_with_behavior(bobomb, bhvOmmFlamingBobomb) {
                         if (bobomb->oAction <= 1) {
                             bobomb->oAction = 5;
                             bobomb->oTimer = 0;
                         }
                     }
-                    omm_bhv_bowser_update_combo(bowser);
+                    bhv_omm_bowser_update_combo(bowser);
                     return;
                 }
 
                 // Throw a bomb every delay frames
                 if ((bowser->timer % omm_bowser_current_action->delay) == 0) {
                     obj_anim_play_with_sound(bowser->obj, OMM_BOWSER_ANIM_THROW_BOMB, 1.f, SOUND_OBJ2_BOWSER_ROAR | 0x8100, true);
-                    struct Object *bobomb = obj_get_first_with_behavior_and_field_s32(omm_bhv_flaming_bobomb, 0x1B, bowser->counter);
+                    struct Object *bobomb = obj_get_first_with_behavior_and_field_s32(bhvOmmFlamingBobomb, 0x1B, bowser->counter);
                     bobomb->oAction = 1;
                     bobomb->oTimer = 0;
                     bowser->counter--;
@@ -1242,7 +1245,7 @@ static void omm_bhv_bowser_bombs(OmmBowser *bowser) {
                     obj_anim_extend(bowser->obj);
                 }
             } else {
-                omm_bhv_bowser_update_action(bowser, 4);
+                bhv_omm_bowser_update_action(bowser, 4);
             }
         } break;
 
@@ -1250,14 +1253,14 @@ static void omm_bhv_bowser_bombs(OmmBowser *bowser) {
         case 4: {
             if (obj_anim_is_near_end(bowser->obj)) {
                 obj_anim_play_with_sound(bowser->obj, OMM_BOWSER_ANIM_IDLE, 1.f, 0, true);
-                omm_bhv_bowser_update_action(bowser, 5);
+                bhv_omm_bowser_update_action(bowser, 5);
             }
         } break;
 
         // Wait for the bobombs to land, next action
         case 5: {
-            if (gMarioState->action == ACT_OMM_POSSESSION || obj_get_first_with_behavior(omm_bhv_flaming_bobomb) == NULL) {
-                omm_bhv_bowser_update_combo(bowser);
+            if (gMarioState->action == ACT_OMM_POSSESSION || !obj_get_first_with_behavior(bhvOmmFlamingBobomb)) {
+                bhv_omm_bowser_update_combo(bowser);
             }
         } break;
     }
@@ -1265,7 +1268,7 @@ static void omm_bhv_bowser_bombs(OmmBowser *bowser) {
 
 // Bowser inhales and throw a burst of flames at Mario, then rotates towards him for a few seconds
 // As Bowser gets faster and faster, Mario must jump over the flamethrower to avoid it
-static void omm_bhv_bowser_flamethrower(OmmBowser *bowser) {
+static void bhv_omm_bowser_flamethrower(OmmBowser *bowser) {
     switch (bowser->subAction) {
 
         // Targets Mario
@@ -1273,23 +1276,23 @@ static void omm_bhv_bowser_flamethrower(OmmBowser *bowser) {
             if (bowser->timer < bowser->setupDuration) {
 OMM_BOWSER_CLONE_CODE(
                 bowser->flamethrowerCanChangeDir = true;
-                omm_bhv_bowser_turn_to_target(bowser, gMarioState->pos[0], gMarioState->pos[2], bowser->setupAngleVel, OMM_BOWSER_ANIM_IDLE, OMM_BOWSER_ANIM_WALK);
+                bhv_omm_bowser_turn_to_target(bowser, gMarioState->pos[0], gMarioState->pos[2], bowser->setupAngleVel, OMM_BOWSER_ANIM_IDLE, OMM_BOWSER_ANIM_WALK);
 );
             } else {
 OMM_BOWSER_CLONE_CODE(
                 obj_anim_play_with_sound(bowser->obj, OMM_BOWSER_ANIM_INHALE_AND_THROW, 1.f, SOUND_OBJ_BOWSER_INHALING, true);
 );
-                omm_bhv_bowser_update_action(bowser, 1);
+                bhv_omm_bowser_update_action(bowser, 1);
             }
         } break;
 
         // Inhales (slow)
         case 1: {
 OMM_BOWSER_CLONE_CODE(
-            omm_bhv_bowser_turn_to_target(bowser, gMarioState->pos[0], gMarioState->pos[2], 0x400, -1, -1);
+            bhv_omm_bowser_turn_to_target(bowser, gMarioState->pos[0], gMarioState->pos[2], 0x400, -1, -1);
 );
             if (obj_anim_get_frame(bowser->obj) >= 54) {
-                omm_bhv_bowser_update_action(bowser, 2);
+                bhv_omm_bowser_update_action(bowser, 2);
             }
         } break;
 
@@ -1324,7 +1327,7 @@ OMM_BOWSER_CLONE_CODE(
                 omm_array_clear(bowser->flamethrowerYaws);
                 bowser->obj->oAngleVelYaw = 0;
 );
-                omm_bhv_bowser_update_action(bowser, 3);
+                bhv_omm_bowser_update_action(bowser, 3);
             }
         } break;
 
@@ -1342,7 +1345,7 @@ OMM_BOWSER_CLONE_CODE(
 OMM_BOWSER_CLONE_CODE(
                 s16 prevYaw = bowser->obj->oFaceAngleYaw;
                 s16 prevVel = bowser->obj->oAngleVelYaw;
-                omm_bhv_bowser_turn_to_target(bowser, gMarioState->pos[0], gMarioState->pos[2], 0x20, -1, -1);
+                bhv_omm_bowser_turn_to_target(bowser, gMarioState->pos[0], gMarioState->pos[2], 0x20, -1, -1);
                 s16 currAcc = (bowser->obj->oFaceAngleYaw - prevYaw);
                 s16 signVel = sign_0_s(bowser->obj->oAngleVelYaw);
                 s16 signAcc = sign_0_s(currAcc);
@@ -1375,20 +1378,20 @@ OMM_BOWSER_CLONE_CODE(
             
             // Next sub-action
             else {
-                omm_bhv_bowser_update_action(bowser, 4);
+                bhv_omm_bowser_update_action(bowser, 4);
             }
         } break;
 
         // Stops and next action
         case 4: {
             if (obj_anim_is_near_end(bowser->obj)) {
-                omm_bhv_bowser_update_combo(bowser);
+                bhv_omm_bowser_update_combo(bowser);
             }
         } break;
     }
     
     // Update flames
-    for_each_object_with_behavior(flame, omm_bhv_bowser_flame) {
+    for_each_object_with_behavior(flame, bhvOmmBowserFlame) {
         if (flame->oAction == 1) {
 OMM_BOWSER_CLONE_CODE(
             if (flame->oIsBowserClone == is_bowser_clone) {
@@ -1403,18 +1406,18 @@ OMM_BOWSER_CLONE_CODE(
 }
 
 // Bowser clones himself
-static void omm_bhv_bowser_clone_start(OmmBowser *bowser) {
+static void bhv_omm_bowser_clone_start(OmmBowser *bowser) {
     switch (bowser->subAction) {
 
         // Turns to face center and spawn a clone
         case 0: {
             s16 prevAngle = bowser->obj->oFaceAngleYaw;
-            omm_bhv_bowser_turn_to_target(bowser, 0, 0, 0x800, OMM_BOWSER_ANIM_IDLE, OMM_BOWSER_ANIM_WALK);
+            bhv_omm_bowser_turn_to_target(bowser, 0, 0, 0x800, OMM_BOWSER_ANIM_IDLE, OMM_BOWSER_ANIM_WALK);
             if (bowser->obj->oFaceAngleYaw == prevAngle) {
                 OmmBowser *clone = &sOmmBowsers[1];
                 clone->real = bowser;
                 clone->clone = clone;
-                clone->obj = spawn_object(bowser->obj, MODEL_BOWSER, omm_bhv_bowser_clone);
+                clone->obj = spawn_object(bowser->obj, MODEL_BOWSER, bhvOmmBowserClone);
                 clone->obj->oAction = 0;
                 clone->obj->oHealth = 99;
                 obj_set_always_rendered(clone->obj, true);
@@ -1423,7 +1426,7 @@ static void omm_bhv_bowser_clone_start(OmmBowser *bowser) {
                 obj_set_angle(clone->obj, bowser->obj->oFaceAnglePitch, bowser->obj->oFaceAngleYaw, bowser->obj->oFaceAngleRoll);
                 obj_scale_xyz(clone->obj, bowser->obj->oScaleX, bowser->obj->oScaleY, bowser->obj->oScaleZ);
                 obj_play_sound(bowser->obj, SOUND_OBJ2_BOWSER_TELEPORT);
-                omm_bhv_bowser_update_action(bowser, 1);
+                bhv_omm_bowser_update_action(bowser, 1);
                 bowser->clone = clone;
             }
         } break;
@@ -1438,40 +1441,40 @@ OMM_BOWSER_CLONE_CODE(
 );
             } else {
                 bowser->clone->obj->oAction = 1;
-                omm_bhv_bowser_update_combo(bowser);
+                bhv_omm_bowser_update_combo(bowser);
             }
         } break;
     }
 }
 
 // Bowser's clone vanishes
-static void omm_bhv_bowser_clone_end(OmmBowser *bowser) {
+static void bhv_omm_bowser_clone_end(OmmBowser *bowser) {
     bowser->clone = NULL;
-    omm_bhv_bowser_update_combo(bowser);
+    bhv_omm_bowser_update_combo(bowser);
 }
 
 // Bowser gets mad when seeing his minion controlled by Mario
-static void omm_bhv_bowser_get_mad(OmmBowser *bowser) {
+static void bhv_omm_bowser_get_mad(OmmBowser *bowser) {
     switch (bowser->subAction) {
 
         // Gets mad
         case 0: {
             obj_anim_play_with_sound(bowser->obj, OMM_BOWSER_ANIM_SURPRISED, 1.25f, SOUND_OBJ_BOWSER_TAIL_PICKUP, true);
-            omm_bhv_bowser_update_action(bowser, 1);
+            bhv_omm_bowser_update_action(bowser, 1);
         } break;
 
         // Faces Mario, next action
         case 1: {
-            omm_bhv_bowser_turn_to_target(bowser, gMarioState->pos[0], gMarioState->pos[2], 0x800, -1, -1);
+            bhv_omm_bowser_turn_to_target(bowser, gMarioState->pos[0], gMarioState->pos[2], 0x800, -1, -1);
             if (obj_anim_is_near_end(bowser->obj)) {
-                omm_bhv_bowser_update_combo(bowser);
+                bhv_omm_bowser_update_combo(bowser);
             }
         } break;
     }
 }
 
 // Bowser is exhausted after attacking
-static void omm_bhv_bowser_exhausted(OmmBowser *bowser) {
+static void bhv_omm_bowser_exhausted(OmmBowser *bowser) {
 
     // Bowser was hit
     if (bowser->obj->oBowserHit) {
@@ -1480,7 +1483,7 @@ static void omm_bhv_bowser_exhausted(OmmBowser *bowser) {
 
         // Bowser is sent flying into a mine
         if (bowser->obj->oHealth == 0) {
-            omm_bhv_bowser_update_combo(bowser);
+            bhv_omm_bowser_update_combo(bowser);
             return;
         }
 
@@ -1488,7 +1491,7 @@ static void omm_bhv_bowser_exhausted(OmmBowser *bowser) {
         // The height depends on his remaining health
         bowser->jumpVelY = 45.f + 15.f * (3 - bowser->obj->oHealth);
         obj_anim_play_with_sound(bowser->obj, OMM_BOWSER_ANIM_DAMAGED_BELLY, 1.25f, SOUND_OBJ_BOWSER_TAIL_PICKUP, true);
-        omm_bhv_bowser_update_action(bowser, 4);
+        bhv_omm_bowser_update_action(bowser, 4);
     }
 
     // Process sub-action
@@ -1497,10 +1500,10 @@ static void omm_bhv_bowser_exhausted(OmmBowser *bowser) {
         // Turns to face center
         case 0: {
             s16 prevAngle = bowser->obj->oFaceAngleYaw;
-            omm_bhv_bowser_turn_to_target(bowser, 0, 0, 0x400, OMM_BOWSER_ANIM_WALK, OMM_BOWSER_ANIM_WALK);
+            bhv_omm_bowser_turn_to_target(bowser, 0, 0, 0x400, OMM_BOWSER_ANIM_WALK, OMM_BOWSER_ANIM_WALK);
             if (bowser->obj->oFaceAngleYaw == prevAngle) {
                 obj_anim_play_with_sound(bowser->obj, OMM_BOWSER_ANIM_EXHAUSTED, 1.f, SOUND_OBJ_BOWSER_DEFEATED, true);
-                omm_bhv_bowser_update_action(bowser, 1);
+                bhv_omm_bowser_update_action(bowser, 1);
             }
         } break;
 
@@ -1508,7 +1511,7 @@ static void omm_bhv_bowser_exhausted(OmmBowser *bowser) {
         case 1: {
             bowser->obj->oHealth = (bowser->phase + 1); // Bowser is now vulnerable to flaming bob-omb explosions
             if (obj_anim_is_near_end(bowser->obj)) {
-                omm_bhv_bowser_update_action(bowser, 2);
+                bhv_omm_bowser_update_action(bowser, 2);
             }
         } break;
 
@@ -1518,7 +1521,7 @@ static void omm_bhv_bowser_exhausted(OmmBowser *bowser) {
             obj_anim_extend(bowser->obj);
             if (bowser->timer >= omm_bowser_current_action->duration) {
                 obj_anim_play_with_sound(bowser->obj, OMM_BOWSER_ANIM_GET_UP, 1.5f, 0, true);
-                omm_bhv_bowser_update_action(bowser, 3);
+                bhv_omm_bowser_update_action(bowser, 3);
             }
         } break;
 
@@ -1527,7 +1530,7 @@ static void omm_bhv_bowser_exhausted(OmmBowser *bowser) {
             bowser->obj->oHealth = -1; // Bowser is no longer vulnerable to flaming bob-omb explosions
             bowser->obj->oBowserEyesShut = 0;
             if (obj_anim_is_near_end(bowser->obj)) {
-                omm_bhv_bowser_update_combo(bowser);
+                bhv_omm_bowser_update_combo(bowser);
             }
         } break;
 
@@ -1547,7 +1550,7 @@ static void omm_bhv_bowser_exhausted(OmmBowser *bowser) {
                     obj_spawn_white_puff(bowser->obj, SOUND_OBJ_BOWSER_WALK);
                     set_environmental_camera_shake(SHAKE_ENV_BOWSER_THROW_BOUNCE);
                 } else {
-                    omm_bhv_bowser_update_action(bowser, 2);
+                    bhv_omm_bowser_update_action(bowser, 2);
                 }
             }
         } break;
@@ -1555,13 +1558,13 @@ static void omm_bhv_bowser_exhausted(OmmBowser *bowser) {
 }
 
 // Mario hits Bowser, Bowser hits a mine
-static void omm_bhv_bowser_damaged(OmmBowser *bowser) {
+static void bhv_omm_bowser_damaged(OmmBowser *bowser) {
     switch (bowser->subAction) {
 
         // Knocked back
         case 0: {
             obj_anim_play_with_sound(bowser->obj, OMM_BOWSER_ANIM_DAMAGED_BELLY, 1.25f, SOUND_OBJ_BOWSER_TAIL_PICKUP, true);
-            omm_bhv_bowser_update_action(bowser, 1);
+            bhv_omm_bowser_update_action(bowser, 1);
         } break;
 
         // Flies into a mine
@@ -1600,7 +1603,7 @@ static void omm_bhv_bowser_damaged(OmmBowser *bowser) {
                 // Hits the mine
                 bowser->jumpVelY = +100.f;
                 obj_anim_play_with_sound(bowser->obj, OMM_BOWSER_ANIM_DAMAGED_BELLY, 1.25f, SOUND_OBJ_BOWSER_TAIL_PICKUP, true);
-                omm_bhv_bowser_update_action(bowser, 2);
+                bhv_omm_bowser_update_action(bowser, 2);
             }
         } break;
 
@@ -1632,14 +1635,14 @@ static void omm_bhv_bowser_damaged(OmmBowser *bowser) {
                 // Defeated
                 if (omm_bowser_current_action->count == -1) {
                     bowser->obj->oPosY = bowser->floorHeight;
-                    omm_bhv_bowser_update_action(bowser, 6);
+                    bhv_omm_bowser_update_action(bowser, 6);
                 }
 
                 // Gets up
                 else {
                     bowser->obj->oPosY = bowser->floorHeight;
                     obj_anim_play_with_sound(bowser->obj, OMM_BOWSER_ANIM_GET_UP, 1.5f, SOUND_OBJ2_BOWSER_ROAR, true);
-                    omm_bhv_bowser_update_action(bowser, 3);
+                    bhv_omm_bowser_update_action(bowser, 3);
                 }
             }
         } break;
@@ -1648,7 +1651,7 @@ static void omm_bhv_bowser_damaged(OmmBowser *bowser) {
         case 3: {
             if (obj_anim_is_near_end(bowser->obj)) {
                 bowser->obj->oBowserEyesShut = 0;
-                omm_bhv_bowser_update_combo(bowser);
+                bhv_omm_bowser_update_combo(bowser);
             }
         } break;
 
@@ -1672,7 +1675,7 @@ static void omm_bhv_bowser_damaged(OmmBowser *bowser) {
                 gMarioObject->oGfxAngle[1] = bowser->obj->oFaceAngleYaw;
                 gMarioObject->oGfxAngle[2] = 0;
                 obj_anim_play_with_sound(bowser->obj, OMM_BOWSER_ANIM_GIVE_UP, 1.f, SOUND_OBJ_BOWSER_TAIL_PICKUP, true);
-                omm_bhv_bowser_update_action(bowser, 7);
+                bhv_omm_bowser_update_action(bowser, 7);
             }
         } break;
 
@@ -1681,7 +1684,7 @@ static void omm_bhv_bowser_damaged(OmmBowser *bowser) {
             if (gMarioState->action == ACT_OMM_RELEASE_BOWSER) {
                 bowser->jumpPosX = bowser->obj->oPosX;
                 bowser->jumpPosZ = bowser->obj->oPosZ;
-                omm_bhv_bowser_update_action(bowser, 8);
+                bhv_omm_bowser_update_action(bowser, 8);
             }
         } break;
 
@@ -1706,7 +1709,7 @@ static void omm_bhv_bowser_damaged(OmmBowser *bowser) {
                 // Hits the mine
                 bowser->jumpVelY = +90.f;
                 obj_anim_play_with_sound(bowser->obj, OMM_BOWSER_ANIM_DAMAGED_BACK, 1.25f, SOUND_OBJ_BOWSER_TAIL_PICKUP, true);
-                omm_bhv_bowser_update_action(bowser, 9);
+                bhv_omm_bowser_update_action(bowser, 9);
             }
         } break;
 
@@ -1734,7 +1737,7 @@ static void omm_bhv_bowser_damaged(OmmBowser *bowser) {
             // About to land on center
             if (t == 1.f) {
                 bowser->obj->oPosY = bowser->floorHeight;
-                omm_bhv_bowser_update_action(bowser, 10);
+                bhv_omm_bowser_update_action(bowser, 10);
             }
         } break;
 
@@ -1743,7 +1746,7 @@ static void omm_bhv_bowser_damaged(OmmBowser *bowser) {
         case 10: {
             struct Object *sm64Bowser = obj_get_first_with_behavior(bhvBowser);
             obj_set_dormant(sm64Bowser, false);
-            sm64Bowser->oBehParams2ndByte = bowser->bowserType;
+            sm64Bowser->oBhvArgs2ndByte = bowser->bowserType;
             sm64Bowser->oAction = 4; // bowser_act_dead
             sm64Bowser->oPrevAction = 4; // must be the same as sm64Bowser->oAction
             sm64Bowser->oSubAction = 2; // bowser_dead_wait_for_mario
@@ -1772,7 +1775,7 @@ static void omm_bhv_bowser_damaged(OmmBowser *bowser) {
             sm64Bowser->oGfxScale[2] = bowser->obj->oScaleZ;
             obj_anim_play_with_sound(sm64Bowser, OMM_BOWSER_ANIM_DEFEATED, 1.f, SOUND_OBJ_BOWSER_DEFEATED | 0xFF00, true);
             obj_set_dormant(bowser->obj, true);
-            omm_bhv_bowser_update_action(bowser, 11);
+            bhv_omm_bowser_update_action(bowser, 11);
         } break;
 
         // There is no come back
@@ -1785,12 +1788,12 @@ static void omm_bhv_bowser_damaged(OmmBowser *bowser) {
 // Main loop
 //
 
-static void omm_bhv_bowser_update_bowser(OmmBowser *bowser) {
+static void bhv_omm_bowser_update_bowser(OmmBowser *bowser) {
     struct Object *b = obj_get_first_with_behavior(bhvBowser);
     if (!obj_is_dormant(b)) {
 
         // Cappy Capture must be enabled to load the OMM Bowser fight
-        if (!bowser->obj->oBehParams) {
+        if (!bowser->obj->oBhvArgs) {
             return;
         }
 
@@ -1836,9 +1839,9 @@ static void omm_bhv_bowser_update_bowser(OmmBowser *bowser) {
         }
 
         // Init OMM Bowser
-        omm_bhv_bowser_init(bowser);
-        omm_bhv_bowser_update_combo(bowser);
-        b->oBehParams2ndByte = bowser->bowserType;
+        bhv_omm_bowser_init(bowser);
+        bhv_omm_bowser_update_combo(bowser);
+        b->oBhvArgs2ndByte = bowser->bowserType;
     }
 
     // Update
@@ -1856,11 +1859,11 @@ OMM_BOWSER_CLONE_CODE(
         // Triggers after 3 flaming bob-omb misses, or after 30 seconds
         // Cancelled if the player captures a flaming bob-omb
         if (bowser->h1Counter != -1) {
-            if (m->action == ACT_OMM_POSSESSION && gOmmCapture->behavior == omm_bhv_flaming_bobomb) {
+            if (m->action == ACT_OMM_POSSESSION && gOmmCapture->behavior == bhvOmmFlamingBobomb) {
                 bowser->h1Counter = -1;
             } else {
                 static s32 sPrevFlamingBobombCount = 0;
-                s32 currFlamingBobombCount = obj_get_count_with_behavior(omm_bhv_flaming_bobomb);
+                s32 currFlamingBobombCount = obj_get_count_with_behavior(bhvOmmFlamingBobomb);
                 bowser->h1Counter += ((sPrevFlamingBobombCount > currFlamingBobombCount) << 16);
                 sPrevFlamingBobombCount = currFlamingBobombCount;
                 bowser->h1Counter++;
@@ -1895,7 +1898,7 @@ OMM_BOWSER_CLONE_CODE(
         bool triggerH3 = (bowser->h3Counter != -1) && (bowser->h3Counter >= 150);
         bool bOnGround = (bowser->obj->oPosY <= bowser->floorHeight + 5);
         bowser->hintTimer += bOnGround * (triggerH1 || triggerH2 || triggerH3);
-        if (bowser->hintTimer >= 30 && bOnGround && (m->action == ACT_IDLE || m->action == ACT_PANTING || m->action == ACT_WALKING)) {
+        if (bowser->hintTimer >= 30 && bOnGround && omm_mario_is_ready_for_dialog(m)) {
             if (triggerH1) {
                 omm_mario_start_dialog(m, bowser->obj, OMM_DIALOG_BOWSER_1_HINT_1, false, true, 0);
                 bowser->h1Counter = -1;
@@ -1915,59 +1918,59 @@ OMM_BOWSER_CLONE_CODE(
     switch (omm_bowser_current_action->action) {
         case OMM_BOWSER_ACTION_JUMP:
         case OMM_BOWSER_ACTION_JUMP_MINE:
-            omm_bhv_bowser_jump(bowser);
-            omm_bhv_bowser_check_emergency_jump(bowser);
+            bhv_omm_bowser_jump(bowser);
+            bhv_omm_bowser_check_emergency_jump(bowser);
             bowser->obj->oBowserHit = 0;
             bowser->obj->oHealth = -1;
             break;
 
         case OMM_BOWSER_ACTION_FIRE_BALLS:
-            omm_bhv_bowser_fireballs(bowser);
-            omm_bhv_bowser_check_emergency_jump(bowser);
+            bhv_omm_bowser_fireballs(bowser);
+            bhv_omm_bowser_check_emergency_jump(bowser);
             bowser->obj->oBowserHit = 0;
             bowser->obj->oHealth = -1;
             break;
 
         case OMM_BOWSER_ACTION_BOMBS:
-            omm_bhv_bowser_bombs(bowser);
-            omm_bhv_bowser_check_emergency_jump(bowser);
+            bhv_omm_bowser_bombs(bowser);
+            bhv_omm_bowser_check_emergency_jump(bowser);
             bowser->obj->oBowserHit = 0;
             bowser->obj->oHealth = -1;
             break;
 
         case OMM_BOWSER_ACTION_FLAMETHROWER:
-            omm_bhv_bowser_flamethrower(bowser);
-            omm_bhv_bowser_check_emergency_jump(bowser);
+            bhv_omm_bowser_flamethrower(bowser);
+            bhv_omm_bowser_check_emergency_jump(bowser);
             bowser->obj->oBowserHit = 0;
             bowser->obj->oHealth = -1;
             break;
 
         case OMM_BOWSER_ACTION_CLONE_START:
-            omm_bhv_bowser_clone_start(bowser);
-            omm_bhv_bowser_check_emergency_jump(bowser);
+            bhv_omm_bowser_clone_start(bowser);
+            bhv_omm_bowser_check_emergency_jump(bowser);
             bowser->obj->oBowserHit = 0;
             bowser->obj->oHealth = -1;
             break;
 
         case OMM_BOWSER_ACTION_CLONE_END:
-            omm_bhv_bowser_clone_end(bowser);
-            omm_bhv_bowser_check_emergency_jump(bowser);
+            bhv_omm_bowser_clone_end(bowser);
+            bhv_omm_bowser_check_emergency_jump(bowser);
             bowser->obj->oBowserHit = 0;
             bowser->obj->oHealth = -1;
             break;
 
         case OMM_BOWSER_ACTION_GET_MAD:
-            omm_bhv_bowser_get_mad(bowser);
+            bhv_omm_bowser_get_mad(bowser);
             bowser->obj->oBowserHit = 0;
             bowser->obj->oHealth = -1;
             break;
 
         case OMM_BOWSER_ACTION_EXHAUSTED:
-            omm_bhv_bowser_exhausted(bowser);
+            bhv_omm_bowser_exhausted(bowser);
             break;
 
         case OMM_BOWSER_ACTION_DAMAGED:
-            omm_bhv_bowser_damaged(bowser);
+            bhv_omm_bowser_damaged(bowser);
             bowser->obj->oBowserHit = 0;
             bowser->obj->oHealth = -1;
             break;
@@ -2001,7 +2004,7 @@ OMM_BOWSER_CLONE_CODE(
         bowser->clone->action = bowser->action;
         bowser->clone->timer = bowser->timer;
         bowser->clone->subAction = bowser->subAction;
-        bowser->clone->obj = obj_get_first_with_behavior(omm_bhv_bowser_clone);
+        bowser->clone->obj = obj_get_first_with_behavior(bhvOmmBowserClone);
         bowser->clone->real = bowser;
         bowser->clone->clone = bowser->clone;
     }
@@ -2009,14 +2012,14 @@ OMM_BOWSER_CLONE_CODE(
     // Update Bowser's aura
 OMM_BOWSER_CLONE_CODE(
     struct Object *aura = NULL;
-    for_each_object_with_behavior(obj, omm_bhv_bowser_mad_aura) {
+    for_each_object_with_behavior(obj, bhvOmmBowserMadAura) {
         if (obj->parentObj == bowser->obj) {
             aura = obj;
             break;
         }
     }
     if (!aura) {
-        aura = obj_spawn_from_geo(bowser->obj, omm_geo_bowser_mad_aura, omm_bhv_bowser_mad_aura);
+        aura = obj_spawn_from_geo(bowser->obj, omm_geo_bowser_mad_aura, bhvOmmBowserMadAura);
         aura->parentObj = bowser->obj;
         aura->oOpacity = 0;
     }
@@ -2028,26 +2031,35 @@ OMM_BOWSER_CLONE_CODE(
     obj_set_angle(aura, 0, atan2s(bowser->obj->oPosZ - gCamera->pos[2], bowser->obj->oPosX - gCamera->pos[0]), 0);
     obj_set_scale(aura, (aura->oOpacity != 0) * bowser->obj->oScaleX, (aura->oOpacity != 0) * bowser->obj->oScaleY, (aura->oOpacity != 0) * bowser->obj->oScaleZ);
 );
+
+    // Spawn sparkles
+    if (omm_sparkly_is_bowser_4_battle()) {
+OMM_BOWSER_CLONE_CODE(
+        if (bowser->obj->oTimer & 1) {
+            omm_spawn_sparkly_star_sparkle(bowser->obj, gOmmSparklyMode, 150.f, 20.f, 1.f, 100.f);
+        }
+);
+    }
 }
 
-static void omm_bhv_bowser_update() {
+static void bhv_omm_bowser_update() {
     sOmmBowsers[0].obj = gCurrentObject;
-    omm_bhv_bowser_update_bowser(&sOmmBowsers[0]);
+    bhv_omm_bowser_update_bowser(&sOmmBowsers[0]);
 }
 
-const BehaviorScript omm_bhv_bowser[] = {
+const BehaviorScript bhvOmmBowser[] = {
     OBJ_TYPE_GENACTOR,
     0x11010001,
     0x102A0008,
     0x27260000, (uintptr_t) bowser_seg6_anims_06057690,
     0x08000000,
-    0x0C000000, (uintptr_t) omm_bhv_bowser_update,
+    0x0C000000, (uintptr_t) bhv_omm_bowser_update,
     0x09000000,
 };
 
-static void omm_bhv_bowser_clone_update() {
+static void bhv_omm_bowser_clone_update() {
     struct Object *o = gCurrentObject;
-    if (sOmmBowsers[0].clone == NULL || o != sOmmBowsers[1].obj) {
+    if (!sOmmBowsers[0].clone || o != sOmmBowsers[1].obj) {
         o->oAction = 2;
     }
     switch (o->oAction) {
@@ -2069,7 +2081,7 @@ static void omm_bhv_bowser_clone_update() {
             f32 t = 1.f - invlerp_0_1_f(o->oSubAction++, 0, 15);
             o->oOpacity = 0xFF * t;
             if (t == 0.f) {
-                for_each_object_with_behavior(obj, omm_bhv_bowser_mad_aura) {
+                for_each_object_with_behavior(obj, bhvOmmBowserMadAura) {
                     if (obj->parentObj == o) {
                         obj_mark_for_deletion(obj);
                         break;
@@ -2081,13 +2093,13 @@ static void omm_bhv_bowser_clone_update() {
     }
 }
 
-const BehaviorScript omm_bhv_bowser_clone[] = {
+const BehaviorScript bhvOmmBowserClone[] = {
     OBJ_TYPE_GENACTOR,
     0x11010001,
     0x102A0008,
     0x27260000, (uintptr_t) bowser_seg6_anims_06057690,
     0x08000000,
-    0x0C000000, (uintptr_t) omm_bhv_bowser_clone_update,
+    0x0C000000, (uintptr_t) bhv_omm_bowser_clone_update,
     0x09000000,
 };
 
@@ -2102,15 +2114,15 @@ OMM_ROUTINE_UPDATE(omm_spawn_bowser) {
         (gCurrLevelNum == LEVEL_BOWSER_2) ||
         (gCurrLevelNum == LEVEL_BOWSER_3) ||
 #endif
-        omm_ssd_is_bowser_4()))
+        omm_sparkly_is_bowser_4_battle()))
     {
-        struct Object *o = obj_get_first_with_behavior(omm_bhv_bowser);
+        struct Object *o = obj_get_first_with_behavior(bhvOmmBowser);
         if (!o) {
-            o = obj_spawn_from_geo(gMarioObject, bowser_geo, omm_bhv_bowser);
+            o = obj_spawn_from_geo(gMarioObject, bowser_geo, bhvOmmBowser);
             o->oPosX = 0;
             o->oPosY = 0;
             o->oPosZ = 0;
-            o->oBehParams = omm_ssd_is_bowser_4() || OMM_CAP_CAPPY_CAPTURE;
+            o->oBhvArgs = omm_sparkly_is_bowser_4_battle() || OMM_CAP_CAPPY_CAPTURE;
             o->oNodeFlags |= GRAPH_RENDER_INVISIBLE;
             obj_reset_hitbox(o, 0, 0, 0, 0, 0, 0);
         }

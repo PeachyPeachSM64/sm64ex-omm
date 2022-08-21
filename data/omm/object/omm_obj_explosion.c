@@ -14,7 +14,7 @@ const GeoLayout omm_geo_explosion[] = {
 // Behavior
 //
 
-static void omm_bhv_explosion_update() {
+static void bhv_omm_explosion_update() {
     struct Object *o = gCurrentObject;
     if (o->oTimer >= 10) {
         spawn_object(o, MODEL_SMOKE, bhvBobombBullyDeathSmoke);
@@ -31,11 +31,11 @@ static void omm_bhv_explosion_update() {
     omm_obj_process_interactions(o, OBJ_INT_PRESET_EXPLOSION);
 }
 
-const BehaviorScript omm_bhv_explosion[] = {
+const BehaviorScript bhvOmmExplosion[] = {
     OBJ_TYPE_SPECIAL,
     0x110100C1,
     0x08000000,
-    0x0C000000, (uintptr_t) omm_bhv_explosion_update,
+    0x0C000000, (uintptr_t) bhv_omm_explosion_update,
     0x09000000,
 };
 
@@ -44,7 +44,7 @@ const BehaviorScript omm_bhv_explosion[] = {
 //
 
 struct Object *omm_spawn_explosion(struct Object *o) {
-    struct Object *explosion  = obj_spawn_from_geo(o, omm_geo_explosion, omm_bhv_explosion);
+    struct Object *explosion  = obj_spawn_from_geo(o, omm_geo_explosion, bhvOmmExplosion);
     explosion->oAnimState     = -1;
     explosion->oGraphYOffset += 100.0f;
     explosion->oOpacity       = 255;

@@ -6,7 +6,7 @@
 // Behavior
 //
 
-static void omm_bhv_sparkly_star_celebration_update() {
+static void bhv_omm_sparkly_star_celebration_update() {
     struct MarioState *m = gMarioState;
     struct Object *o = gCurrentObject;
 
@@ -35,14 +35,14 @@ static void omm_bhv_sparkly_star_celebration_update() {
     }
 }
 
-const BehaviorScript omm_bhv_sparkly_star_celebration[] = {
+const BehaviorScript bhvOmmSparklyStarCelebration[] = {
     OBJ_TYPE_LEVEL,
     0x11010001,
     0x0D0700C0,
     0x10120000,
     0x10140000,
     0x08000000,
-    0x0C000000, (uintptr_t) omm_bhv_sparkly_star_celebration_update,
+    0x0C000000, (uintptr_t) bhv_omm_sparkly_star_celebration_update,
     0x09000000,
 };
 
@@ -51,7 +51,7 @@ const BehaviorScript omm_bhv_sparkly_star_celebration[] = {
 //
 
 struct Object *omm_spawn_sparkly_star_celebration(struct Object *o, s32 mode) {
-    struct Object *star = obj_spawn_from_geo(o, OMM_SSX_STAR_GEO_OPAQUE[mode], omm_bhv_sparkly_star_celebration);
+    struct Object *star = obj_spawn_from_geo(o, OMM_SPARKLY_STAR_GEO_OPAQUE[mode], bhvOmmSparklyStarCelebration);
     star->activeFlags |= ACTIVE_FLAG_INITIATED_TIME_STOP;
     star->oSparklyStarMode = mode;
     return star;

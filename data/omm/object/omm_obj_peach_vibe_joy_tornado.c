@@ -125,7 +125,7 @@ const GeoLayout omm_geo_peach_vibe_joy_tornado[] = {
 // Behavior
 //
 
-static void omm_bhv_peach_vibe_joy_tornado_update() {
+static void bhv_omm_peach_vibe_joy_tornado_update() {
     struct Object *o = gCurrentObject;
     struct MarioState *m = gMarioState;
     if (!omm_peach_vibe_is_joy()) {
@@ -165,10 +165,10 @@ static void omm_bhv_peach_vibe_joy_tornado_update() {
     omm_obj_process_interactions(o, OBJ_INT_PRESET_PEACH_VIBE_JOY_TORNADO);
 }
 
-const BehaviorScript omm_bhv_peach_vibe_joy_tornado[] = {
+const BehaviorScript bhvOmmPeachVibeJoyTornado[] = {
     OBJ_TYPE_SPECIAL,
     0x08000000,
-    0x0C000000, (uintptr_t) omm_bhv_peach_vibe_joy_tornado_update,
+    0x0C000000, (uintptr_t) bhv_omm_peach_vibe_joy_tornado_update,
     0x09000000,
 };
 
@@ -177,9 +177,9 @@ const BehaviorScript omm_bhv_peach_vibe_joy_tornado[] = {
 //
 
 struct Object *omm_spawn_peach_vibe_joy_tornado(struct Object *o) {
-    struct Object *tornado = obj_get_first_with_behavior(omm_bhv_peach_vibe_joy_tornado);
-    if (tornado == NULL) {
-        tornado = obj_spawn_from_geo(o, omm_geo_peach_vibe_joy_tornado, omm_bhv_peach_vibe_joy_tornado);
+    struct Object *tornado = obj_get_first_with_behavior(bhvOmmPeachVibeJoyTornado);
+    if (!tornado) {
+        tornado = obj_spawn_from_geo(o, omm_geo_peach_vibe_joy_tornado, bhvOmmPeachVibeJoyTornado);
         obj_set_always_rendered(tornado, true);
         obj_set_angle(tornado, 0, 0, 0);
     }

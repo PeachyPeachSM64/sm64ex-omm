@@ -119,10 +119,10 @@ static bool init_shadow(Vec3f pos, f32 scale, u8 solidity) {
     sShadow->isOnIceOrCarpet = false;
     sShadow->isOnFlyingCarpet = false;
 
-    // Find floor
+    // Find floor (don't cast shadows on death planes)
     struct Surface *floor = NULL;
     f32 floorHeight = find_floor(pos[0], pos[1], pos[2], &floor) + 1.f;
-    if (!floor) {
+    if (!floor || SURFACE_IS_DEATH_PLANE(floor->type)) {
         return false;
     }
 
@@ -162,35 +162,37 @@ static bool init_shadow(Vec3f pos, f32 scale, u8 solidity) {
 }
 
 static Gfx *create_shadow_player() {
-    Vtx *vtx = alloc_display_list(4 * sizeof(Vtx));
-    Gfx *gfx = alloc_display_list(5 * sizeof(Gfx));
-    if (vtx && gfx) {
-        
+    if (gMarioObject) {
+        Vtx *vtx = alloc_display_list(4 * sizeof(Vtx));
+        Gfx *gfx = alloc_display_list(5 * sizeof(Gfx));
+        if (vtx && gfx) {
+            
 #if OMM_GAME_IS_SM64
-        // Flying carpet in RR
-        if (gCurrLevelNum == LEVEL_RR && sShadow->floor.type != SURFACE_DEATH_PLANE) {
-            switch (gFlyingCarpetState) {
-                case FLYING_CARPET_MOVING_WITHOUT_MARIO:
-                    sShadow->isOnIceOrCarpet = true;
-                    sShadow->isOnFlyingCarpet = true;
-                    break;
+            // Flying carpet in RR
+            if (gCurrLevelNum == LEVEL_RR) {
+                switch (gFlyingCarpetState) {
+                    case FLYING_CARPET_MOVING_WITHOUT_MARIO:
+                        sShadow->isOnIceOrCarpet = true;
+                        sShadow->isOnFlyingCarpet = true;
+                        break;
 
-                case FLYING_CARPET_MOVING_WITH_MARIO:
-                    sShadow->isOnIceOrCarpet = true;
-                    break;
+                    case FLYING_CARPET_MOVING_WITH_MARIO:
+                        sShadow->isOnIceOrCarpet = true;
+                        break;
+                }
             }
-        }
 #endif
-        s16 animFrame = gMarioObject->oAnimInfo.animFrame;
-        switch (gMarioObject->oAnimInfo.animID) {
-            case MARIO_ANIM_IDLE_ON_LEDGE:    return NULL;
-            case MARIO_ANIM_FAST_LEDGE_GRAB:  sShadow->solidity *= invlerp_0_1_f(animFrame,  5, 14); break;
-            case MARIO_ANIM_SLOW_LEDGE_GRAB:  sShadow->solidity *= invlerp_0_1_f(animFrame, 21, 33); break;
-            case MARIO_ANIM_CLIMB_DOWN_LEDGE: sShadow->solidity *= invlerp_0_1_f(animFrame,  5,  0); break;
+            s16 animFrame = gMarioObject->oAnimInfo.animFrame;
+            switch (gMarioObject->oAnimInfo.animID) {
+                case MARIO_ANIM_IDLE_ON_LEDGE:    return NULL;
+                case MARIO_ANIM_FAST_LEDGE_GRAB:  sShadow->solidity *= invlerp_0_1_f(animFrame,  5, 14); break;
+                case MARIO_ANIM_SLOW_LEDGE_GRAB:  sShadow->solidity *= invlerp_0_1_f(animFrame, 21, 33); break;
+                case MARIO_ANIM_CLIMB_DOWN_LEDGE: sShadow->solidity *= invlerp_0_1_f(animFrame,  5,  0); break;
+            }
+            make_shadow_vertices(vtx);
+            add_shadow_to_display_list(gfx, vtx, SHADOW_SHAPE_CIRCLE);
+            return gfx;
         }
-        make_shadow_vertices(vtx);
-        add_shadow_to_display_list(gfx, vtx, SHADOW_SHAPE_CIRCLE);
-        return gfx;
     }
     return NULL;
 }

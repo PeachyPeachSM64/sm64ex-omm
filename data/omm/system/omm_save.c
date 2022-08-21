@@ -41,7 +41,7 @@ static const OmmNameValue sOmmFlags[] = {
     { "basement_door", SAVE_FLAG_UNLOCKED_BASEMENT_DOOR },
     { "upstairs_door", SAVE_FLAG_UNLOCKED_UPSTAIRS_DOOR },
 };
-#define OMM_FLAGS_COUNT OMM_ARRAY_SIZE(sOmmFlags)
+#define OMM_FLAGS_COUNT omm_static_array_length(sOmmFlags)
 
 static const OmmNameValue sOmmCourses[] = {
     { "bob", COURSE_BOB },
@@ -70,7 +70,7 @@ static const OmmNameValue sOmmCourses[] = {
     { "sa", COURSE_SA },
     { "castle", COURSE_COUNT },
 };
-#define OMM_COURSES_COUNT OMM_ARRAY_SIZE(sOmmCourses)
+#define OMM_COURSES_COUNT omm_static_array_length(sOmmCourses)
 
 //
 // Collectibles
@@ -108,10 +108,10 @@ typedef struct {
 static OmmSaveBuffer sOmmSaveBuffers[] = {
     { "smex", 1, 7, NULL, { { { 0 } } } },
     { "smms", 1, 7, NULL, { { { 0 } } } },
-#if OMM_GAME_IS_R96A
-    { "r96a", 1, 7, "b00" STRINGIFY(NUM_KEYS) "b" STRINGIFY(NUM_KEYS) STRINGIFY(NUM_WARIO_COINS), { { { 0 } } } },
+#if OMM_GAME_IS_R96X
+    { "r96x", 1, 7, "b00" STRINGIFY(NUM_KEYS) "b" STRINGIFY(NUM_KEYS) STRINGIFY(NUM_WARIO_COINS), { { { 0 } } } },
 #else
-    { "r96a", 1, 7, "b0016b1616", { { { 0 } } } },
+    { "r96x", 1, 7, "b0016b1616", { { { 0 } } } },
 #endif
     { "xalo", 1, 7, NULL, { { { 0 } } } },
     { "sm74", 2, 7, NULL, { { { 0 } } } },
@@ -140,7 +140,7 @@ typedef struct {
 } Token;
 
 static Token tokenize(const char *buffer) {
-    Token token; OMM_MEMSET(&token, 0, sizeof(token));
+    Token token; omm_zero(&token, sizeof(token));
     char temp[128];
     s32 index = 0;
     s32 length = 0;
@@ -153,7 +153,7 @@ static Token tokenize(const char *buffer) {
             }
         } else {
             if (length > 0) {
-                OMM_MEMCPY(token.args[index++], temp, length);
+                omm_copy(token.args[index++], temp, length);
                 if (index >= 4) {
                     return token;
                 }
@@ -168,14 +168,14 @@ static void trim_left(char *buffer) {
     s32 l = strlen(buffer);
     s32 i = 0;
     while (buffer[i] != 0 && buffer[i] <= ' ') ++i;
-    OMM_MEMMOV(buffer, buffer + i, l - i + 1);
+    omm_move(buffer, buffer + i, l - i + 1);
 }
 
 void save_file_load_all() {
     static bool sSaveFileLoaded = false;
     static bool sSaveFileBackup = false;
     if (!sSaveFileLoaded) {
-        OMM_STRING(filename, 256, "%s/%s", OMM_USER_FOLDER, (sSaveFileBackup ? OMM_SAVEFILE_BACKUP : OMM_SAVEFILE_NAME));
+        omm_cat_paths(filename, 256, sys_user_path(), (sSaveFileBackup ? OMM_SAVEFILE_BACKUP : OMM_SAVEFILE_NAME));
         FILE *f = fopen(filename, "r");
         bool loaded = false;
         if (f) {
@@ -196,7 +196,7 @@ void save_file_load_all() {
                     else if (buffer[0] == '[') {
 
                         // Buffer
-                        for (s32 i = 0; i != OMM_ARRAY_SIZE(sOmmSaveBuffers); ++i) {
+                        for (s32 i = 0; i != omm_static_array_length(sOmmSaveBuffers); ++i) {
                             if (strcmp(sOmmSaveBuffers[i].name, token.args[0]) == 0) {
 
                                 // File index
@@ -218,72 +218,70 @@ void save_file_load_all() {
                     else if (saveFile) {
 
                         // Settings data
-                        READ_KBINDS(gOmmControlsButtonA, token.args);
-                        READ_KBINDS(gOmmControlsButtonB, token.args);
-                        READ_KBINDS(gOmmControlsButtonX, token.args);
-                        READ_KBINDS(gOmmControlsButtonY, token.args);
-                        READ_KBINDS(gOmmControlsButtonStart, token.args);
-                        READ_KBINDS(gOmmControlsTriggerL, token.args);
-                        READ_KBINDS(gOmmControlsTriggerR, token.args);
-                        READ_KBINDS(gOmmControlsTriggerZ, token.args);
-                        READ_KBINDS(gOmmControlsCUp, token.args);
-                        READ_KBINDS(gOmmControlsCDown, token.args);
-                        READ_KBINDS(gOmmControlsCLeft, token.args);
-                        READ_KBINDS(gOmmControlsCRight, token.args);
-                        READ_KBINDS(gOmmControlsDUp, token.args);
-                        READ_KBINDS(gOmmControlsDDown, token.args);
-                        READ_KBINDS(gOmmControlsDLeft, token.args);
-                        READ_KBINDS(gOmmControlsDRight, token.args);
-                        READ_KBINDS(gOmmControlsStickUp, token.args);
-                        READ_KBINDS(gOmmControlsStickDown, token.args);
-                        READ_KBINDS(gOmmControlsStickLeft, token.args);
-                        READ_KBINDS(gOmmControlsStickRight, token.args);
-                        READ_CHOICE(gOmmFPS, token.args);
-                        READ_CHOICE_SC(gOmmCharacter, token.args);
-                        READ_CHOICE_SC(gOmmMovesetType, token.args);
-                        READ_CHOICE_SC(gOmmCapType, token.args);
-                        READ_CHOICE_SC(gOmmStarsMode, token.args);
-                        READ_CHOICE_SC(gOmmPowerUpsType, token.args);
-                        READ_CHOICE_SC(gOmmCameraMode, token.args);
-                        READ_CHOICE_SC(gOmmSparklyStarsMode, token.args);
-                        READ_TOGGLE_SC(gOmmSparklyStarsAssist, token.args);
-                        READ_TOGGLE_SC(gOmmSparklyStarsHint, token.args);
-                        READ_CHOICE(gOmmExtrasMarioColors, token.args);
-                        READ_CHOICE(gOmmExtrasPeachColors, token.args);
-                        READ_TOGGLE_SC(gOmmExtrasSMOAnimations, token.args);
-                        READ_TOGGLE_SC(gOmmExtrasCappyAndTiara, token.args);
-                        READ_TOGGLE_SC(gOmmExtrasColoredStars, token.args);
-                        READ_TOGGLE_SC(gOmmExtrasVanishingHUD, token.args);
-                        READ_TOGGLE_SC(gOmmExtrasRevealSecrets, token.args);
-                        READ_TOGGLE_SC(gOmmExtrasRedCoinsRadar, token.args);
-                        READ_TOGGLE_SC(gOmmExtrasShowStarNumber, token.args);
-                        READ_TOGGLE_SC(gOmmExtrasInvisibleMode, token.args);
-#if OMM_CODE_DEV
-                        READ_TOGGLE_SC(gOmmExtrasRender96Peach, token.args);
-#endif
-                        READ_TOGGLE_SC(gOmmExtrasCrystalStarsReward, token.args);
-                        READ_TOGGLE_SC(gOmmExtrasNebulaStarsReward, token.args);
+                        READ_KBINDS(gOmmControlsButtonA);
+                        READ_KBINDS(gOmmControlsButtonB);
+                        READ_KBINDS(gOmmControlsButtonX);
+                        READ_KBINDS(gOmmControlsButtonY);
+                        READ_KBINDS(gOmmControlsButtonStart);
+                        READ_KBINDS(gOmmControlsTriggerL);
+                        READ_KBINDS(gOmmControlsTriggerR);
+                        READ_KBINDS(gOmmControlsTriggerZ);
+                        READ_KBINDS(gOmmControlsCUp);
+                        READ_KBINDS(gOmmControlsCDown);
+                        READ_KBINDS(gOmmControlsCLeft);
+                        READ_KBINDS(gOmmControlsCRight);
+                        READ_KBINDS(gOmmControlsDUp);
+                        READ_KBINDS(gOmmControlsDDown);
+                        READ_KBINDS(gOmmControlsDLeft);
+                        READ_KBINDS(gOmmControlsDRight);
+                        READ_KBINDS(gOmmControlsStickUp);
+                        READ_KBINDS(gOmmControlsStickDown);
+                        READ_KBINDS(gOmmControlsStickLeft);
+                        READ_KBINDS(gOmmControlsStickRight);
+                        READ_CHOICE(gOmmFrameRate);
+                        READ_TOGGLE(gOmmShowFPS);
+                        READ_CHOICE(gOmmPreloadTextures);
+                        READ_CHOICE_SC(gOmmCharacter);
+                        READ_CHOICE_SC(gOmmMovesetType);
+                        READ_CHOICE_SC(gOmmCapType);
+                        READ_CHOICE_SC(gOmmStarsMode);
+                        READ_CHOICE_SC(gOmmPowerUpsType);
+                        READ_CHOICE_SC(gOmmCameraMode);
+                        READ_CHOICE_SC(gOmmSparklyStarsMode);
+                        READ_CHOICE_SC(gOmmSparklyStarsHintAtLevelEntry);
+                        READ_CHOICE(gOmmExtrasMarioColors);
+                        READ_CHOICE(gOmmExtrasPeachColors);
+                        READ_TOGGLE_SC(gOmmExtrasSMOAnimations);
+                        READ_TOGGLE_SC(gOmmExtrasCappyAndTiara);
+                        READ_TOGGLE_SC(gOmmExtrasColoredStars);
+                        READ_TOGGLE_SC(gOmmExtrasVanishingHUD);
+                        READ_TOGGLE_SC(gOmmExtrasRevealSecrets);
+                        READ_TOGGLE_SC(gOmmExtrasRedCoinsRadar);
+                        READ_TOGGLE_SC(gOmmExtrasShowStarNumber);
+                        READ_TOGGLE_SC(gOmmExtrasInvisibleMode);
+                        READ_CHOICE_SC(gOmmExtrasSparklyStarsReward);
 #if OMM_CODE_DEBUG
-                        READ_TOGGLE_SC(gOmmDebugHitbox, token.args);
-                        READ_TOGGLE_SC(gOmmDebugHurtbox, token.args);
-                        READ_TOGGLE_SC(gOmmDebugWallbox, token.args);
-                        READ_TOGGLE_SC(gOmmDebugSurface, token.args);
-                        READ_TOGGLE_SC(gOmmDebugMario, token.args);
-                        READ_TOGGLE_SC(gOmmDebugCappy, token.args);
-                        READ_TOGGLE_SC(gOmmDebugProfiler, token.args);
-#if OMM_CODE_DEV_DEBUG
-                        READ_TOGGLE_SC(gOmmDebugGameSpeedEnable, token.args);
-                        READ_TOGGLE_SC(gOmmDebugGameSpeedFps, token.args);
+                        READ_TOGGLE_SC(gOmmDebugHitbox);
+                        READ_TOGGLE_SC(gOmmDebugHurtbox);
+                        READ_TOGGLE_SC(gOmmDebugWallbox);
+                        READ_TOGGLE_SC(gOmmDebugSurface);
+                        READ_TOGGLE_SC(gOmmDebugMario);
+                        READ_TOGGLE_SC(gOmmDebugCappy);
 #endif
+#if OMM_CODE_DEV
+                        READ_TOGGLE_SC(gOmmDevGameSpeedEnable);
+                        READ_CHOICE_SC(gOmmDevGameSpeedModifier);
+                        READ_TOGGLE_SC(gOmmDevSaveState);
+                        READ_TOGGLE_SC(gOmmDevLoadState);
 #endif
                 
                         // Sparkly Stars data
-                        if (omm_ssd_read(OMM_ARRAY_OF(const char*) { token.args[0], token.args[1] })) {
+                        if (omm_sparkly_read(omm_static_array_of(const char*) { token.args[0], token.args[1] })) {
                             continue;
                         }
 
                         // Mario colors
-                        if (omm_mario_colors_read(OMM_ARRAY_OF(const char*) { token.args[0], token.args[1] })) {
+                        if (omm_mario_colors_read(omm_static_array_of(const char*) { token.args[0], token.args[1] })) {
                             continue;
                         }
 
@@ -358,10 +356,10 @@ void save_file_load_all() {
 
             // The backup was loaded, regenerate the save file
             if (loaded && sSaveFileBackup) {
-                OMM_STRING(backupFilename, 256, "%s/%s", OMM_USER_FOLDER, OMM_SAVEFILE_BACKUP);
+                omm_cat_paths(backupFilename, 256, sys_user_path(), OMM_SAVEFILE_BACKUP);
                 FILE *backup = fopen(backupFilename, "rb");
                 if (backup) {
-                    OMM_STRING(saveFilename, 256, "%s/%s", OMM_USER_FOLDER, OMM_SAVEFILE_NAME);
+                    omm_cat_paths(saveFilename, 256, sys_user_path(), OMM_SAVEFILE_NAME);
                     FILE *save = fopen(saveFilename, "wb");
                     if (save) {
                         char buffer[0x1000]; s32 length = 0;
@@ -390,7 +388,7 @@ void save_file_reload() {
 
 static bool save_file_is_empty(const OmmSaveFile *savefile) {
     static const OmmSaveFile sOmmEmptySaveFile = { 0, 0, { { 0, 0, 0 } } };
-    return OMM_MEMCMP(savefile, &sOmmEmptySaveFile, sizeof(sOmmEmptySaveFile));
+    return omm_same(savefile, &sOmmEmptySaveFile, sizeof(sOmmEmptySaveFile));
 }
 
 #define write(...) { head += sprintf(head, __VA_ARGS__); }
@@ -428,7 +426,7 @@ static void save_file_write() {
     write("\n");
 
     // Versions
-    for (s32 s = 0; s != OMM_ARRAY_SIZE(sOmmSaveBuffers); ++s) {
+    for (s32 s = 0; s != omm_static_array_length(sOmmSaveBuffers); ++s) {
         const OmmSaveBuffer *saveBuffer = &sOmmSaveBuffers[s];
         for (s32 i = 0; i != NUM_SAVE_FILES; ++i) {
             for (s32 j = 0; j != saveBuffer->modes; ++j) {
@@ -492,7 +490,7 @@ static void save_file_write() {
     }
 
     // Sparkly Stars data
-    omm_ssd_write(&head);
+    omm_sparkly_write(&head);
 
     // Mario colors
     omm_mario_colors_write(&head);
@@ -519,7 +517,9 @@ static void save_file_write() {
     WRITE_KBINDS(gOmmControlsStickDown);
     WRITE_KBINDS(gOmmControlsStickLeft);
     WRITE_KBINDS(gOmmControlsStickRight);
-    WRITE_CHOICE(gOmmFPS);
+    WRITE_CHOICE(gOmmFrameRate);
+    WRITE_TOGGLE(gOmmShowFPS);
+    WRITE_CHOICE(gOmmPreloadTextures);
     WRITE_CHOICE_SC(gOmmCharacter);
     WRITE_CHOICE_SC(gOmmMovesetType);
     WRITE_CHOICE_SC(gOmmCapType);
@@ -527,8 +527,7 @@ static void save_file_write() {
     WRITE_CHOICE_SC(gOmmPowerUpsType);
     WRITE_CHOICE_SC(gOmmCameraMode);
     WRITE_CHOICE_SC(gOmmSparklyStarsMode);
-    WRITE_TOGGLE_SC(gOmmSparklyStarsAssist);
-    WRITE_TOGGLE_SC(gOmmSparklyStarsHint);
+    WRITE_CHOICE_SC(gOmmSparklyStarsHintAtLevelEntry);
     WRITE_CHOICE(gOmmExtrasMarioColors);
     WRITE_CHOICE(gOmmExtrasPeachColors);
     WRITE_TOGGLE_SC(gOmmExtrasSMOAnimations);
@@ -539,11 +538,7 @@ static void save_file_write() {
     WRITE_TOGGLE_SC(gOmmExtrasRedCoinsRadar);
     WRITE_TOGGLE_SC(gOmmExtrasShowStarNumber);
     WRITE_TOGGLE_SC(gOmmExtrasInvisibleMode);
-#if OMM_CODE_DEV
-    WRITE_TOGGLE_SC(gOmmExtrasRender96Peach);
-#endif
-    WRITE_TOGGLE_SC(gOmmExtrasCrystalStarsReward);
-    WRITE_TOGGLE_SC(gOmmExtrasNebulaStarsReward);
+    WRITE_CHOICE_SC(gOmmExtrasSparklyStarsReward);
 #if OMM_CODE_DEBUG
     WRITE_TOGGLE_SC(gOmmDebugHitbox);
     WRITE_TOGGLE_SC(gOmmDebugHurtbox);
@@ -551,16 +546,17 @@ static void save_file_write() {
     WRITE_TOGGLE_SC(gOmmDebugSurface);
     WRITE_TOGGLE_SC(gOmmDebugMario);
     WRITE_TOGGLE_SC(gOmmDebugCappy);
-    WRITE_TOGGLE_SC(gOmmDebugProfiler);
-#if OMM_CODE_DEV_DEBUG
-    WRITE_TOGGLE_SC(gOmmDebugGameSpeedEnable);
-    WRITE_TOGGLE_SC(gOmmDebugGameSpeedFps);
 #endif
+#if OMM_CODE_DEV
+    WRITE_TOGGLE_SC(gOmmDevGameSpeedEnable);
+    WRITE_CHOICE_SC(gOmmDevGameSpeedModifier);
+    WRITE_TOGGLE_SC(gOmmDevSaveState);
+    WRITE_TOGGLE_SC(gOmmDevLoadState);
 #endif
     write("\n");
 
     // Create a back-up
-    OMM_STRING(backupFilename, 256, "%s/%s", OMM_USER_FOLDER, OMM_SAVEFILE_BACKUP);
+    omm_cat_paths(backupFilename, 256, sys_user_path(), OMM_SAVEFILE_BACKUP);
     FILE *backup = fopen(backupFilename, "wb");
     if (backup) {
         fwrite(saveFileBuffer, sizeof(char), head - saveFileBuffer, backup);
@@ -568,7 +564,7 @@ static void save_file_write() {
     }
 
     // Write the save file
-    OMM_STRING(saveFilename, 256, "%s/%s", OMM_USER_FOLDER, OMM_SAVEFILE_NAME);
+    omm_cat_paths(saveFilename, 256, sys_user_path(), OMM_SAVEFILE_NAME);
     FILE *save = fopen(saveFilename, "wb");
     if (save) {
         fwrite(saveFileBuffer, sizeof(char), head - saveFileBuffer, save);
@@ -591,7 +587,7 @@ void save_file_do_save(UNUSED s32 fileIndex) {
 BAD_RETURN(s32) save_file_copy(s32 srcFileIndex, s32 dstFileIndex) {
     CHECK_FILE_INDEX(srcFileIndex, return);
     CHECK_FILE_INDEX(dstFileIndex, return);
-    OMM_MEMCPY(&sOmmCurrSaveBuffer->files[dstFileIndex], &sOmmCurrSaveBuffer->files[srcFileIndex], sizeof(sOmmCurrSaveBuffer->files[dstFileIndex]));
+    omm_copy(&sOmmCurrSaveBuffer->files[dstFileIndex], &sOmmCurrSaveBuffer->files[srcFileIndex], sizeof(sOmmCurrSaveBuffer->files[dstFileIndex]));
     gSaveFileModified = true;
 }
 
@@ -601,7 +597,7 @@ BAD_RETURN(s32) save_file_copy(s32 srcFileIndex, s32 dstFileIndex) {
 
 void save_file_erase(s32 fileIndex) {
     CHECK_FILE_INDEX(fileIndex, return);
-    OMM_MEMSET(&sOmmCurrSaveBuffer->files[fileIndex], 0, sizeof(sOmmCurrSaveBuffer->files[fileIndex]));
+    omm_zero(&sOmmCurrSaveBuffer->files[fileIndex], sizeof(sOmmCurrSaveBuffer->files[fileIndex]));
     gSaveFileModified = true;
 }
 
@@ -707,6 +703,13 @@ void save_file_set_star_flags(s32 fileIndex, s32 courseIndex, u32 starFlags) {
     gSaveFileModified = true;
 }
 
+void save_file_clear_star_flags(s32 fileIndex, s32 courseIndex) {
+    CHECK_FILE_INDEX(fileIndex, return);
+    CHECK_COURSE_INDEX(courseIndex, return);
+    sOmmCurrSaveBuffer->files[fileIndex][OMM_GAME_MODE].courses[(courseIndex == -1) ? COURSE_CASTLE : courseIndex].stars = 0;
+    gSaveFileModified = true;
+}
+
 void save_file_collect_star_or_key(s16 coinScore, s16 starIndex) {
     gLastCompletedCourseNum = OMM_BOWSER_IN_THE_LEVEL(gCurrLevelNum);
     gLastCompletedStarNum = starIndex + 1;
@@ -759,7 +762,7 @@ void save_file_set_sound_mode(UNUSED u16 mode) {
 void save_file_move_cap_to_default_location() {
 }
 
-#if OMM_GAME_IS_R96A
+#if OMM_GAME_IS_R96X
 
 //
 // Luigi keys and Wario coins
@@ -886,7 +889,7 @@ void omm_set_complete_save_file(s32 fileIndex) {
         }
 
         // Collectibles
-#if OMM_GAME_IS_R96A
+#if OMM_GAME_IS_R96X
         for (s32 i = 0; i != NUM_KEYS; ++i) {
             save_file_register_key(fileIndex, i);
         }
@@ -901,6 +904,6 @@ void omm_set_complete_save_file(s32 fileIndex) {
     // Unlock Peach
     // That's the "unlock Peach" cheat code that only works with OMM save files :)
     if (!omm_player_is_unlocked(OMM_PLAYER_PEACH)) {
-        omm_ssd_read(OMM_ARRAY_OF(const char *) { "sparkly_stars", "XgU2yLgIIM1ihxJ8tC5qV35jzIrc5FoEXqezDLDUhBVCVF12sKsYkuPPgtoGfHk4UhwmwOF1d73inOZA" });
+        omm_sparkly_read(omm_static_array_of(const char *) { "sparkly_stars", "GfXjKVYgaaJtJcEoXos7yYX2qxnlWT7u6suhEpchlobJxzcvvTeTVoJVNz4" });
     }
 }

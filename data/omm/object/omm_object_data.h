@@ -1,11 +1,6 @@
 #ifndef OMM_OBJECT_DATA_H
 #define OMM_OBJECT_DATA_H
 
-typedef uintptr_t GeoLayout;
-typedef uintptr_t BehaviorScript;
-typedef uintptr_t LevelScript;
-typedef s16 Collision;
-
 //
 // Flags
 //
@@ -122,189 +117,18 @@ typedef s16 Collision;
 // Geo layouts
 //
 
-extern const GeoLayout omm_geo_star_0_opaque[];
-extern const GeoLayout omm_geo_star_1_opaque[];
-extern const GeoLayout omm_geo_star_2_opaque[];
-extern const GeoLayout omm_geo_star_3_opaque[];
-extern const GeoLayout omm_geo_star_4_opaque[];
-extern const GeoLayout omm_geo_star_5_opaque[];
-extern const GeoLayout omm_geo_star_6_opaque[];
-extern const GeoLayout omm_geo_star_7_opaque[];
-extern const GeoLayout omm_geo_star_8_opaque[];
-extern const GeoLayout omm_geo_star_9_opaque[];
-extern const GeoLayout omm_geo_star_10_opaque[];
-extern const GeoLayout omm_geo_star_11_opaque[];
-extern const GeoLayout omm_geo_star_12_opaque[];
-extern const GeoLayout omm_geo_star_13_opaque[];
-extern const GeoLayout omm_geo_star_14_opaque[];
-extern const GeoLayout omm_geo_star_15_opaque[];
-extern const GeoLayout omm_geo_star_16_opaque[];
-extern const GeoLayout omm_geo_star_17_opaque[];
-extern const GeoLayout omm_geo_star_18_opaque[];
-extern const GeoLayout omm_geo_star_19_opaque[];
-extern const GeoLayout omm_geo_star_0_transparent[];
-extern const GeoLayout omm_geo_star_1_transparent[];
-extern const GeoLayout omm_geo_star_2_transparent[];
-extern const GeoLayout omm_geo_star_3_transparent[];
-extern const GeoLayout omm_geo_star_4_transparent[];
-extern const GeoLayout omm_geo_star_5_transparent[];
-extern const GeoLayout omm_geo_star_6_transparent[];
-extern const GeoLayout omm_geo_star_7_transparent[];
-extern const GeoLayout omm_geo_star_8_transparent[];
-extern const GeoLayout omm_geo_star_9_transparent[];
-extern const GeoLayout omm_geo_star_10_transparent[];
-extern const GeoLayout omm_geo_star_11_transparent[];
-extern const GeoLayout omm_geo_star_12_transparent[];
-extern const GeoLayout omm_geo_star_13_transparent[];
-extern const GeoLayout omm_geo_star_14_transparent[];
-extern const GeoLayout omm_geo_star_15_transparent[];
-extern const GeoLayout omm_geo_star_16_transparent[];
-extern const GeoLayout omm_geo_star_17_transparent[];
-extern const GeoLayout omm_geo_star_18_transparent[];
-extern const GeoLayout omm_geo_star_19_transparent[];
-extern const GeoLayout omm_geo_number[];
-extern const GeoLayout omm_geo_star_number[];
-extern const GeoLayout omm_geo_fire_smoke_red[];
-extern const GeoLayout omm_geo_fire_smoke_blue[];
-extern const GeoLayout omm_geo_metal_sparkle[];
-extern const GeoLayout omm_geo_vanish_mist[];
-extern const GeoLayout omm_geo_sparkle[];
-extern const GeoLayout omm_geo_break_particle[];
-extern const GeoLayout omm_geo_snowball[];
-extern const GeoLayout omm_geo_mr_i_beam[];
-extern const GeoLayout omm_geo_snufit_ball[];
-extern const GeoLayout omm_geo_rock[];
-extern const GeoLayout omm_geo_explosion[];
-extern const GeoLayout omm_geo_blargg_fire_ball[];
-extern const GeoLayout omm_geo_shockwave_whomp[];
-extern const GeoLayout omm_geo_shockwave_spindrift[];
-extern const GeoLayout omm_geo_shockwave_fire[];
-extern const GeoLayout omm_geo_rising_lava[];
-extern const GeoLayout omm_geo_star_ring[];
-extern const GeoLayout omm_geo_bowser_mine[];
-extern const GeoLayout omm_geo_bowser_flame[];
-extern const GeoLayout omm_geo_bowser_fireball[];
-extern const GeoLayout omm_geo_bowser_fireball_flame[];
-extern const GeoLayout omm_geo_bowser_mad_aura[];
-extern const GeoLayout omm_geo_flaming_bobomb[];
-extern const GeoLayout omm_geo_flaming_bobomb_aura[];
-extern const GeoLayout omm_geo_flaming_bobomb_explosion[];
-extern const GeoLayout omm_geo_sparkly_star_1_opaque[];
-extern const GeoLayout omm_geo_sparkly_star_1_transparent[];
-extern const GeoLayout omm_geo_sparkly_star_1_sparkle[];
-extern const GeoLayout omm_geo_sparkly_star_1_block[];
-extern const GeoLayout omm_geo_sparkly_star_1_hint[];
-extern const GeoLayout omm_geo_sparkly_star_2_opaque[];
-extern const GeoLayout omm_geo_sparkly_star_2_transparent[];
-extern const GeoLayout omm_geo_sparkly_star_2_sparkle[];
-extern const GeoLayout omm_geo_sparkly_star_2_block[];
-extern const GeoLayout omm_geo_sparkly_star_2_hint[];
-extern const GeoLayout omm_geo_sparkly_star_3_opaque[];
-extern const GeoLayout omm_geo_sparkly_star_3_transparent[];
-extern const GeoLayout omm_geo_sparkly_star_3_sparkle[];
-extern const GeoLayout omm_geo_sparkly_star_3_block[];
-extern const GeoLayout omm_geo_sparkly_star_3_hint[];
-extern const GeoLayout omm_geo_peach[];
-extern const GeoLayout omm_geo_peachs_cap[];
-extern const GeoLayout omm_geo_peachs_metal_cap[];
-extern const GeoLayout omm_geo_perry[];
-extern const GeoLayout omm_geo_perry_trail[];
-extern const GeoLayout omm_geo_perry_shockwave[];
-extern const GeoLayout omm_geo_perry_blast[];
-extern const GeoLayout omm_geo_perry_charge[];
-extern const GeoLayout omm_geo_peach_vibe_aura[];
-extern const GeoLayout omm_geo_peach_vibe_sparkle[];
-extern const GeoLayout omm_geo_peach_vibe_joy_tornado[];
-extern const GeoLayout omm_geo_peach_vibe_joy_gust[];
-extern const GeoLayout omm_geo_peach_vibe_rage_aura[];
-extern const GeoLayout omm_geo_peach_vibe_rage_shockwave[];
-extern const GeoLayout omm_geo_peach_vibe_gloom_aura[];
-extern const GeoLayout omm_geo_peach_vibe_gloom_tear[];
-extern const GeoLayout omm_geo_peach_vibe_gloom_tear_small[];
-extern const GeoLayout omm_geo_peach_vibe_calm_aura[];
-extern const GeoLayout omm_geo_peach_vibe_calm_sparkle[];
-extern const GeoLayout omm_geo_menu_button_mario[];
-extern const GeoLayout omm_geo_menu_button_peach[];
-extern const GeoLayout omm_geo_menu_button_luigi[];
-extern const GeoLayout omm_geo_menu_button_wario[];
-extern const GeoLayout omm_geo_problem[];
+typedef uintptr_t GeoLayout;
+#define OMM_GEO_(geo) extern const GeoLayout geo[];
+#include "omm_object_data_geo.inl"
+#undef OMM_GEO_
 
 //
 // Behaviors
 //
 
-extern const BehaviorScript omm_bhv_grab[];
-extern const BehaviorScript omm_bhv_damage_mario[];
-extern const BehaviorScript omm_bhv_dummy[];
-extern const BehaviorScript omm_bhv_cappy[];
-extern const BehaviorScript omm_bhv_possessed_object[];
-extern const BehaviorScript omm_bhv_possessed_object_cap[];
-extern const BehaviorScript omm_bhv_possessed_koopa_shell[];
-extern const BehaviorScript omm_bhv_act_select_star[];
-extern const BehaviorScript omm_bhv_star_celebration[];
-extern const BehaviorScript omm_bhv_life_up[];
-extern const BehaviorScript omm_bhv_star_number[];
-extern const BehaviorScript omm_bhv_fire_smoke[];
-extern const BehaviorScript omm_bhv_wing_glow_left_hand[];
-extern const BehaviorScript omm_bhv_wing_glow_right_hand[];
-extern const BehaviorScript omm_bhv_wing_trail[];
-extern const BehaviorScript omm_bhv_metal_sparkle[];
-extern const BehaviorScript omm_bhv_vanish_mist[];
-extern const BehaviorScript omm_bhv_break_particle[];
-extern const BehaviorScript omm_bhv_snowball[];
-extern const BehaviorScript omm_bhv_mr_i_beam[];
-extern const BehaviorScript omm_bhv_snufit_ball[];
-extern const BehaviorScript omm_bhv_rock[];
-extern const BehaviorScript omm_bhv_explosion[];
-extern const BehaviorScript omm_bhv_blargg_fire_drop[];
-extern const BehaviorScript omm_bhv_blargg_fire_trail[];
-extern const BehaviorScript omm_bhv_blargg_fire_ball[];
-extern const BehaviorScript omm_bhv_shockwave_whomp[];
-extern const BehaviorScript omm_bhv_shockwave_spindrift[];
-extern const BehaviorScript omm_bhv_shockwave_fire[];
-extern const BehaviorScript omm_bhv_rising_lava[];
-extern const BehaviorScript omm_bhv_star_ring[];
-extern const BehaviorScript omm_bhv_bitfs_pillar[];
-extern const BehaviorScript omm_bhv_goomba_stack[];
-extern const BehaviorScript omm_bhv_goomba_stack_capture[];
-extern const BehaviorScript omm_bhv_chain_chomp_free[];
-extern const BehaviorScript omm_bhv_mips[];
-extern const BehaviorScript omm_bhv_bowser[];
-extern const BehaviorScript omm_bhv_bowser_clone[];
-extern const BehaviorScript omm_bhv_bowser_mine[];
-extern const BehaviorScript omm_bhv_bowser_flame[];
-extern const BehaviorScript omm_bhv_bowser_fireball[];
-extern const BehaviorScript omm_bhv_bowser_fireball_flame[];
-extern const BehaviorScript omm_bhv_bowser_mad_aura[];
-extern const BehaviorScript omm_bhv_flaming_bobomb[];
-extern const BehaviorScript omm_bhv_flaming_bobomb_aura[];
-extern const BehaviorScript omm_bhv_flaming_bobomb_explosion[];
-extern const BehaviorScript omm_bhv_sparkly_star[];
-extern const BehaviorScript omm_bhv_sparkly_star_hint[];
-extern const BehaviorScript omm_bhv_sparkly_star_1_block[];
-extern const BehaviorScript omm_bhv_sparkly_star_2_block[];
-extern const BehaviorScript omm_bhv_sparkly_star_3_block[];
-extern const BehaviorScript omm_bhv_sparkly_star_sparkle[];
-extern const BehaviorScript omm_bhv_sparkly_star_sparkle_mario[];
-extern const BehaviorScript omm_bhv_sparkly_star_celebration[];
-extern const BehaviorScript omm_bhv_perry[];
-extern const BehaviorScript omm_bhv_perry_trail[];
-extern const BehaviorScript omm_bhv_perry_shockwave[];
-extern const BehaviorScript omm_bhv_perry_blast[];
-extern const BehaviorScript omm_bhv_perry_charge[];
-extern const BehaviorScript omm_bhv_peach_vibe_aura[];
-extern const BehaviorScript omm_bhv_peach_vibe_sparkle[];
-extern const BehaviorScript omm_bhv_peach_vibe_joy_tornado[];
-extern const BehaviorScript omm_bhv_peach_vibe_joy_sparkle[];
-extern const BehaviorScript omm_bhv_peach_vibe_joy_gust[];
-extern const BehaviorScript omm_bhv_peach_vibe_rage_aura[];
-extern const BehaviorScript omm_bhv_peach_vibe_rage_shockwave[];
-extern const BehaviorScript omm_bhv_peach_vibe_gloom_aura[];
-extern const BehaviorScript omm_bhv_peach_vibe_gloom_tear[];
-extern const BehaviorScript omm_bhv_peach_vibe_gloom_tear_small[];
-extern const BehaviorScript omm_bhv_peach_vibe_calm_aura[];
-extern const BehaviorScript omm_bhv_peach_vibe_calm_sparkle[];
-extern const BehaviorScript omm_bhv_menu_character_select_button[];
-extern const BehaviorScript omm_bhv_problem[];
+typedef uintptr_t BehaviorScript;
+#define OMM_BHV_(bhv) extern const BehaviorScript bhv[];
+#include "omm_object_data_bhv.inl"
+#undef OMM_BHV_
 
 #endif // OMM_OBJECT_DATA_H

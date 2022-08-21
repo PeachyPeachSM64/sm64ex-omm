@@ -2,7 +2,7 @@
 #include "data/omm/omm_includes.h"
 #undef OMM_ALL_HEADERS
 
-#if OMM_GAME_IS_R96A
+#if OMM_GAME_IS_R96X
 #define speed_modifier(...)     cheats_speed_modifier(__VA_ARGS__)
 #define jump_modifier(...)      cheats_jump_modifier(__VA_ARGS__)
 #define swim_modifier(...)      cheats_swim_modifier(__VA_ARGS__)
@@ -64,9 +64,9 @@ static const s32 sStepResult[][4] = {
 };
 
 OMM_INLINE void clamp_mario_pos(struct MarioState *m) {
-    m->pos[0] = clamp_f(m->pos[0], -LEVEL_BOUNDS, +LEVEL_BOUNDS);
+    m->pos[0] = clamp_f(m->pos[0], -LEVEL_BOUNDARY_MAX, +LEVEL_BOUNDARY_MAX);
     m->pos[1] =   min_f(m->pos[1], +20000.f);
-    m->pos[2] = clamp_f(m->pos[2], -LEVEL_BOUNDS, +LEVEL_BOUNDS);
+    m->pos[2] = clamp_f(m->pos[2], -LEVEL_BOUNDARY_MAX, +LEVEL_BOUNDARY_MAX);
 }
 
 //
@@ -158,7 +158,7 @@ s32 stationary_ground_step(struct MarioState *m) {
     m->pos[1] = m->floorHeight;
     m->vel[1] = 0.f;
     clamp_mario_pos(m);
-    gOmmData->mario->state.peakHeight = m->pos[1];
+    gOmmMario->state.peakHeight = m->pos[1];
     vec3f_copy(m->marioObj->oGfxPos, m->pos);
     vec3s_set(m->marioObj->oGfxAngle, 0, m->faceAngle[1], 0);
     return sStepResult[STEP_NONE][GROUND_STEP];
@@ -268,26 +268,44 @@ static s32 omm_mario_perform_ground_sub_step(struct MarioState *m, Vec3f nextPos
 
 s32 perform_ground_step(struct MarioState *m) {
 
+    // Sliding acceleration
+    f32 slideAcc = omm_player_physics_get_selected_slide();
+    if (omm_mario_is_sliding(m) && slideAcc != 1.f) {
+        m->slideVelX = m->vel[0] = lerp_f(slideAcc, gOmmMario->state.previous.vel[0], m->vel[0]);
+        m->slideVelZ = m->vel[2] = lerp_f(slideAcc, gOmmMario->state.previous.vel[2], m->vel[2]);
+        m->forwardVel = sign_0_f(m->forwardVel) * sqrtf(sqr_f(m->slideVelX) + sqr_f(m->slideVelZ));
+        m->slideVelX = m->vel[0] = m->vel[0] * 100.f / max_f(100.f, abs_f(m->forwardVel));
+        m->slideVelZ = m->vel[2] = m->vel[2] * 100.f / max_f(100.f, abs_f(m->forwardVel));
+    }
+
     // Init steps
     s32 stepResult = STEP_NONE;
-    f32 speedMul = omm_player_get_selected_ground_speed_multiplier();
+    f32 speedMul = (omm_mario_is_sliding(m) ? 1.f : omm_player_physics_get_selected_ground());
     s32 numSteps = OMM_STEP_NUM_SUB_STEPS;
     s32 subSteps = numSteps * speed_modifier(m);
 
     // Perform steps
+    s32 leftFloorSubSteps = 0;
     for (s32 i = 0; i != subSteps; ++i) {
         Vec3f intendedPos;
         intendedPos[0] = m->pos[0] + (m->vel[0] * m->floor->normal.y * speedMul) / numSteps;
         intendedPos[1] = m->pos[1];
         intendedPos[2] = m->pos[2] + (m->vel[2] * m->floor->normal.y * speedMul) / numSteps;
         stepResult     = omm_mario_perform_ground_sub_step(m, intendedPos);
+        if (stepResult == STEP_LEFT_FLOOR) {
+            leftFloorSubSteps++;
+        }
         if (stepResult == STEP_OUT_OF_BOUNDS ||
             stepResult == STEP_HIT_LAVA_WALL ||
-            stepResult == STEP_LEFT_FLOOR ||
             stepResult == STEP_HIT_CEIL ||
             stepResult == STEP_SQUISH) {
             break;
         }
+    }
+
+    // Left floor?
+    if (stepResult == STEP_NONE && leftFloorSubSteps >= subSteps / 2) {
+        stepResult = STEP_LEFT_FLOOR;
     }
 
     // Turn lava walls into regular walls with "Walk on Lava" cheat
@@ -307,7 +325,7 @@ s32 perform_ground_step(struct MarioState *m) {
     // Update gfx and return step result
     m->vel[1] = 0.f;
     clamp_mario_pos(m);
-    gOmmData->mario->state.peakHeight = m->pos[1];
+    gOmmMario->state.peakHeight = m->pos[1];
     m->terrainSoundAddend = mario_get_terrain_sound_addend(m);
     vec3f_copy(m->marioObj->oGfxPos, m->pos);
     vec3s_set(m->marioObj->oGfxAngle, 0, m->faceAngle[1], 0);
@@ -332,7 +350,7 @@ u32 mario_update_moving_sand(struct MarioState *m) {
 }
 
 u32 mario_update_quicksand(struct MarioState *m, f32 sinkingSpeed) {
-    if (!omm_mario_has_metal_cap(m) && !walk_on_quicksand(m) && !(m->action & ACT_FLAG_RIDING_SHELL)) {
+    if (!omm_mario_has_metal_cap(m) && !walk_on_quicksand(m) && !(m->action & ACT_FLAG_RIDING_SHELL) && m->floor) {
         switch (m->floor->type) {
             case SURFACE_SHALLOW_QUICKSAND: {
                 m->quicksandDepth = clamp_f(m->quicksandDepth + sinkingSpeed, 1.1f, 10.f);
@@ -627,7 +645,7 @@ static void omm_mario_apply_gravity(struct MarioState *m) {
     // Peach air attack
     else if (m->action == ACT_OMM_PEACH_ATTACK_AIR) {
         static const f32 sActOmmPeachAttackAirDecV[] = { 3, 3, 3, 3, 3, 3, 3, 3, 1, 1, 1, 1, 1, 1, 4 };
-        decV = sActOmmPeachAttackAirDecV[min_s(m->actionTimer, OMM_ARRAY_SIZE(sActOmmPeachAttackAirDecV) - 1)];
+        decV = sActOmmPeachAttackAirDecV[min_s(m->actionTimer, omm_static_array_length(sActOmmPeachAttackAirDecV) - 1)];
     }
 
     // Wall-slide
@@ -650,12 +668,12 @@ static void omm_mario_apply_gravity(struct MarioState *m) {
 
     // Midair spin
     else if (m->action == ACT_OMM_MIDAIR_SPIN) {
-        decV = clamp_f((gOmmData->mario->midairSpin.counter - 1) * 0.8f, 0.01f, 4.f);
+        decV = clamp_f((gOmmMario->midairSpin.counter - 1) * 0.8f, 0.01f, 4.f);
         maxV = 60.f;
     }
 
     // Cappy throw airborne
-    else if (m->action == ACT_OMM_CAPPY_THROW_AIRBORNE) {
+    else if (m->action == ACT_OMM_CAPPY_THROW_AIRBORNE || ((m->action & ACT_FLAG_RIDING_SHELL) && m->actionArg == 0xFF)) {
         decV = 2.f;
     }
 
@@ -720,11 +738,13 @@ static void omm_mario_apply_gravity(struct MarioState *m) {
     }
 
     // Apply gravity
+    maxV *= omm_player_physics_get_selected_gravity();
+    decV *= (m->vel[1] <= 0.f ? omm_player_physics_get_selected_gravity() : 1.f);
     m->vel[1] = max_f(-maxV, m->vel[1] - decV);
 }
 
 static void omm_mario_apply_vertical_wind(struct MarioState *m) {
-    if (m->floor->type == SURFACE_VERTICAL_WIND && !omm_mario_is_ground_pounding(m)) {
+    if (m->floor && m->floor->type == SURFACE_VERTICAL_WIND && !omm_mario_is_ground_pounding(m)) {
         f32 offsetY = m->pos[1] - -1500.f;
         if (-3000.f < offsetY && offsetY < 2000.f) {
             f32 maxVelY = 10000.f / (max_f(0.f, offsetY) + 200.f);
@@ -740,7 +760,7 @@ s32 perform_air_step(struct MarioState *m, u32 stepArg) {
 
     // Init steps
     s32 stepResult = STEP_NONE;
-    f32 speedMul = omm_player_get_selected_air_speed_multiplier();
+    f32 speedMul = omm_player_physics_get_selected_air();
     s32 numSteps = OMM_STEP_NUM_SUB_STEPS;
     s32 hStepMul = speed_modifier(m);
     s32 yStepMul = (m->vel[1] > 0.f ? jump_modifier(m) : 1);
@@ -791,7 +811,7 @@ s32 perform_air_step(struct MarioState *m, u32 stepArg) {
 
     // Update gfx and return step result
     clamp_mario_pos(m);
-    if (m->vel[1] >= 0.f) gOmmData->mario->state.peakHeight = m->pos[1];
+    if (m->vel[1] >= 0.f) gOmmMario->state.peakHeight = m->pos[1];
     m->terrainSoundAddend = mario_get_terrain_sound_addend(m);
     omm_mario_apply_gravity(m);
     omm_mario_apply_vertical_wind(m);
@@ -873,7 +893,7 @@ s32 perform_hang_step(struct MarioState *m) {
 
     // Init steps
     s32 stepResult = STEP_NONE;
-    f32 speedMul = omm_player_get_selected_air_speed_multiplier();
+    f32 speedMul = omm_player_physics_get_selected_air();
     s32 numSteps = OMM_STEP_NUM_SUB_STEPS;
     s32 subSteps = numSteps * speed_modifier(m);
 
@@ -903,7 +923,7 @@ s32 perform_hang_step(struct MarioState *m) {
     m->vel[1] = 0.f;
     clamp_mario_pos(m);
     m->slideYaw = m->faceAngle[1];
-    gOmmData->mario->state.peakHeight = m->pos[1];
+    gOmmMario->state.peakHeight = m->pos[1];
     vec3f_copy(m->marioObj->oGfxPos, m->pos);
     vec3s_set(m->marioObj->oGfxAngle, 0, m->faceAngle[1], 0);
     return sStepResult[stepResult][HANG_STEP];
@@ -1011,7 +1031,7 @@ static void omm_mario_apply_water_current(struct MarioState *m, Vec3f waterVel) 
 
     // Flowing water
     static const s16 sWaterCurrentSpeeds[] = { 28, 12, 8, 4 };
-    if (m->floor->type == SURFACE_FLOWING_WATER) {
+    if (m->floor && m->floor->type == SURFACE_FLOWING_WATER) {
         s16 currentAngle = m->floor->force << 8;
         f32 currentSpeed = sWaterCurrentSpeeds[min_s(3, (u8) (m->floor->force >> 8))];
         waterVel[0] += currentSpeed * sins(currentAngle);
@@ -1046,15 +1066,16 @@ s32 perform_water_step(struct MarioState *m) {
 
     // Init steps
     s32 stepResult = STEP_NONE;
+    f32 speedMul = omm_player_physics_get_selected_swim();
     s32 numSteps = OMM_STEP_NUM_SUB_STEPS_WATER;
     s32 subSteps = numSteps * swim_modifier(m);
 
     // Perform steps
     for (s32 i = 0; i != subSteps; ++i) {
         Vec3f intendedPos;
-        intendedPos[0] = m->pos[0] + (waterVel[0] / numSteps);
-        intendedPos[1] = m->pos[1] + (waterVel[1] / numSteps);
-        intendedPos[2] = m->pos[2] + (waterVel[2] / numSteps);
+        intendedPos[0] = m->pos[0] + (waterVel[0] * speedMul) / numSteps;
+        intendedPos[1] = m->pos[1] + (waterVel[1] * speedMul) / numSteps;
+        intendedPos[2] = m->pos[2] + (waterVel[2] * speedMul) / numSteps;
         if (intendedPos[1] >= m->waterLevel - 80) {
             intendedPos[1] = m->waterLevel - 80;
             m->vel[1] = 0.f;
@@ -1153,7 +1174,7 @@ s32 perform_object_step(struct Object *o, u32 flags) {
 
     // Init steps
     s32 stepResult = STEP_NONE;
-    f32 speedMul = (isCapture ? (onGround ? POBJ_GROUND_SPEED_MULTIPLIER : POBJ_AIR_SPEED_MULTIPLIER) : 1.f);
+    f32 speedMul = (isCapture ? (onGround ? POBJ_PHYSICS_GROUND : POBJ_PHYSICS_AIR) : 1.f);
     s32 numSteps = (isCapture ? OMM_STEP_NUM_SUB_STEPS_CAPTURE : OMM_STEP_NUM_SUB_STEPS_OBJECT);
     s32 hStepMul = (isCapture ? speed_modifier(gMarioState) : 1);
     s32 yStepMul = (isCapture && o->oVelY > 0.f ? jump_modifier(gMarioState) : 1);
@@ -1181,9 +1202,9 @@ s32 perform_object_step(struct Object *o, u32 flags) {
         f32 diffHeight = o->hitboxHeight - o->hitboxDownOffset;
         if (floorHeight < ceilHeight && ceilHeight < floorHeight + diffHeight &&
             o->oPosY    < ceilHeight && ceilHeight < o->oPosY    + diffHeight) {
-            gOmmData->object->state.squishTimer++;
+            gOmmObject->state.squishTimer++;
         } else {
-            gOmmData->object->state.squishTimer = 0;
+            gOmmObject->state.squishTimer = 0;
         }
     }
 

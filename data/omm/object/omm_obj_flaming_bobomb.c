@@ -14,7 +14,7 @@ const GeoLayout omm_geo_flaming_bobomb[] = {
 // Behavior
 //
 
-static void omm_bhv_flaming_bobomb_update() {
+static void bhv_omm_flaming_bobomb_update() {
     struct Object *o = gCurrentObject;
     switch (o->oAction) {
 
@@ -93,7 +93,7 @@ static void omm_bhv_flaming_bobomb_update() {
                 o->oPosZ = r * coss(a);
                 struct Surface *floor = NULL;
                 find_floor(o->oPosX, o->oPosY, o->oPosZ, &floor);
-                if (floor && floor->type != SURFACE_BURNING && floor->type != SURFACE_DEATH_PLANE) {
+                if (floor && !SURFACE_IS_LETHAL(floor->type)) {
                     break;
                 }
             }
@@ -122,11 +122,11 @@ static void omm_bhv_flaming_bobomb_update() {
     o->oFlamingBobombAura->oGraphYOffset = o->oScaleY * 20.f;
 }
 
-const BehaviorScript omm_bhv_flaming_bobomb[] = {
+const BehaviorScript bhvOmmFlamingBobomb[] = {
     OBJ_TYPE_GENACTOR,
     0x27260000, (uintptr_t) bobomb_seg8_anims_0802396C,
     0x08000000,
-    0x0C000000, (uintptr_t) omm_bhv_flaming_bobomb_update,
+    0x0C000000, (uintptr_t) bhv_omm_flaming_bobomb_update,
     0x09000000,
 };
 
@@ -135,8 +135,8 @@ const BehaviorScript omm_bhv_flaming_bobomb[] = {
 //
 
 struct Object *omm_spawn_flaming_bobomb(struct Object *o, f32 x, f32 y, f32 z, s32 index, s32 count, f32 maxRadius, f32 maxHeight) {
-    struct Object *bobomb           = obj_spawn_from_geo(o, omm_geo_flaming_bobomb, omm_bhv_flaming_bobomb);
-    bobomb->oFlamingBobombAura      = obj_spawn_from_geo(bobomb, omm_geo_flaming_bobomb_aura, omm_bhv_flaming_bobomb_aura);
+    struct Object *bobomb           = obj_spawn_from_geo(o, omm_geo_flaming_bobomb, bhvOmmFlamingBobomb);
+    bobomb->oFlamingBobombAura      = obj_spawn_from_geo(bobomb, omm_geo_flaming_bobomb_aura, bhvOmmFlamingBobombAura);
     bobomb->oFlamingBobombIndex     = index;
     bobomb->oFlamingBobombCount     = count;
     bobomb->oFlamingBobombMaxRadius = maxRadius;
