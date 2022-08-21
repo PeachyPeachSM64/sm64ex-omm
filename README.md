@@ -5,14 +5,33 @@
 
 ## Build the game with *OMM Builder*
 
-*OMM Builder* is a convenient Python script that makes the building process of the *Odyssey Mario's Moveset* mod simplier, while allowing some customization.<br>If you have never built the PC port of *Super Mario 64* before, please take a look at this [page](https://github.com/sm64pc/sm64ex/wiki/Compiling-on-Windows) or this [page](https://github.com/sm64pc/sm64ex/wiki/Compiling-on-Linux) first.<br>Make sure you have the following dependencies before starting: `MSYS2` (Windows only), `git`, `make`, `gcc`, `glew`, `SDL2` and `python3`.
+*OMM Builder* is a terminal-styled GUI packaged as a Python script that makes the building process of the *Odyssey Mario's Moveset* mod simplier, while allowing some customization.
 
 ```diff
 - IMPORTANT NOTICE:
-- Cloning the `sm64pc-omm` repository from PeachyPeachSM64's github is the only way to get the builder.
+- Cloning the `sm64ex-omm` repository from PeachyPeachSM64's github is the only way to get the builder.
 - Never download or execute the file `omm_builder.py` from any other source, even trusted ones, as it's
 - likely to contain malicious code that can irremediably harm your computer or steal your personal data.
 ```
+
+---
+
+### Prerequisites:
+
+Make sure you have the following dependencies before starting: `MSYS2` (Windows only), `git`, `zip`, `make`, `gcc`, `glew`, `SDL2` and `python3`.<br>If not, follow these steps:
+
+- **Windows**:
+
+  - Open an MSYS2 terminal. To do so, open the **Windows Start** menu, type `mingw` and select `MSYS2 MinGW 64-bit`.
+
+  - Run the following commands to install the required packages:
+    - `pacman -Syu`
+    - `pacman -S zip unzip make git mingw-w64-i686-gcc mingw-w64-x86_64-gcc mingw-w64-i686-glew mingw-w64-x86_64-glew mingw-w64-i686-SDL2 mingw-w64-i686-SDL mingw-w64-x86_64-SDL2 mingw-w64-x86_64-SDL python3`
+
+- **Linux**:
+
+  - Open a terminal and run the following command to install the required packages:
+    - `sudo apt install build-essential git python3 libglew-dev libsdl2-dev zip`
 
 ---
 
@@ -20,11 +39,11 @@
 
 - **Windows**:
 
-  - Open an MSYS2 terminal. To do so, open the **Windows Start** menu, type `mingw` and select `MSYS2 MinGW 64-bit` or `MSYS2 MinGW 32-bit`, depending of your operating system and processor type. To see it, open the **Windows Settings**, go to **System**, and select **About**.
+  - Open an MSYS2 terminal. To do so, open the **Windows Start** menu, type `mingw` and select `MSYS2 MinGW 64-bit`.
 
-  - The first time, install the builder by cloning the *master* branch with this command:<br>`git clone https://github.com/PeachyPeachSM64/sm64pc-omm.git -b master`
+  - The first time, install the builder by cloning the *master* branch with this command:<br>`git clone https://github.com/PeachyPeachSM64/sm64ex-omm.git -b master`
 
-  - Move to the created directory and open it in Windows Explorer by executing the following command:<br>`cd sm64pc-omm; explorer .`
+  - Move to the created directory and open it in Windows Explorer by executing the following command:<br>`cd sm64ex-omm; explorer .`
 
   - If it's not already done, in Windows Explorer, click on the **View** tab, then check **File name extensions**. This option will allow you to rename files properly.
 
@@ -34,9 +53,9 @@
 
   - Open a terminal.
 
-  - The first time, install the builder by cloning the *master* branch with this command:<br>`git clone https://github.com/PeachyPeachSM64/sm64pc-omm.git -b master`
+  - The first time, install the builder by cloning the *master* branch with this command:<br>`git clone https://github.com/PeachyPeachSM64/sm64ex-omm.git -b master`
 
-  - Move to the created directory by executing the following command:<br>`cd sm64pc-omm`
+  - Move to the created directory by executing the following command:<br>`cd sm64ex-omm`
 
   - Place your copy of the **Super Mario 64 US ROM** inside it, next to the Python script `omm_builder.py`, and rename it `baserom.us.z64`.
 
@@ -44,132 +63,130 @@
 
 ### Building the game:
 
-*OMM Builder* is a command-line tool with four main commands:
+*OMM Builder* is a terminal-styled GUI. Start it with the command: `python3 omm_builder.py`, or launch the start-up script corresponding to your OS:
+- **Windows**: `omm_builder.bat`
+- **Linux**: `omm_builder.sh`
 
-||||
-|:-|:-|:-|
-| Build | Compile the game with the version specified. | `python3 omm_builder.py [version] [build_speed] [args...]` |
-| Run | Run the game with the version specified. An executable of the specified version must be compiled first. | `python3 omm_builder.py [version] run` |
-| Clear | Clear the build directory of the version specified. | `python3 omm_builder.py [version] clear` |
-| Reset | Reset the version directory without deleting it, but remove the compiled game. | `python3 omm_builder.py [version] reset` |
-| Delete | Delete the version directory, including all its content. | `python3 omm_builder.py [version] delete` |
+Use <kbd>E</kbd>, <kbd>S</kbd>, <kbd>D</kbd>, <kbd>F</kbd> to move, <kbd>C</kbd> to go to the next view and <kbd>X</kbd> to come back.<br>Additionally, you can use digits from <kbd>1</kbd> to <kbd>9</kbd> to select instantly the desired option and <kbd>0</kbd> to go back to the previous view.
 
-The `[version]` parameter must be one of the following:
+![OMM Builder](omm_builder.png)
 
+The main views are the following:
+```
+omm_builder.py
+└── Games
+    └── Commands
+        ├── Run
+        ├── Clear
+        ├── Reset
+        ├── Delete
+        └── Build
+            ├── Build Speed
+            ├── Render API
+            ├── DynOS
+            ├── Patches
+            ├── Texture Packs
+            ├── Sound Packs
+            ├── Model Packs
+            ├── Audio Packs
+            └── Build and Run
+```
+
+Games that can be built with *Odyssey Mario's Moveset*:
+1. - ***Super Mario 64 ex-nightly***
+2. - ***Super Mario 64 Moonshine***
+3. - ***Super Mario 64 ex-alo***
+4. - ***Super Mario 74***
+5. - ***Super Mario Star Road***
+6. - ***Render96***
+
+Some shortcuts (replace `X` by the game's number):
 |||
 |:-|:-|
-| `smex` | Super Mario 64 ex-nightly |
-| `smms` | Super Mario 64 Moonshine |
-| `xalo` | Super Mario 64 ex-alo |
-| `sm74` | Super Mario 74 |
-| `smsr` | Super Mario Star Road |
-| `r96a` | Render96 ex-alpha |
-
-The `[build_speed]` parameter must be one of the following:
-
-|||
-|:-|:-|
-| `slow` | Build the game by compiling files one by one. |
-| `fast` | Enable multi-processing to build the game faster. |
-| `faster` | Build the game even faster (not recommended for weak PCs). |
-| `fastest` | Use 100% of CPU to build the game as fast as possible. |
-
-The `[args...]` parameters can be any of the following:
-
-|||
-|:-|:-|
-| `DYNOS` | Download and install the latest version of DynOS. |
-| `PATCHES` | Apply patches from the 'custom/patches' directory. |
-| `DIRECT_X` | Replace SDL/OpenGL APIs by DirectX APIs. |
-| `AUTO_RUN` | Start the game after building. |
-
-For instance, if you want to build and play *Star Road* with 60 FPS and External data, run the command:<br>`python3 omm_builder.py smsr faster DIRECT_X AUTO_RUN`<br>Additionally, the builder is case-insensitive, meaning you can also write the previous command as:<br>`python3 omm_builder.py smsr faster directx autorun`
+| Run a compiled game | `python3 omm_builder.py -i X2` |
+| Reset a game's directory | `python3 omm_builder.py -i X4` |
+| Build a game with DynOS | `python3 omm_builder.py -i X139` |
+| Build a game with DirectX 11 | `python3 omm_builder.py -i X129` |
+| Build a game with DirectX 11 and DynOS | `python3 omm_builder.py -i X1239` |
 
 ---
 
 ### Requirements
 
-- To build *Super Mario 64 Moonshine*, you must extract the mod archive (`MOONSHINE_FINALUPDATE.rar`) into a directory named `moonshine`.
+- To build ***Super Mario 64 Moonshine***, you must extract the mod archive (`MOONSHINE_FINALUPDATE.rar`) into a directory named `moonshine`.
 
-### Custom patches
+### Custom resources
 
-- To build the game with custom patches, place a copy of your `.patch` files inside the `custom/patches` directory and run the command with the `PATCHES` option.
-- Remember that not all patches or combination of patches are supported.
-
-### Texture and sound packs
-
-- Customize your game's textures and sounds by placing your packs `.zip` archives inside the `custom/res` directory.
-- Texture packs must be `.zip` archives with a `gfx` directory inside them.
-- Sound packs must be `.zip` archives with a `sound` directory inside them.
-
-### Model packs (DynOS and *Render96* only)
-
-- To be able to swap actors models in-game, copy your model packs directories inside the `custom/dynos/packs` directory and run the command with the `DYNOS` option.
-- Model packs must be either directories of `.bin` files or filled with actors sub-directories, each sub-directory containing at least one `model.inc.c` and one `geo.inc.c` file as well as textures `.png` files.
-
-### Musics, jingles and sounds (*Render96* only)
-
-- Make your game more unique with custom musics, jingles and sounds! Put your audio data inside a `custom/dynos/audio` directory before running the command.
-- *Render96* audio packs must be directories of sub-directories and `.txt` files, with each `.txt` file corresponding to one sub-directory.
-- The sub-directories must be: `jingles`, `levels`, `sfx_mario`, `sfx_mario_peach`, `sfx_luigi`, `sfx_luigi_peach`, `sfx_wario`, `sfx_wario_peach`.
-- The associated `.txt` files are: `jingle.txt`, `music.txt`, `sfx_mario.txt`, `sfx_mario_peach.txt`, `sfx_luigi.txt`, `sfx_luigi_peach.txt`, `sfx_wario.txt`, `sfx_wario_peach.txt`.
+- Put your custom resources (Patches, Texture packs, Sound packs, Model packs, Audio packs) into the `custom` directory.<br>Upon running, *OMM Builder* will detect automatically the custom resources and their type.
 
 ---
 
 ## Build the game with *sm64pcBuilder2*
 
-Remember that this tool's only purpose is to build the *Odyssey Mario's Moveset* mod with the most common and useful features. It's not supposed (and will never) be as complete as **sm64pcBuilder2**.
-
-If you want more customization or simply build the game the usual way, you can download the patch file of the latest version of OMM available in the section **Useful resources** below and add it as a custom patch in **sm64pcBuilder2**.
+If you want more customization or simply build the game the usual way, select the latest version of the *Odyssey Mario's Moveset* patch in **sm64pcBuilder2**.
 
 ---
 
 ## Q&A
 
-### The builder says `ERROR: The file 'baserom.us.z64' is missing.`, but it is here!
-
-Your file is actually named `baserom.us.z64.z64`. It happened because Windows hides file extensions by default, and adds its extension back after renaming a file.<br>To prevent this, in Windows Explorer, click on the **View** tab and check **File name extensions**. Then remove the extra `.z64` from your file name.
-
 ### The builder is spitting out errors like `gcc: No such file or directory`. What does it mean?
 
-You're missing dependencies. You need the following ones to properly build the game: `MSYS2` (Windows only), `git`, `make`, `gcc`, `glew`, `SDL2` and `python3`.<br>Go to this [page](https://github.com/sm64pc/sm64ex/wiki/Compiling-on-Windows) (Windows) or this [page](https://github.com/sm64pc/sm64ex/wiki/Compiling-on-Linux) (Linux) and make sure to follow the **Install dependencies** part.
+You're missing dependencies. See the **[Prerequisites](https://github.com/PeachyPeachSM64/sm64ex-omm/tree/master#prerequisites)** part.
+
+### MSYS2: There is a weird Python error that fails the assets extraction...
+
+Your install of MSYS2 is broken. To repair it, do the following:
+- Remove entirely MSYS2 from your computer. Delete the `msys64` directory at the root of your system.
+- Download the latest version from https://www.msys2.org/.
+- Launch it and run: `pacman -Syu`.
+- Once done close it and reopen it.
+- Run again: `pacman -Syu`.
+- Close it again, open it a third time.
+- This time, run: `pacman -S zip unzip make git mingw-w64-i686-gcc mingw-w64-x86_64-gcc mingw-w64-i686-glew mingw-w64-x86_64-glew mingw-w64-i686-SDL2 mingw-w64-i686-SDL mingw-w64-x86_64-SDL2 mingw-w64-x86_64-SDL python3`.
+- Close it once every package is installed.
 
 ### The game is built successfully, but the only thing I get when launching it is a black screen with the game over sound...
 
-You probably built the game with a renderer not supported by your computer.<br>Delete your build and try again with the flag `DIRECT_X` to change the SDL/OpenGL API by the DirectX one.
+You probably built the game with a renderer not supported by your computer.<br>Delete your build and try again by changing the `Render API` option from `OpenGL 2.1` to `DirectX 11`.
 
-### Where did my executable go? Do I have to always use the `run` command to play the game?
+### Where did my executable go?
 
-Once built, the game executable is located in the `build/us_pc` directory of the version you choose.<br>You don't need to use the `run` command every time, you can simply double-click on `sm64.us.f3dex2e.exe` like any other executable to start the game.<br>If you want to copy or move it, make sure to copy/move the entire `build/us_pc` directory, not only the executable file.
+- **Windows**: `repos/<game>/build/us_pc/sm64.us.f3dex2e.exe`
+- **Linux**: `repos/<game>/build/us_pc/sm64.us.f3dex2e`
+
+Once built, the game executable is located in the `build/us_pc` directory of the game you choose.<br>If you want to copy or move it, make sure to copy/move the entire `build/us_pc` directory, not only the executable file.
 
 ### Where is the save file located? How do I open/edit it?
 
-Windows: `%appdata%\sm64ex\omm_save_file.txt`<br>Linux: `~/.local/share/sm64ex/omm_save_file.txt`<br>MacOS: `~/Library/Application Support/sm64ex/omm_save_file.txt`<br><br>The save file is a plain text file, so any text editor can open it. It is divided in multiple sections:
-- `[xxxx:yy]`: The main game save data. `xxxx` is the version name, `yy` is the save slot.
+- **Windows**: `%appdata%\sm64ex\omm_save_file.txt`
+- **Linux**: `~/.local/share/sm64ex/omm_save_file.txt`
+
+The save file is a plain text file, so any text editor can open it. It is divided in multiple sections:
+- `[xxxx:yy]`: The main game save data. `xxxx` is the game name, `yy` is the save slot.
   - Flags: 0 = locked and 1 = unlocked.
   - Courses: the first 7 numbers are the stars (1 = collected, 0 = not), the next number is the cannon (1 = open, 0 = closed) and the last number is the coin score.
 - `[sparkly_stars]`: The Sparkly Stars save data. It cannot be edited directly.
 - `[mario_colors]`, `[peach_colors]`: The custom palettes for playable characters.
-  - Each `mario_custom` (`peach_custom`) entry consists of 6 (7) pairs of RGB values in hexadecimal form.
+  - Each `mario_custom` (`peach_custom`) entry consists of 7 (8) pairs of RGB values in hexadecimal form + a palette name.
   - The first value of a pair is the ambient color, the second is the diffuse color.
-  - For Mario, the colors are in the following order: *Cap*, *Hair*, *Skin*, *Gloves*, *Overalls*, *Shoes*.
-  - For Peach, the colors are in the following order: *Skin*, *Hair*, *Dress (light tone)*, *Dress (dark tone)*, *Gloves*, *Earrings*, *Shoes*.
+  - For Mario, the colors are in the following order: *Cap*, *Hair*, *Skin*, *Gloves*, *Overalls*, *Shoes*, *Cappy Eyes*.
+  - For Peach, the colors are in the following order: *Skin*, *Hair*, *Dress (light tone)*, *Dress (dark tone)*, *Gloves*, *Earrings*, *Shoes*, *Tiara Eyes*.
+  - The palette name cannot have spaces, replace them by underscores.
 - `[settings]`: The saved options. It includes controls, shortcuts and extras.
 
 ### What is the options menu?
 
 A PC port exclusivity, the options menu allows the player to configure their game without relying on code modifications, patches or external tools.<br>The options menu can be accessed by pausing the game, then pressing <kbd>RSHIFT</kbd> (keyboard) or <kbd>**R**</kbd> (controller).
 - `Odyssey Mario's Moveset`:
-  - `Character`: Mario, Peach (if unlocked), Luigi or Wario (Render96 only).
+  - `Character`: Mario, Peach (if unlocked), Luigi or Wario (***Render96*** only).
   - `Moveset`: Classic, Odyssey (3-Health), Odyssey (6-Health).
-  - `Cap`: Classic, Cappy (no Capture), Cappy (with Captures).
+  - `Cap`: Classic, Cappy (No Capture), Cappy (Capture-Press), Cappy (Capture-Hold).
   - `Stars`: Classic, Non-Stop.
   - `Power-ups`: Classic, Improved.
   - `Camera`: Classic, 8-Dir, 16-Dir.
   - `Sparkly Stars`:
     - `Mode`: Disabled, Normal, Hard.
-    - `Assist`: If enabled, help the player in various ways.
-    - `Show Hint at Level Entry`: If enabled, show the hint sign when entering a level if there's one.
+    - `Show Hint at Level Entry`: Always, Only If Not Collected, Never.
   - `Cheats`:
     - `Unlimited Cappy Bounces`: Mario can bounce infinitely on Cappy.
     - `Cappy Stays Forever`: Cappy no longer returns to Mario after some time.
@@ -181,7 +198,7 @@ A PC port exclusivity, the options menu allows the player to configure their gam
   - `Extras`:
     - `Mario Colors`: Select a color palette for Mario. The last 4 are customizable.
     - `Peach Colors`: Select a color palette for Peach. The last 4 are customizable.
-    - `SMO Animations`: If enabled, replace some of the vanilla animations with animations from *Super Mario Odyssey*.
+    - `Super Mario Odyssey Animations`: If enabled, replace some of the vanilla animations with animations from *Super Mario Odyssey*.
     - `Cappy and Tiara`: If enabled, replace Mario's cap by Cappy and Peach's crown by Tiara.
     - `Colored Stars`: If enabled, give each level stars a specific color, like moons in *Super Mario Odyssey*.
     - `Vanishing HUD`: If enabled, make the HUD progressively vanish when Mario is moving.
@@ -190,9 +207,8 @@ A PC port exclusivity, the options menu allows the player to configure their gam
     - `Show Star Number`: If enabled, show for each star its number.
     - `Invisible Mode`: If enabled, make Mario, Cappy, Peach, Tiara and their effects invisible.
   - `Shortcuts`: Allow the player to bind up to three keys/buttons for a bunch of options.
-- `Game` (Render96 only):
-  - `Current Language`: Set the current language.<br>**Only English is naturally supported by OMM.** To support more languages, you must provide the language files `*.omm.json` yourself.
-  - `Precache Textures`: Cache all textures when starting the game to avoid in-game freezes due to texture loading.
+- `Game` (***Render96*** only):
+  - `Current Language`: Set the current language.
   - `Disable Billboards`: Don't force objects to face the camera. Must be enabled if the *Render96 Model Pack* is installed.
 - `Camera`:
   - `Free Camera`/`Puppycam 2`: A modern game camera designed to be more comfortable.
@@ -208,9 +224,18 @@ A PC port exclusivity, the options menu allows the player to configure their gam
   - `Stick Deadzone`: The left-stick deadzone.
   - `Reset Controls`: Reset the controls back to default.
 - `Display`:
-  - `FPS`: Set the framerate to a value from 30 to 360. Does not affect game updates, they still run 30 times per second.
+  - `Frame Rate`: Set the framerate. Does not affect game updates, they still run 30 times per second.
+    - `30`: No frame interpolation.
+    - `60`: Enable frame interpolation to make the game render at a constant 60 FPS.
+    - `Auto`: Synchronize the framerate with the monitor's refresh rate.
+    - `Unlimited`: Render as much frames as possible.
+  - `Show FPS`: If enabled, show the actual framerate in the bottom-left corner of the screen.
   - `Fullscreen`: Enable fullscreen mode.
-  - `Vertical Sync`: Synchronize the framerate with the monitor's refresh rate. Enable it if you're experiencing tearing.
+  - `Vertical Sync`: Synchronize the render rate with the monitor's refresh rate. Enable it if you're experiencing tearing.
+  - `Preload Textures`: Preload and cache all textures when starting the game to avoid in-game freezes due to texture loading.
+    - `Never`: Don't preload textures.
+    - `From RAM`: Load PNGs into RAM before sending them to the GPU.
+    - `From Disk`: Create a back-up of the texture cache so the next time the game is launched, the data is directly uploaded to the GPU.
   - `Texture Filtering`: Set to nearest neighbor for blocky effects, or linear for smooth but blurry effects.
   - `Draw Distance`: Control the rendering distance of objects. Reduce it if you're experiencing slowdowns.
   - `HUD`: Show or hide the HUD.
@@ -248,13 +273,13 @@ A PC port exclusivity, the options menu allows the player to configure their gam
 
 ### How do I update *OMM Builder*/*Odyssey Mario's Moveset*?
 
-If it detects a new version, the builder will ask you if you want to update it when you launch it.<br>As for the *Odyssey Mario's Moveset* mod, the files are automatically updated when running a Build command.
+If it detects a new version, the builder will ask you if you want to update it when you launch it.<br>As for the *Odyssey Mario's Moveset* mod, the files are automatically updated when building a game.
 
 ---
 
 ## Speedrunning
 
-For speedrunners, OMM comes with a LiveSplit auto-splitter.<br>It works with every game that can be built with OMM.
+For speedrunners, *Odyssey Mario's Moveset* comes with a LiveSplit auto-splitter.<br>It works with every game that can be built with *Odyssey Mario's Moveset*.
 
 An auto-splitter is a script, a small program, that runs through LiveSplit and does the splits automatically, so the player doesn't need to press a key or a button to trigger each one.<br>What it does in *Super Mario 64* is fairly simple:
 - Starts the timer when the player selects a file,
@@ -263,7 +288,7 @@ An auto-splitter is a script, a small program, that runs through LiveSplit and d
 - Resets when the player returns to the main menu.
 
 To install it and make it work, follow these steps:
-- Your OMM version must be 6.1.0 or later.
+- Your *Odyssey Mario's Moveset* version must be **6.1.0** or later.
 - Open LiveSplit, and load your splits. Make sure they follow this format:
   - For star splits, you must indicate the amount of stars needed in brackets or parentheses like this: "\[20\]" or "(20)".
   - If a split has "Bowser" in its name but no star amount, it will be interpreted as a Bowser key split or a Grand Star split.
@@ -271,16 +296,14 @@ To install it and make it work, follow these steps:
 - Right click, select `Save Splits As...` and save them as a `splits.lss` file next to the `sm64.us.f3dex2e.exe` executable.
 - Right click again, and select `Edit Layout...`.
 - Add a `Scriptable Auto Splitter`, double-click on it, and select `Browse...`.
-- Navigate to the OMM builder directory and select the file `omm.asl`.
+- Navigate to the *OMM Builder* directory and select the file `omm.asl`.
 - Press `OK` twice, then start the game. The timer should start as soon as an **empty** save file is selected.
 
 ---
 
-## Odyssey Mario's Moveset content
+## *Odyssey Mario's Moveset* content
 
-- [Patch file](https://raw.githubusercontent.com/PeachyPeachSM64/sm64pc-omm/master/patch/omm.patch)
-- [Coop LUA mod: OMM Moves](https://github.com/PeachyPeachSM64/sm64pc-omm/raw/master/coop/omm-moves.zip)
-- [Coop LUA mod: OMM Cappy](https://github.com/PeachyPeachSM64/sm64pc-omm/raw/master/coop/omm-cappy.zip)
+- [Patch file](https://raw.githubusercontent.com/PeachyPeachSM64/sm64ex-omm/master/patch/omm.patch)
 - [In-depth guide](https://docs.google.com/document/d/1IlhCxYGulxrnbvqbSuBMC1JgtBIEwoCcK3l-urVUADk/edit) (by **Cancel the Eat**)
 - [Sparkly Stars guide](https://www.youtube.com/watch?v=xWHKPV-cbqI&list=PLFZ-DGZKGuUo3KuXfGoaP55RYiDXgxE8N) (by **Cancel the Eat**)
 - [Pink Gold Stars guide](https://www.youtube.com/watch?v=sPhx7hDPLKs) (by **FastMario**)
@@ -294,15 +317,155 @@ To install it and make it work, follow these steps:
 - [Super Mario 64 Moonshine archive](https://www.mediafire.com/file/khy40tbd1rcve2p/MOONSHINE_FINALUPDATE.rar/file) (by **TurnFlashed**, **s4ys**, **Fito**)
 - [Super Mario Star Road HD Texture pack](https://github.com/aspieweeb759/Star-Road-HD) (by **sarah_taylor**)
 - [Custom patches](https://sm64pc.info/downloads/patches/)
-- [Model packs](https://sm64pc.info/downloads/model_pack/)
 - [Texture packs](https://sm64pc.info/downloads/texture_pack/)
 - [Sound packs](https://sm64pc.info/downloads/sound_pack/)
+- [Model packs](https://sm64pc.info/downloads/model_pack/)
 
 -----
 
+## Version 7.2.0 (21/08/2022)
+
+### *OMM Builder*:
+- Brand new version! See **[Building the game](https://github.com/PeachyPeachSM64/sm64ex-omm/tree/master#building-the-game)**.
+- Main changes:
+  - `r96a` is now `r96x` and uses the `Render96ex-tester` branch.
+  - All custom resources (Patches, Texture packs, Sound packs, Model packs and Audio packs) can be put into a `custom` directory, without distinction.
+  - Start-up script for Windows (`omm_builder.bat`) and Linux (`omm_builder.sh`).
+  - Built-in HD Texture pack for OMM. Use it with another HD Texture pack like Render96 or Redrawn.
+
+### Bug fixes:
+- Odyssey Moveset - 3-Health: Collecting a 1-up now properly stops the KtQ/PSS timer during the life-up transition.
+- Fixed a bug where Mario would die if switching from Classic to Odyssey Health if his health was low enough.
+- Fixed a bug where blue coins from blue coin switch could be collected multiple times.
+- Fixed a bug where caps and Vibes could be used during the Bowser 4 fights.
+- Fixed triple jump/wall kick animation.
+- Fixed Time Trials crashes and compatibility.
+- Fixed a crash on Linux machines (thanks **TheBoiJoshua**).
+- Render96:
+  - Fixed the language loading crash.
+- Star Road:
+  - Fixed crashes when entering levels with Non-Stop disabled.
+  - Entering Chuckya Harbor from the secret entrance now skips the star select screen.
+
+### Odyssey Moveset:
+- Improved shell ride:
+  - Increased top speed,
+  - Jump slightly higher,
+  - Better handling, both ground and airborne,
+  - Pressing **(X)** triggers a Cappy spin throw,
+  - No more interaction with trees and poles.
+- Super Cappy bounce: Increased the window from frame-perfect to 3 frames.
+- Almost all moves have now action cancels.
+- Mario can kick, throw Cappy or spin during an air roll is **(Z)** is not held.
+- Increased water punch grab range.
+- Extend a water ground pound by holding **(Z)**, but drains the air meter faster.
+- Implemented underwater Metal hold actions.
+- Fixed fake pole grabs.
+- Top-of-pole transition is faster.
+- Mario can throw crazy boxes by pressing **(B)** between bounces.
+- Balanced tiny Goombas and huge Goombas move speed and jump height.
+- Re-balanced physics properties per character:
+
+| | Mario | Peach | Luigi | Wario | Peach (Joy) | Peach (Rage) | Peach (Gloom) | Peach (Calm) |
+|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
+| Ground speed | | | ➕ | ➖ | | ➖➖ | ➕➕ | |
+| Air speed | | | ➖ | ➕ | | ➖➖ | ➕➕ | |
+| Swimming speed | | | ➕ | ➖ | | | | |
+| Jumping height | | ➖ | ➕ | ➖ | | ➖➖ | ➕➕ | ➖ |
+| Gravity | | ➖ | ➖ | ➕ | | ➕➕ | ➖ | ➖ |
+| Sliding accel | | | ➖ | ➕ | | ➕➕ | | |
+
+*Multipliers are inverted for captures.*
+
+### Sparkly Stars:
+- Some Pink-Gold Stars and Crystal Stars have been reworked.<br>The goal of this rework is to provide more fun and less infuriating challenges without lowering the difficulty.<br>Therefore, most of the "no button press" challenges have been replaced.
+- Pink-Gold Stars:
+  - Along with Peach, completing Normal mode now unlocks the `Sparkly Stars Reward` option in the `Extras` sub-menu.
+  - Changes:
+    - Shifting Sand Land:
+      - The Star height has been lowered.
+    - Snowman's Land:
+      - Captured snowmen no longer receive a height boost in Normal mode.
+    - Wet-Dry World:
+      - The Star is higher and now requires a cannon shot.
+    - Rainbow Ride:
+      - **New**: Collect 6 secrets in order by climbing poles from lowest to highest.
+    - Bowser in the Dark World:
+      - The Goomba capture is forced, even if Cap is set to Classic or No Capture.
+    - Bowser in the Sky:
+      - **New**: Collect at least 75 coins. Start with 1 minute, but each coin collected adds 1 second to the timer.
+    - Princess Secret Slide:
+      - Pressing **(L)** or **(R)** no longer invalidates the Star.
+- Crystal Stars:
+  - Completing Hard mode now unlocks a new ability for Peach: **Perry's Charged Shot**. Hold **(B)** to charge energy and release to unleash a stronger version of a Perry shockwave.
+  - Changes:
+    - Whomp Fortress:
+      - Reduced timer from 1'50 to 1'45.
+    - Big Boo's Haunt:
+      - Reduced timer from 2'15 to 2'10.
+    - Hazy Maze Cave:
+      - Reduced timer from 3'00 to 2'30.
+    - Snowman's Land:
+      - **New**: Collect at least 80 coins, but only when riding a shell.
+    - Tick-Tock Clock:
+      - You only have 35 seconds to reach the Star after leaving the floor.
+    - Rainbow Ride:
+      - Collect all 9 1-up mushrooms in 1'35. No more button restriction.
+    - Bowser in the Dark World:
+      - Reduced timer from 1'45 to 1'40.
+      - The Goomba capture is forced, even if Cap is set to Classic or No Capture.
+    - Bowser in the Fire Sea:
+      - Mario cannot have more than 3 Health (4 with Classic moveset).
+    - Bowser in the Sky:
+      - **New**: Destroy all enemies with a captured bob-omb. This special bob-omb has infinite explosions, but you only have 1'50.
+      - The Bob-omb capture is forced, even if Cap is set to Classic or No Capture.
+    - Princess Secret Slide:
+      - Pressing **(L)** or **(R)** no longer invalidates the Star.
+- Bowser 4 and 5 are now *Pink-Gold Bowser* and *Crystal Bowser*.
+
+### Enhancements:
+- Better frame interpolation and framerate modes:
+  - Fixed: 30, 60
+  - Auto: Sets the framerate to the monitor's refresh rate
+  - Unlimited: No sleep between frames, the game constantly draws content
+- Faster external texture data loading.
+- Warping, restarting, exiting or returning to Castle now heals Mario to full health.
+- Exclamation boxes with shells now respawn after some time.
+- Fixed some enemies' hitbox (notably Bullet Bill's).
+- Press **(Start)** during the ending cutscene to skip it and return to the file select screen.
+- Select an empty save file with **(Start)** instead of **(A)** to skip the intro.
+
+### Palette Editor
+Customize in-game your Mario and Peach color palettes!<br>To access the Palette Editor, select the Mario/Peach button on file select screen with **(Start)**.<br>Controls:
+- **D-Pad Left**/**Right** to change the current palette
+- **D-Pad Up**/**Down** to change the current color
+- **L-Stick** to choose a color or **Mouse Left-Click** to select a color (OpenGL only)
+- Hold **(Z)** to change the brightness
+- **(X)** to switch between cap and capless
+- **(Y)** to switch between Mario and Peach
+- Hold **(R)** to zoom in, **(L)** to zoom out
+- **R-Stick** to change the camera angles
+- **(B)** to change the background
+- **(A)** to manually enter a color code
+  - Enter an hexadecimal color code with keys <kbd>0</kbd>-<kbd>9</kbd>/<kbd>A</kbd>-<kbd>F</kbd> or
+  - Press <kbd>V</kbd> to paste a color code from the clipboard (Windows only)
+- **(Start)** to save and return to the file select screen.
+
+### Playtest:
+Special thanks to all people who playtested this version before its release and contributed to spot errors, fixing bugs and making it better:
+- **JokerFactor**
+- **Wookis**
+- **chani**
+- **Mr.Needlemouse**
+- **FROST**
+- **SonicDarkHedgeboy**
+- **Cancel the Eat**
+- **FastMario**
+- **Petch**
+
 ## Version 7.1.0 (11/04/2022)
 
-### OMM Builder:
+### *OMM Builder*:
 - Fixed DynOS compilation on Linux-based systems.
 - `r96a` now uses the repository `Render96ex-tester_rt64alpha`.<br>Note 1: You don't need an RTX card to build this branch.<br>Note 2: The new audio system in the `tester` branch is not supported yet.
 - Removed options: `60_FPS` and `EXT_DATA`.
@@ -402,24 +565,10 @@ To install it and make it work, follow these steps:
   - `Walk On Death Barrier`
   - `BLJ Anywhere`
 
-### OMM ex-coop:
-- OMM is now available as two lua mods for ex-coop:
-  - `OMM (Moves)` **(v1.0.0)**:
-    - Includes the wall slide, ground pound jump, underwater ground pound and jump, water dash, ground and air rolls, ground, air and midair spins.
-    - Better ground and air handling, more action cancels.
-    - Removes fall damage, game over, gives Mario short invulnerability after a burn and collecting a star restores health.
-  - `OMM (Cappy)` **(v1.0.0)**:
-    - Throw Cappy with (X), hold a D-pad button to do a directional throw.
-    - Press a D-pad button after any throw to perform a homing attack.
-    - Cappy can collect coins, 1-up mushrooms, secrets and interact with almost every object.
-    - Collide with Cappy to bounce, or throw Cappy to other players to make them bounce or pop their bubble.
-- To play with the mods, simply extract the `.zip` archives into your `sm64ex-coop-unstable/build/us_pc/mods/` directory. Then enable `OMM (Moves)` or/and `OMM (Cappy)` before hosting.
-- Important note: **Do not use `OMM (Moves)` or `OMM (Cappy)` with `Shell Rush` or `Grand Theft Mario` if your coop version is not at least `unstable 24`.**
-
 ## Version 7.0.9 (01/02/2022)
 
-### OMM Builder:
-- Added *Saturn (sm64ex-nightly)* repository: `saex`. This repository shares save data with *Super Mario 64 ex-nightly* (`smex`).
+### *OMM Builder*:
+- Added ***Saturn*** repository: `saex`. This repository shares save data with ***Super Mario 64 ex-nightly*** (`smex`).
 
 ### Bug fixes:
 - Fixed a bug where captures triggered the regular star cutscene when touching a Sparkly star.
@@ -457,7 +606,7 @@ To install it and make it work, follow these steps:
 
 ## Version 7.0.2 (17/01/2022)
 
-### OMM Builder:
+### *OMM Builder*:
 - Added a fix for the `undefined reference to 'gMusicData'` error.
 
 ### Bug fixes:
@@ -538,7 +687,7 @@ These animations can be toggled on/off with the option `Super Mario Odyssey Anim
 
 ## Version 6.1.2 (14/12/2021)
 
-### OMM Builder:
+### *OMM Builder*:
 - The `clear` command now deletes only the `build` directory.
 - The `delete` command removes completely the version directory.
 
@@ -550,12 +699,12 @@ These animations can be toggled on/off with the option `Super Mario Odyssey Anim
 
 ## Version 6.1.0 (11/12/2021)
 
-### OMM Builder:
-- The `star_road.patch` file is no longer needed to build *Super Mario Star Road*.
-- Added *Render96 ex-alpha* repository.
+### *OMM Builder*:
+- The `star_road.patch` file is no longer needed to build ***Super Mario Star Road***.
+- Added ***Render96*** repository.
 - Added compatibility checks:
-  - *Render96 ex-alpha*, *Super Mario 64 ex-alo* and *Super Mario Star Road* cannot be built with a version of OMM prior to 6.1.0.
-  - *Super Mario 64 ex-alo*, *Super Mario 74* and *Super Mario Star Road* cannot be built with DynOS.
+  - ***Render96***, ***Super Mario 64 ex-alo*** and ***Super Mario Star Road*** cannot be built with a version of OMM prior to **6.1.0**.
+  - ***Super Mario 64 ex-alo***, ***Super Mario 74*** and ***Super Mario Star Road*** cannot be built with DynOS.
 - Added the `DYNOS` option. When selected, download and install the latest version of DynOS with the selected repository, and copy the contents of the `custom/dynos/packs` directory to the executable directory.
 - Added the `PATCHES` option. This option must be explicitly set to tell the builder to apply custom patches from the `custom/patches` directory before compiling.
 - Modified the `EXT_DATA` option. This option must be explicitly set to tell the builder to compile with the flag `EXTERNAL_DATA=1`, and copy the contents of the `custom/res` directory to the executable directory.
@@ -573,7 +722,7 @@ These animations can be toggled on/off with the option `Super Mario Odyssey Anim
   - Go to the Fourth floor and enter a pipe: red pipe for Mario, green for Luigi and yellow for Wario.<br>To select Peach, enter your character's pipe (red if you play as Mario, green if Luigi or yellow if Wario).
 - Each character has different properties and moves:
   - **Mario**: the most balanced character.
-  - **Peach**: same properties as Mario, plus extra moves from *Super Princess Peach*. See [Version 6.0.0](https://github.com/PeachyPeachSM64/sm64pc-omm/tree/master#peach).
+  - **Peach**: same properties as Mario, plus extra moves from *Super Princess Peach*. See [Version 6.0.0](https://github.com/PeachyPeachSM64/sm64ex-omm/tree/master#peach).
   - **Luigi**: runs faster, jumps higher and twirl after a back-flip, but slides on ground and moves slower in the air.
   - **Wario**: runs slower and jumps lower, but has some powerful moves from *Wario World* and gains speed faster in the air.
 - Interactions with custom objects:
@@ -589,7 +738,7 @@ These animations can be toggled on/off with the option `Super Mario Odyssey Anim
     - `Play as`
 
 ### OMM with DynOS:
-- Peach, Perry and Tiara models can now be converted into DynOS models, but they need a version of OMM >= 6.1.0 to work properly.
+- Peach, Perry and Tiara models can now be converted into DynOS models, but they need a version of OMM >= **6.1.0** to work properly.
   - Peach's `model.inc.c` and `geo.inc.c` are in the `data/omm/peachy/peach` directory.
   - Perry's `model.inc.c` and `geo.inc.c` are in the `data/omm/peachy/perry` directory.
   - Tiara's `model.inc.c` and `geo.inc.c` are in the `data/omm/peachy/tiara` directory.
@@ -598,7 +747,7 @@ These animations can be toggled on/off with the option `Super Mario Odyssey Anim
 ### LiveSplit auto-splitter:
 - The player no longer needs to enter their splits manually in a text file.
 - To make the game read splits, save them from LiveSplit as a `splits.lss` file next to the `sm64.us.f3dex2e.exe` executable.
-- See [Speedrunning](https://github.com/PeachyPeachSM64/sm64pc-omm/tree/master#speedrunning) for more details.
+- See [Speedrunning](https://github.com/PeachyPeachSM64/sm64ex-omm/tree/master#speedrunning) for more details.
 
 ### Other changes:
 - New Cappy cheats:
@@ -1594,10 +1743,10 @@ Added a LiveSplit Auto-Splitter script: `omm.4.1.2.asl`.<br>If you don't use Liv
 - Cappy throws are slightly faster than before to match Odyssey's ones.
 - Cappy can no longer be thrown again if he's already out, but Mario can force him to return prematurely by pressing **(X)** again.
 - Up-throw, Down-throw and Homing throws have been added to Cappy's moveset:
-  - Trigger an Up-throw by holding D-pad up and pressing **(X)**.
-  - Trigger a Down-throw by holding D-pad down and pressing **(X)**, or by pressing **(X)** after landing from a ground pound.
-  - Trigger a spin throw by holding D-pad left or right and pressing **(X)**, or by pressing **(X)** while spinning.
-  - Trigger a Homing throw by pressing a D-pad direction while Cappy's out:
+  - Trigger an Up-throw by holding **D-Pad Up** and pressing **(X)**.
+  - Trigger a Down-throw by holding **D-Pad Down** and pressing **(X)**, or by pressing **(X)** after landing from a ground pound.
+  - Trigger a spin throw by holding **D-Pad Left** or right and pressing **(X)**, or by pressing **(X)** while spinning.
+  - Trigger a Homing throw by pressing a D-Pad direction while Cappy's out:
     - Cappy will target the nearest interactable object, then will return to Mario.
     - If no target is found, Cappy will move in the direction of the button pressed, then will return to Mario.
 - Cappy has now his own sub-menu:
