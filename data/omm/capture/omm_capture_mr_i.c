@@ -7,7 +7,7 @@
 //
 
 bool omm_cappy_mr_i_init(struct Object *o) {
-    if (o->oBehParams2ndByte != 0 || ( // Don't capture Big Mr. I
+    if (o->oBhvArgs2ndByte != 0 || ( // Don't capture Big Mr. I
         o->oAction != 1 &&
         o->oAction != 2)) {
         return false;
