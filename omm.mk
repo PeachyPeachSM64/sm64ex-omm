@@ -25,14 +25,15 @@ INC_DIRS := \
 -I data/omm/engine/headers/src \
 -I data/omm/engine/headers/src/engine \
 -I data/omm/engine/headers/src/extras \
--I data/omm/engine/headers/src/game 
+-I data/omm/engine/headers/src/game \
+-I data/omm/engine/headers/src/pc
 
 # -------
 # Version
 # -------
 
 OMM_VERSION_NUMBER := 7.2.0
-OMM_VERSION_REVISION := 8
+OMM_VERSION_REVISION := 9
 OMM_DEVELOPER := PeachyPeach
 OMM_FLAGS := -p
 VERSION_CFLAGS += -DOMM_VERSION="$(OMM_VERSION_NUMBER)"
@@ -133,7 +134,9 @@ ifeq ($(OMM_BUILDER),1)
   CC := $(CROSS)gcc -w $(INC_DIRS)
   CXX := $(CROSS)g++ -w $(INC_DIRS)
 else
-  OMM_PATCH := $(shell python3 omm_patcher.py $(OMM_FLAGS))
+  ifneq ($(OMM_DEV),1)
+    OMM_PATCH := $(shell python3 omm_patcher.py $(OMM_FLAGS))
+  endif
   CC := $(CROSS)gcc $(INC_DIRS)
   CXX := $(CROSS)g++ $(INC_DIRS)
 endif

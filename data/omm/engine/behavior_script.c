@@ -703,6 +703,19 @@ static bool bhv_snowmans_head_non_stop_dont_spawn_whole(NativeBhvFunc func) {
     return false;
 }
 
+// Make sure spawned stars don't go inside ceilings or below floors
+static bool bhv_spawned_star_fix(NativeBhvFunc func) {
+    if (!bhv_star_dont_respawn(func)) {
+        f32 floorHeight = find_floor_height(o->oPosX, o->oPosY - 100, o->oPosZ);
+        f32 ceilHeight = find_ceil(o->oPosX, o->oPosY - 100, o->oPosZ, NULL);
+        if (ceilHeight > floorHeight) {
+            o->oPosY = min_s(o->oPosY, ceilHeight - 60);
+            o->oPosY = max_s(o->oPosY, floorHeight + 60);
+        }
+    }
+    return false;
+}
+
 // Allow any type of ground pound to drain the water on top of Tiny THI
 static bool bhv_thi_tiny_island_top_fix(NativeBhvFunc func) {
     if (o->oAction == 0 && !gTHIWaterDrained && omm_mario_is_ground_pound_landing(m) && obj_get_distance(o, mo) < 500.f) {
@@ -829,7 +842,7 @@ OMM_AT_STARTUP static void omm_setup_behavior_update_functions_map() {
         { bhv_sl_snowman_wind_loop,                 bhv_sl_snowman_wind_blow_if_sparkly_stars_enabled },
         { bhv_snowmans_bottom_loop,                 bhv_snowmans_bottom_fix },
         { bhv_snowmans_head_init,                   bhv_snowmans_head_non_stop_dont_spawn_whole },
-        { bhv_spawned_star_loop,                    bhv_star_dont_respawn },
+        { bhv_spawned_star_loop,                    bhv_spawned_star_fix },
         { bhv_star_spawn_init,                      bhv_star_dont_respawn },
         { bhv_star_spawn_loop,                      bhv_star_dont_respawn },
         { bhv_thi_tiny_island_top_loop,             bhv_thi_tiny_island_top_fix },

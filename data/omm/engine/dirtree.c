@@ -2,7 +2,7 @@
 #include "data/omm/omm_includes.h"
 #undef OMM_ALL_HEADERS
 
-static u32 dirtree_hash(const char *s, size_t len) {
+static u32 dirtree_hash(const char *s, u64 len) {
     u32 hash = 0x1505;
     while (len--) hash = ((hash << 5) + hash) ^ *(s++);
     return hash & (FS_NUMBUCKETS - 1);
@@ -22,8 +22,8 @@ static fs_dirtree_entry_t *dirtree_add_ancestors(fs_dirtree_t *tree, char *name)
     return ent;
 }
 
-static fs_walk_result_t dirtree_walk_impl(fs_dirtree_entry_t *ent, walk_fn_t walkfn, void *user, const bool recur) {
-    fs_walk_result_t res = FS_WALK_SUCCESS;
+static s32 dirtree_walk_impl(fs_dirtree_entry_t *ent, walk_fn_t walkfn, void *user, const bool recur) {
+    s32 res = FS_WALK_SUCCESS;
     for (ent = ent->next_child; ent && res == FS_WALK_SUCCESS; ent = ent->next_sibling) {
         if (ent->is_dir && recur && ent->next_child) {
             res = dirtree_walk_impl(ent, walkfn, user, recur);
@@ -38,7 +38,7 @@ static fs_walk_result_t dirtree_walk_impl(fs_dirtree_entry_t *ent, walk_fn_t wal
 // Dir Tree
 //
 
-bool fs_dirtree_init(fs_dirtree_t *tree, const size_t entry_len) {
+bool fs_dirtree_init(fs_dirtree_t *tree, const u64 entry_len) {
     omm_zero(tree, sizeof(fs_dirtree_t));
     tree->root = (fs_dirtree_entry_t *) omm_new(u8, entry_len);
     if (OMM_LIKELY(tree->root)) {
@@ -67,8 +67,8 @@ fs_dirtree_entry_t *fs_dirtree_add(fs_dirtree_t *tree, char *name, const bool is
     if (!ent) {
         fs_dirtree_entry_t *parent = dirtree_add_ancestors(tree, name);
         if (parent) {
-            const size_t name_len = strlen(name);
-            const size_t allocsize = tree->entry_len + name_len + 1;
+            const u64 name_len = strlen(name);
+            const u64 allocsize = tree->entry_len + name_len + 1;
             ent = (fs_dirtree_entry_t *) omm_new(u8, allocsize);
             if (OMM_LIKELY(ent)) {
                 ent->name = (const char *) ent + tree->entry_len; 
@@ -107,7 +107,7 @@ fs_dirtree_entry_t *fs_dirtree_find(fs_dirtree_t *tree, const char *name) {
     return NULL;
 }
 
-fs_walk_result_t fs_dirtree_walk(void *pack, const char *base, walk_fn_t walkfn, void *user, const bool recur) {
+s32 fs_dirtree_walk(void *pack, const char *base, walk_fn_t walkfn, void *user, const bool recur) {
     fs_dirtree_t *tree = (fs_dirtree_t *) pack;
     fs_dirtree_entry_t *ent = fs_dirtree_find(tree, base);
     if (ent) {

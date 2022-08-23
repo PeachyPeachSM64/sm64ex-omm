@@ -82,7 +82,7 @@ static fs_dir_f fs_dir_types[] = {
 struct finddata_s {
     const char *pattern;
     char *dst;
-    size_t dst_len;
+    u64 dst_len;
 };
 
 static bool fs_find_walk(void *user, const char *path) {
@@ -101,9 +101,9 @@ static bool fs_find_walk(void *user, const char *path) {
 
 struct matchdata_s {
     const char *prefix;
-    size_t prefix_len;
+    u64 prefix_len;
     char *dst;
-    size_t dst_len;
+    u64 dst_len;
 };
 
 static bool fs_match_walk(void *user, const char *path) {
@@ -239,10 +239,10 @@ bool fs_unmount(const char *realpath) {
     return false;
 }
 
-fs_walk_result_t fs_walk(const char *base, walk_fn_t walkfn, void *user, const bool recur) {
+s32 fs_walk(const char *base, walk_fn_t walkfn, void *user, const bool recur) {
     bool found = false;
     for_each_dir_in_search_paths {
-        fs_walk_result_t res = dir->packer->walk(dir->pack, base, walkfn, user, recur);
+        s32 res = dir->packer->walk(dir->pack, base, walkfn, user, recur);
         if (res == FS_WALK_INTERRUPTED) return res;
         if (res != FS_WALK_NOTFOUND) found = true;
     }
@@ -319,7 +319,7 @@ bool fs_eof(fs_file_t *file) {
     return true;
 }
 
-const char *fs_find(char *outname, const size_t outlen, const char *pattern) {
+const char *fs_find(char *outname, const u64 outlen, const char *pattern) {
     struct finddata_s data = {
         .pattern = pattern,
         .dst = outname,
@@ -331,7 +331,7 @@ const char *fs_find(char *outname, const size_t outlen, const char *pattern) {
     return NULL;
 }
 
-const char *fs_match(char *outname, const size_t outlen, const char *prefix) {
+const char *fs_match(char *outname, const u64 outlen, const char *prefix) {
     struct matchdata_s data = {
         .prefix = prefix,
         .prefix_len = strlen(prefix),
@@ -414,7 +414,7 @@ const char *fs_get_write_path(const char *vpath) {
     return path;
 }
 
-const char *fs_convert_path(char *buf, const size_t bufsiz, const char *path)  {
+const char *fs_convert_path(char *buf, const u64 bufsiz, const char *path)  {
     if (path[0] == '!') {
         str_cat(buf, bufsiz, sys_exe_path(), path + 1);
     } else {
@@ -424,7 +424,7 @@ const char *fs_convert_path(char *buf, const size_t bufsiz, const char *path)  {
     return buf;
 }
 
-const char *fs_cat_paths(char *buf, const size_t bufsiz, const char *path1, const char *path2) {
+const char *fs_cat_paths(char *buf, const u64 bufsiz, const char *path1, const char *path2) {
 
     // Sanitize path1, remove the trailing separators
     char cpath1[SYS_MAX_PATH];
@@ -506,7 +506,7 @@ bool fs_sys_copy_file(const char *oldname, const char *newname) {
         FILE *fout = fopen(newname, "wb");
         if (fout) {
             u8 buf[0x1000];
-            size_t rx;
+            u64 rx;
             for (ret = true; (rx = fread(buf, 1, sizeof(buf), fin)) > 0;) {
                 if (!fwrite(buf, rx, 1, fout)) {
                     ret = false;

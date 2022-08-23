@@ -3,7 +3,7 @@
 #undef OMM_ALL_HEADERS
 
 struct walkdata_s {
-    size_t baselen;
+    u64 baselen;
     walk_fn_t userwalk;
     void *userdata;
 };
@@ -29,7 +29,7 @@ static void fs_packtype_dir_unmount(void *pack) {
     omm_free(pack);
 }
 
-static fs_walk_result_t fs_packtype_dir_walk(void *pack, const char *base, walk_fn_t walkfn, void *user, const bool recur) {
+static s32 fs_packtype_dir_walk(void *pack, const char *base, walk_fn_t walkfn, void *user, const bool recur) {
     omm_cat_paths(path, SYS_MAX_PATH, (const char *) pack, base);
     if (fs_sys_dir_exists(path)) {
         struct walkdata_s walkdata = { strlen((const char *) pack) + 1, walkfn, user };

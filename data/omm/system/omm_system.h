@@ -6,14 +6,6 @@
 #include "game/mario_step.h" // declare get_additive_y_vel_for_jumps before macro-ing it
 
 //
-// fs+
-//
-
-u8 *fs_load_png(const char *vpath, s32 *w, s32 *h);
-const char *fs_find(char *outname, const size_t outlen, const char *pattern);
-const char *fs_cat_paths(char *buf, const size_t bufsiz, const char *path1, const char *path2);
-
-//
 // System
 //
 
