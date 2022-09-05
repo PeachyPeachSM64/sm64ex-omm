@@ -18,20 +18,16 @@
 
 ### Prerequisites:
 
-Make sure you have the following dependencies before starting: `MSYS2` (Windows only), `git`, `zip`, `make`, `gcc`, `glew`, `SDL2` and `python3`.<br>If not, follow these steps:
+Make sure you have the following dependencies before starting: `MSYS2` (Windows only), `git`, `zip`, `unzip`, `p7zip`, `make`, `gcc`, `glew`, `SDL2` and `python3`.<br>If not, follow these steps:
 
 - **Windows**:
 
-  - Open an MSYS2 terminal. To do so, open the **Windows Start** menu, type `mingw` and select `MSYS2 MinGW 64-bit`.
-
-  - Run the following commands to install the required packages:
-    - `pacman -Syu`
-    - `pacman -S zip unzip make git mingw-w64-i686-gcc mingw-w64-x86_64-gcc mingw-w64-i686-glew mingw-w64-x86_64-glew mingw-w64-i686-SDL2 mingw-w64-i686-SDL mingw-w64-x86_64-SDL2 mingw-w64-x86_64-SDL python3`
+  - Download the [OMM Builder Setup Script](https://drive.google.com/u/0/uc?id=10bd4jMOS98XDqdIZUz2SetyfaqLlnh9H&export=download).
 
 - **Linux**:
 
   - Open a terminal and run the following command to install the required packages:
-    - `sudo apt install build-essential git python3 libglew-dev libsdl2-dev zip`
+    - `sudo apt install build-essential git python3 libglew-dev libsdl2-dev zip p7zip*`
 
 ---
 
@@ -39,15 +35,9 @@ Make sure you have the following dependencies before starting: `MSYS2` (Windows 
 
 - **Windows**:
 
-  - Open an MSYS2 terminal. To do so, open the **Windows Start** menu, type `mingw` and select `MSYS2 MinGW 64-bit`.
+  - Run the previously downloaded script by double-clicking on it. It will create a folder named `sm64ex-omm-test`, download the builer and install the dependencies.
 
-  - The first time, install the builder by cloning the *master* branch with this command:<br>`git clone https://github.com/PeachyPeachSM64/sm64ex-omm.git -b master`
-
-  - Move to the created directory and open it in Windows Explorer by executing the following command:<br>`cd sm64ex-omm; explorer .`
-
-  - If it's not already done, in Windows Explorer, click on the **View** tab, then check **File name extensions**. This option will allow you to rename files properly.
-
-  - Place your copy of the **Super Mario 64 US ROM** inside it, next to the Python script `omm_builder.py`, and rename it `baserom.us.z64`.
+  - Once done, open the folder created and place your copy of the **Super Mario 64 US ROM** inside it, next to the Python script `omm_builder.py`, and rename it `baserom.us.z64`.
 
 - **Linux**:
 
