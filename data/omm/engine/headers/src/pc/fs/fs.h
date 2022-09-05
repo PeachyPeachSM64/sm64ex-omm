@@ -2,6 +2,7 @@
 #define _SM64_FS_H_
 
 #include "types.h"
+#include "pc/platform.h" // sys_exe_path, sys_user_path
 
 // Save filename (not used, kept because compiling issues)
 #define SAVE_FILENAME "sm64_save_file.bin"
