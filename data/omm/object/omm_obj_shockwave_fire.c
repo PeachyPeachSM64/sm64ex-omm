@@ -584,8 +584,6 @@ struct Object *omm_spawn_shockwave_fire(struct Object *o, f32 radius, f32 width,
     }
 
     // Assign geo data
-    if (obj_alloc_fields(fire)) {
-        fire->oGeoData = (void *) data;
-    }
+    fire->oGeoData = (void *) data;
     return fire;
 }

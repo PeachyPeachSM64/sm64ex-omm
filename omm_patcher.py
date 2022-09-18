@@ -196,7 +196,7 @@ if __name__ == "__main__":
     # Header patches
     do_patch_file("sm64.h", "SM64_H", "#include \"macros.h\"", "\n#include \"data/omm/omm_includes.h\"", PATCH_AFTER)
     do_patch_file("types.h", "_SM64_TYPES_H_", "s32 animAccel;", "\n    s16_ts _animID;\n    ptr_ts _curAnim;\n    s16_ts _animFrame;", PATCH_AFTER)
-    do_patch_file("types.h", "_SM64_TYPES_H_", "Vec3f cameraToObject;", "\n    Vec3s_ts _angle;\n    Vec3f_ts _pos;\n    Vec3f_ts _scale;\n    Vec3f_ts _objPos;\n    Vec3f_ts _shadowPos;\n    f32_ts _shadowScale;\n    Mat4_ts _throwMatrix;", PATCH_AFTER)
+    do_patch_file("types.h", "_SM64_TYPES_H_", "Vec3f cameraToObject;", "\n    ObjFields _oFields;\n    Vec3s_ts _angle;\n    Vec3f_ts _pos;\n    Vec3f_ts _scale;\n    Vec3f_ts _objPos;\n    Vec3f_ts _shadowPos;\n    f32_ts _shadowScale;\n    Mat4_ts _throwMatrix;", PATCH_AFTER)
     do_patch_file("ultra64.h", "_ULTRA64_H_", "#include <PR/libultra.h>", "\n#include \"data/omm/omm_macros.h\"", PATCH_AFTER)
 
     # Actors patches
@@ -222,6 +222,7 @@ if __name__ == "__main__":
     do_patch_file("options_menu.c", "static struct SubMenu *currentMenu = &menuMain", ";", "\n#include \"data/omm/system/omm_options_menu.inl\"", PATCH_AFTER)
     do_patch_file("paintings.c", "Gfx *render_painting", "// Draw the triangles individually", "\n    extern void gfx_interpolate_painting(Vtx *, s32);\n    gfx_interpolate_painting(verts, numVtx);", PATCH_AFTER)
     do_patch_file("paintings.c", "Gfx *geo_painting_update(s32 callContext,", "gLastPaintingUpdateCounter = gPaintingUpdateCounter;", "geo_painting_update_fix_floor();\n        ", PATCH_BEFORE)
+    do_patch_file("spawn_object.c", "struct Object *allocate_object(struct ObjectNode *objList)", "obj->activeFlags = ACTIVE_FLAG_ACTIVE", "memset(&obj->header.gfx._oFields, 0, sizeof(obj->header.gfx._oFields));\n    ", PATCH_BEFORE)
 
     # Other patches
     do_patch_file("audio/external.c", "play_sound(s32 soundBits, f32 *pos)", "{", "\n    OMM_RETURN_IF_TRUE(omm_sound_play_character_sound_n64(soundBits, pos),,);", PATCH_AFTER)

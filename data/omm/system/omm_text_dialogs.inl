@@ -343,7 +343,7 @@ OMM_DIALOG_SPARKLY_STAR_3, 0, OMM_DIALOG_SPARKLY_MULTI(4, 3, 3),
 "to the surface.\n"
 
 "Try to collect at least\n"
-"80 coins, because that\n"
+"101 coins, because that\n"
 "will be your only way\n"
 "to not drown here."
 OMM_DIALOG_SPARKLY_MULTI_END

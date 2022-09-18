@@ -54,19 +54,23 @@
 #define POBJ_IS_ATTACKING                       ((gOmmObject->state.properties & (1 << 10)) != 0)
 
 #define POBJ_STEP_FLAGS                         (OBJ_STEP_UPDATE_HOME | (OBJ_STEP_MOVE_THROUGH_WALLS * POBJ_IS_ABLE_TO_MOVE_THROUGH_WALLS) | (OBJ_STEP_STICKY_FEET * POBJ_IS_ABLE_TO_MOVE_ON_SLOPES) | OBJ_STEP_CHECK_ON_GROUND)
+#define POBJ_INT_PRESET_COLLECTIBLES            (OBJ_INT_COLLECT_TRIGGERS | OBJ_INT_COLLECT_COINS | OBJ_INT_COLLECT_STARS)
 
-#define POBJ_INTERACTIONS(...)                                                                         \
-    if ((gOmmObject->state.invincTimer-- <= 0) && !omm_mario_is_locked(gMarioState)) {           \
-        for_each_object_in_interaction_lists(obj) {                                                    \
-            if (obj != o) {                                                                            \
-                __VA_ARGS__;                                                                           \
-                u32 interactType = obj->oInteractType;                                                 \
-                if (!(obj->oInteractStatus & INT_STATUS_INTERACTED)) {                                 \
-                    pobj_process_interaction(o, obj, interactType);                                    \
-                }                                                                                      \
-            }                                                                                          \
-        }                                                                                              \
-    }
+#define POBJ_INTERACTIONS(...)                                                                  \
+if (gOmmObject->state.invincTimer-- <= 0 && !omm_mario_is_locked(gMarioState)) {                \
+    struct Object *interacted = omm_obj_process_interactions(o, POBJ_INT_PRESET_COLLECTIBLES);  \
+    if (!interacted || !omm_obj_is_collectible(interacted)) {                                   \
+        for_each_object_in_interaction_lists(obj) {                                             \
+            if (obj != o) {                                                                     \
+                __VA_ARGS__;                                                                    \
+                u32 interactType = obj->oInteractType;                                          \
+                if (!(obj->oInteractStatus & INT_STATUS_INTERACTED)) {                          \
+                    pobj_process_interaction(o, obj, interactType);                             \
+                }                                                                               \
+            }                                                                                   \
+        }                                                                                       \
+    }                                                                                           \
+}
 
 //
 // Possessed object stuff

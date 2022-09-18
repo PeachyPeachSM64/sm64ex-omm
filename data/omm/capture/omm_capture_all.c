@@ -33,61 +33,61 @@ f32 omm_capture_get_top(struct Object *o) {
 f32 omm_capture_get_walk_speed(struct Object *o) {
     const OmmBhvDataCapture *data = (const OmmBhvDataCapture *) gOmmMario->capture.data;
     if (!data) return 0.f;
-    return data->walkSpeed * data->scaleModifier(o ? o->oScaleX : 1.f);
+    return data->walkSpeed * data->scaleModifier(o ? abs_f(o->oScaleX) : 1.f);
 }
 
 f32 omm_capture_get_run_speed(struct Object *o) {
     const OmmBhvDataCapture *data = (const OmmBhvDataCapture *) gOmmMario->capture.data;
     if (!data) return 0.f;
-    return data->runSpeed * data->scaleModifier(o ? o->oScaleX : 1.f);
+    return data->runSpeed * data->scaleModifier(o ? abs_f(o->oScaleX) : 1.f);
 }
 
 f32 omm_capture_get_dash_speed(struct Object *o) {
     const OmmBhvDataCapture *data = (const OmmBhvDataCapture *) gOmmMario->capture.data;
     if (!data) return 0.f;
-    return data->dashSpeed * data->scaleModifier(o ? o->oScaleX : 1.f);
+    return data->dashSpeed * data->scaleModifier(o ? abs_f(o->oScaleX) : 1.f);
 }
 
 f32 omm_capture_get_jump_velocity(struct Object *o) {
     const OmmBhvDataCapture *data = (const OmmBhvDataCapture *) gOmmMario->capture.data;
     if (!data) return 0.f;
-    return data->jumpVelocity * data->scaleModifier(o ? o->oScaleY : 1.f);
+    return data->jumpVelocity * data->scaleModifier(o ? abs_f(o->oScaleY) : 1.f);
 }
 
 f32 omm_capture_get_terminal_velocity(struct Object *o) {
     const OmmBhvDataCapture *data = (const OmmBhvDataCapture *) gOmmMario->capture.data;
     if (!data) return 0.f;
-    return data->terminalVelocity * data->scaleModifier(o ? o->oScaleY : 1.f);
+    return data->terminalVelocity * data->scaleModifier(o ? abs_f(o->oScaleY) : 1.f);
 }
 
 f32 omm_capture_get_gravity(struct Object *o) {
     const OmmBhvDataCapture *data = (const OmmBhvDataCapture *) gOmmMario->capture.data;
     if (!data) return 0.f;
-    return data->gravity * data->scaleModifier(o ? o->oScaleY : 1.f);
+    return data->gravity * data->scaleModifier(o ? abs_f(o->oScaleY) : 1.f);
 }
 
 f32 omm_capture_get_hitbox_radius(struct Object *o) {
     const OmmBhvDataCapture *data = (const OmmBhvDataCapture *) gOmmMario->capture.data;
     if (!data) return 0.f;
-    return data->hitboxRadius * (o ? o->oScaleX : 1.f);
+    return data->hitboxRadius * (o ? abs_f(o->oScaleX) : 1.f);
 }
 
 f32 omm_capture_get_hitbox_height(struct Object *o) {
     const OmmBhvDataCapture *data = (const OmmBhvDataCapture *) gOmmMario->capture.data;
     if (!data) return 0.f;
-    return data->hitboxHeight * (o ? o->oScaleY : 1.f);
+    return data->hitboxHeight * (o ? abs_f(o->oScaleY) : 1.f);
 }
 
 f32 omm_capture_get_hitbox_down_offset(struct Object *o) {
     const OmmBhvDataCapture *data = (const OmmBhvDataCapture *) gOmmMario->capture.data;
     if (!data) return 0.f;
-    return data->hitboxDownOffset * (o ? o->oScaleY : 1.f);
+    return data->hitboxDownOffset * (o ? abs_f(o->oScaleY) : 1.f);
 }
 
 f32 omm_capture_get_wall_hitbox_radius(struct Object *o) {
     const OmmBhvDataCapture *data = (const OmmBhvDataCapture *) gOmmMario->capture.data;
     if (!data) return 0.f;
-    return data->wallHitboxRadius * (o ? o->oScaleX : 1.f);
+    return data->wallHitboxRadius * (o ? abs_f(o->oScaleX) : 1.f);
 }
 
 bool omm_capture_should_reference_object(struct Object *o) {
@@ -215,7 +215,7 @@ void pobj_decelerate(struct Object *o, f32 decel, f32 decelIce) {
 
 void pobj_apply_gravity(struct Object *o, f32 mult) {
     o->oVelY = max_f(
-        o->oVelY + (OMM_CHEAT_MOON_JUMP && (gMarioState->controller->buttonDown & L_TRIG) ? 25.f : (omm_capture_get_gravity(o) * mult * (o->oVelY <= 0.f ? POBJ_PHYSICS_GRAVITY : 1.f))),
+        o->oVelY + (OMM_CHEAT_MOON_JUMP && (gMarioState->controller->buttonDown & L_TRIG) ? (25.f - o->oVelY) : (omm_capture_get_gravity(o) * mult * (o->oVelY <= 0.f ? POBJ_PHYSICS_GRAVITY : 1.f))),
         omm_capture_get_terminal_velocity(o) * mult * POBJ_PHYSICS_GRAVITY
     );
 }
@@ -363,21 +363,6 @@ static bool pobj_push_out_of_object_hurtbox() {
             sObj->oPosZ -= pushZ;
         }
         return true;
-    }
-    return false;
-}
-
-static bool pobj_interact_coin() {
-    if (sOverlapHitbox) {
-        omm_mario_interact_coin(gMarioState, sObj);
-        return true;
-    }
-    return false;
-}
-
-static bool pobj_interact_star_or_key() {
-    if (sOverlapHitbox) {
-        return omm_mario_interact_star_or_key(gMarioState, sObj);
     }
     return false;
 }
@@ -678,11 +663,9 @@ bool pobj_process_interaction(struct Object *o, struct Object *obj, u32 interact
 
     // Interaction
     switch (interactType) {
-        case INTERACT_COIN:
-            return pobj_interact_coin();
-
-        case INTERACT_STAR_OR_KEY:
-            return pobj_interact_star_or_key();
+        // Handled by omm_obj_process_interactions
+        // case INTERACT_COIN:
+        // case INTERACT_STAR_OR_KEY:
 
         case INTERACT_SNUFIT_BULLET:
         case INTERACT_MR_BLIZZARD:

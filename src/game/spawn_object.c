@@ -235,6 +235,7 @@ struct Object *allocate_object(struct ObjectNode *objList) {
 
     // Initialize object fields
 
+    memset(&obj->header.gfx._oFields, 0, sizeof(obj->header.gfx._oFields));
     obj->activeFlags = ACTIVE_FLAG_ACTIVE | ACTIVE_FLAG_UNK8;
     obj->parentObj = obj;
     obj->prevObj = NULL;

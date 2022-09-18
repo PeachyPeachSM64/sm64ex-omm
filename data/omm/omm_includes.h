@@ -105,7 +105,6 @@
 #include "levels/scripts.h"
 #include "pc/pc_main.h"
 #include "pc/cliopts.h"
-#include "pc/platform.h"
 #include "pc/configfile.h"
 #include "pc/fs/dirtree.h"
 #include "pc/gfx/gfx_pc.h"

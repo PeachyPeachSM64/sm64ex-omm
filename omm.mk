@@ -32,8 +32,8 @@ INC_DIRS := \
 # Version
 # -------
 
-OMM_VERSION_NUMBER := 7.2.0
-OMM_VERSION_REVISION := 10
+OMM_VERSION_NUMBER := 7.3.2
+OMM_VERSION_REVISION := 2
 OMM_DEVELOPER := PeachyPeach
 OMM_FLAGS := -p
 VERSION_CFLAGS += -DOMM_VERSION="$(OMM_VERSION_NUMBER)"
@@ -56,6 +56,13 @@ else ifeq ($(or $(and $(wildcard levels/zerolife/script.c),1),0),1)
   DEFINES += SMSR=1
   OMM_FLAGS += smsr
   OMM_VERSION_SUB := Super Mario Star Road
+	
+# Super Mario 64: The Green Stars
+else ifeq ($(or $(and $(wildcard data/smgs.data.custom.h),1),0),1)
+  VERSION_CFLAGS += -DSMGS
+  DEFINES += SMGS=1
+  OMM_FLAGS += smgs
+  OMM_VERSION_SUB := Super Mario 64: The Green Stars
 	
 # Super Mario 74
 else ifeq ($(or $(and $(wildcard text/us/coursesEE.h),1),0),1)

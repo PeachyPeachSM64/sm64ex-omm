@@ -226,6 +226,9 @@ static void omm_text_replace(u8 *str64, const char *from, const char *to) {
     }
 }
 
+static void omm_text_replace_mario_by_mario(UNUSED u8 *str64) {
+}
+
 static void omm_text_replace_mario_by_peach(u8 *str64) {
     omm_text_replace(str64, OMM_TEXT_MARIO, OMM_TEXT_PEACH);
     omm_text_replace(str64, OMM_TEXT_MARIO_UPPER, OMM_TEXT_PEACH_UPPER);
@@ -247,24 +250,36 @@ static void omm_text_replace_mario_by_wario(u8 *str64) {
     omm_text_replace(str64, OMM_TEXT_MARIO_LOWER, OMM_TEXT_WARIO_LOWER);
 }
 
-u8 *omm_text_replace_names(u8 *str64) {
-    static OmmMap sMarioStrings = omm_map_zero;
+static void (*omm_text_replace_func[])(u8 *) = {
+    omm_text_replace_mario_by_mario,
+    omm_text_replace_mario_by_peach,
+    omm_text_replace_mario_by_luigi,
+    omm_text_replace_mario_by_wario,
+};
 
-    // Find the original string or add it to the map
-    s32 i = omm_map_find_key(sMarioStrings, ptr, str64);
-    if (i != -1) {
-        const u8 *orig = (const u8 *) omm_map_get_val(sMarioStrings, ptr, i);
-        omm_copy(str64, orig, omm_text_length(orig) + 1);
-    } else {
-        omm_map_add(sMarioStrings, ptr, str64, ptr, omm_dup(str64, omm_text_length(str64) + 1));
+u8 *omm_text_get_string_for_selected_player(u8 *str64) {
+    static OmmArray sPlayersStrings = omm_array_zero;
+    s32 lenWithFFterm = omm_text_length(str64) + 1;
+
+    // Try to find the string in the list
+    omm_array_for_each(sPlayersStrings, p) {
+        const u8 **pstr = (const u8 **) p->as_ptr;
+        for (s32 i = 0; i != OMM_NUM_PLAYABLE_CHARACTERS; ++i) {
+            if (omm_text_compare(str64, pstr[i]) == 0) {
+                omm_copy(str64, pstr[omm_player_get_selected_index()], lenWithFFterm);
+                return str64;
+            }
+        }
     }
 
-    // Replace Mario/Cappy by the current character's name/cap's name
-    switch (omm_player_get_selected_index()) {
-        case OMM_PLAYER_PEACH: omm_text_replace_mario_by_peach(str64); break;
-        case OMM_PLAYER_LUIGI: omm_text_replace_mario_by_luigi(str64); break;
-        case OMM_PLAYER_WARIO: omm_text_replace_mario_by_wario(str64); break;
+    // It doesn't exist yet, lets add an entry
+    const u8 **pstr = omm_new(const u8 *, OMM_NUM_PLAYABLE_CHARACTERS);
+    for (s32 i = 0; i != OMM_NUM_PLAYABLE_CHARACTERS; ++i) {
+        pstr[i] = omm_dup(str64, lenWithFFterm);
+        omm_text_replace_func[i](pstr[i]);
     }
+    omm_array_add(sPlayersStrings, ptr, pstr);
+    omm_copy(str64, pstr[omm_player_get_selected_index()], lenWithFFterm);
     return str64;
 }
 
@@ -272,6 +287,19 @@ s32 omm_text_length(const u8 *str64) {
     s32 length = 0;
     for (; str64 && *str64 != 255; str64++, length++);
     return length;
+}
+
+s32 omm_text_compare(const u8 *str1, const u8 *str2) {
+    s32 len1 = omm_text_length(str1);
+    s32 len2 = omm_text_length(str2);
+    s32 len = min_s(len1, len2);
+    for (s32 i = 0; i != len; ++i) {
+        if (str1[i] < str2[i]) return -1;
+        if (str1[i] > str2[i]) return +1;
+    }
+    if (len1 < len2) return -1;
+    if (len1 > len2) return +1;
+    return 0;
 }
 
 //
@@ -380,16 +408,6 @@ static void omm_play_dialog_sound(struct DialogEntry *dialog) {
     }
 }
 
-struct DialogEntry **omm_dialog_get_table() {
-#if OMM_GAME_IS_SM74
-    return (struct DialogEntry **) (sm74_mode__omm_dialog_get_table == 2 ? seg2_dialog_table_EE : seg2_dialog_table);
-#elif OMM_GAME_IS_R96X
-    return (struct DialogEntry **) dialogPool;
-#else
-    return (struct DialogEntry **) seg2_dialog_table;
-#endif
-}
-
 struct DialogEntry *omm_dialog_get_entry(void **dialogTable, s16 dialogId, s32 mode) {
 
     // OMM dialog entry
@@ -442,10 +460,10 @@ OMM_ROUTINE_PRE_RENDER(omm_update_dialogs) {
                 case DIALOG_121: gDialogID = omm_get_bowser_dialog(false, DIALOG_121); break;
                 case DIALOG_163: gDialogID = omm_get_bowser_dialog(false, DIALOG_163); break;
             }
-            struct DialogEntry *entry = omm_dialog_get_entry((void **) omm_dialog_get_table(), gDialogID, gOmmSparklyMode);
-            omm_text_replace_names((u8 *) entry->str);
+            struct DialogEntry *entry = omm_dialog_get_entry((void **) gDialogTable, gDialogID, gOmmSparklyMode);
+            omm_text_get_string_for_selected_player((u8 *) entry->str);
             gDialogID = min_s(gDialogID, DIALOG_COUNT);
-            omm_dialog_get_table()[gDialogID] = entry;
+            gDialogTable[gDialogID] = entry;
         }
         sDialogID = gDialogID;
     }
@@ -453,7 +471,7 @@ OMM_ROUTINE_PRE_RENDER(omm_update_dialogs) {
     // Ending cutscene dialog
     // Replace 'Mario' and 'Cappy' by the selected character name and cap name
     if (gCutsceneMsgIndex != -1) {
-        omm_text_replace_names(gEndCutsceneStringsEn[gCutsceneMsgIndex]);
+        omm_text_get_string_for_selected_player(gEndCutsceneStringsEn[gCutsceneMsgIndex]);
     }
 }
 

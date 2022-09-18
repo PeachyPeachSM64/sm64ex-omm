@@ -215,17 +215,9 @@ static u8 omm_stars_get_bits_per_area(s32 level, s32 area) {
 static u32 omm_stars_get_color_per_course(s32 course) {
     static u32 *sOmmStarsColors = NULL;
     if (!sOmmStarsColors) {
-        sOmmStarsColors = omm_new(u32, 18);
-        static const char *sOmmStarsTextures[] = {
-            OMM_TEXTURE_STAR_BODY_0,  OMM_TEXTURE_STAR_BODY_1,  OMM_TEXTURE_STAR_BODY_2,
-            OMM_TEXTURE_STAR_BODY_3,  OMM_TEXTURE_STAR_BODY_4,  OMM_TEXTURE_STAR_BODY_5,
-            OMM_TEXTURE_STAR_BODY_6,  OMM_TEXTURE_STAR_BODY_7,  OMM_TEXTURE_STAR_BODY_8,
-            OMM_TEXTURE_STAR_BODY_9,  OMM_TEXTURE_STAR_BODY_10, OMM_TEXTURE_STAR_BODY_11,
-            OMM_TEXTURE_STAR_BODY_12, OMM_TEXTURE_STAR_BODY_13, OMM_TEXTURE_STAR_BODY_14,
-            OMM_TEXTURE_STAR_BODY_15, OMM_TEXTURE_STAR_BODY_16, OMM_TEXTURE_STAR_BODY_17,
-        };
-        for (s32 i = 0; i != 18; ++i) {
-            omm_str_cat(filename, 256, "gfx/", sOmmStarsTextures[i], ".png");
+        sOmmStarsColors = omm_new(u32, omm_static_array_length(OMM_TEXTURE_STAR_BODY_));
+        for (s32 i = 0; i != omm_static_array_length(OMM_TEXTURE_STAR_BODY_); ++i) {
+            omm_str_cat(filename, 256, "gfx/", OMM_TEXTURE_STAR_BODY_[OMM_STAR_COLOR_[i]], ".png");
             s32 w, h;
             u8 *p = fs_load_png(filename, &w, &h);
             if (p) {
@@ -261,7 +253,7 @@ u8 omm_stars_get_bits() {
 
 u8 omm_stars_get_bits_total(s32 level) {
 #if OMM_GAME_IS_SM74
-    return omm_stars_get_bits_per_area(level, sm74_mode__omm_stars_get_bits_total);
+    return omm_stars_get_bits_per_area(level, sWarpDest.areaIdx);
 #else
     return omm_stars_get_bits_per_area(level, 0) |
            omm_stars_get_bits_per_area(level, 1) |
@@ -290,20 +282,18 @@ bool omm_stars_is_collected(s32 index) {
 // or
 // - Every star bit is 1 and there is an exit warp
 bool omm_stars_all_collected(s32 level) {
-    return (level != LEVEL_BITDW  ) &&
-           (level != LEVEL_BITFS  ) &&
-           (level != LEVEL_BITS   ) && 
-           (level != LEVEL_GROUNDS) && 
-           (level != LEVEL_CASTLE ) && 
-           (level != LEVEL_COURT  ) && (
-#if OMM_GAME_IS_SMSR
-           (level == LEVEL_ENDING) ||
-#endif
-           (level == LEVEL_BOWSER_1) ||
-           (level == LEVEL_BOWSER_2) ||
-           (level == LEVEL_BOWSER_3) ||
-           (omm_level_get_exit_warp(level, gCurrAreaIndex) &&
-           (omm_stars_get_bits() == omm_stars_get_bits_total(level))));
+    return level != LEVEL_BITDW    &&
+           level != LEVEL_BITFS    &&
+           level != LEVEL_BITS     && 
+           level != LEVEL_GROUNDS  && 
+           level != LEVEL_CASTLE   && 
+           level != LEVEL_COURT    && (
+           level == OMM_LEVEL_END  ||
+           level == LEVEL_BOWSER_1 ||
+           level == LEVEL_BOWSER_2 ||
+           level == LEVEL_BOWSER_3 || (
+           omm_level_get_exit_warp(level, gCurrAreaIndex) &&
+           omm_stars_get_bits() == omm_stars_get_bits_total(level)));
 }
 
 void omm_stars_set_bits(u8 bits) {

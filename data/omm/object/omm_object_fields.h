@@ -229,28 +229,18 @@ extern struct OmmData *gOmmData;
 #define gOmmCapture    gOmmData->mario->capture.obj
 #define gOmmObject     gOmmData->object
 
-#define oFields             OBJECT_FIELD_OBJ(0x48)
-#define oGfxInited          oFields->OBJECT_FIELD_U32(0x00)
-#define oGeoData            oFields->OBJECT_FIELD_VPTR(0x01)
-#define oBhvPointer         oFields->OBJECT_FIELD_CVPTR(0x02)
-#define oBhvCommand         oFields->OBJECT_FIELD_CVPTR(0x03)
-#define oBhvStackIndex      oFields->OBJECT_FIELD_U32(0x04)
-#define oBhvTypes           oFields->OBJECT_FIELD_U32(0x05)
-#define oSafeStepInited     oFields->OBJECT_FIELD_U32(0x06)
-#define oSafeStepIgnore     oFields->OBJECT_FIELD_U32(0x07)
-#define oSafeStepHeight     oFields->OBJECT_FIELD_F32(0x08)
-#define oSafeStepIndex      oFields->OBJECT_FIELD_S32(0x09)
-#define oSafeStepCoordA     oFields->OBJECT_FIELD_F32(0x0A)
-#define oSafeStepCoordB     oFields->OBJECT_FIELD_F32(0x0B)
-#define oSafeStepCoordC     oFields->OBJECT_FIELD_F32(0x0C)
-#define oSafeStepCoords     oSafeStepCoordA
-
-#ifndef OBJECT_FIELDS_INDEX_DIRECTLY
-extern struct Object gOmmObjFields[OBJECT_POOL_CAPACITY];
-OMM_INLINE bool obj_alloc_fields(struct Object *o) {
-    u32 objSlot = (u32) (o - gObjectPool);
-    return (objSlot < OBJECT_POOL_CAPACITY) && (o->oFields || (o->oFields = (struct Object *) omm_zero(gOmmObjFields + objSlot, sizeof(struct Object))) != NULL);
-}
-#endif
+#define oFields             header.gfx._oFields
+#define oGfxInited          oFields._oGfxInited
+#define oTransparency       oFields._oTransparency
+#define oGeoData            oFields._oGeoData
+#define oBhvPointer         oFields._oBhvPointer
+#define oBhvCommand         oFields._oBhvCommand
+#define oBhvStackIndex      oFields._oBhvStackIndex
+#define oBhvTypes           oFields._oBhvTypes
+#define oSafeStepInited     oFields._oSafeStepInited
+#define oSafeStepIgnore     oFields._oSafeStepIgnore
+#define oSafeStepIndex      oFields._oSafeStepIndex
+#define oSafeStepHeight     oFields._oSafeStepHeight
+#define oSafeStepCoords     oFields._oSafeStepCoords
 
 #endif // OMM_OBJECT_FIELDS_H

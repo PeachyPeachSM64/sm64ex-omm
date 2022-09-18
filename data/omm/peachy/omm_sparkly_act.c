@@ -1,6 +1,7 @@
 #define OMM_ALL_HEADERS
 #include "data/omm/omm_includes.h"
 #undef OMM_ALL_HEADERS
+#undef do_cutscene_handler
 
 //
 // Star dance
@@ -124,6 +125,12 @@ typedef struct {
     s32 jump;
 } EndToadStruct;
 
+static struct {
+    s32 timer;
+    u8 fade;
+    u8 msg[256];
+} sOmmEndToadDialog[1];
+
 static void omm_sparkly_act_ending_update_toad_anim(EndToadStruct *toad) {
     if (toad->obj) {
         geo_obj_init_animation(&toad->obj->header.gfx, (struct Animation **) &toad_seg6_anims_0600FB58[toad->anim]);
@@ -141,11 +148,10 @@ static void omm_sparkly_act_ending_update_toad_jump(EndToadStruct *toad) {
 }
 
 static void omm_sparkly_act_ending_set_toad_message(const char *msg, s16 duration) {
-    static u8 sOmmEndToadMessage[256];
-    const u8 *converted = omm_text_convert(msg, false);
-    omm_copy(sOmmEndToadMessage, converted, omm_text_length(converted) + 1);
-    gEndCutsceneStringsEn[OMM_CUTSCENE_MSG_INDEX] = sOmmEndToadMessage;
-    set_cutscene_message(SCREEN_WIDTH / 2, 227, OMM_CUTSCENE_MSG_INDEX, duration);
+    const u8 *converted = omm_text_get_string_for_selected_player(omm_text_convert(msg, false));
+    omm_copy(sOmmEndToadDialog->msg, converted, omm_text_length(converted) + 1);
+    sOmmEndToadDialog->timer = duration + 10; // + Fade in/out frames
+    sOmmEndToadDialog->fade = 0;
 }
 
 static void omm_sparkly_act_ending_set_visual_pos(struct Object *o, f32 *value) {
@@ -192,6 +198,30 @@ static void omm_sparkly_act_ending_update_music(struct MarioState *m) {
 #endif
 }
 
+void omm_sparkly_ending_dialog() {
+    if (gMarioState->action == ACT_END_PEACH_CUTSCENE && gOmmSparklyEnding == OMM_SPARKLY_ENDING_BAD) {
+        if (sOmmEndToadDialog->timer > 0) {
+
+            // Render text
+            omm_render_create_dl_ortho_matrix();
+            gSPDisplayList(gDisplayListHead++, dl_ia_text_begin);
+            gDPSetEnvColor(gDisplayListHead++, 0xFF, 0xFF, 0xFF, sOmmEndToadDialog->fade);
+            print_generic_string(get_str_x_pos_from_center(SCREEN_WIDTH / 2, sOmmEndToadDialog->msg, 10), 13, sOmmEndToadDialog->msg);
+            gSPDisplayList(gDisplayListHead++, dl_ia_text_end);
+
+            // Fade in/out
+            if (sOmmEndToadDialog->timer-- < 6) {
+                sOmmEndToadDialog->fade -= 0x33;
+            } else if (sOmmEndToadDialog->fade < 0xFF) {
+                sOmmEndToadDialog->fade += 0x33;
+            }
+        }
+    } else {
+        sOmmEndToadDialog->timer = 0;
+        do_cutscene_handler();
+    }
+}
+
 #endif
 
 // Sparkly Stars bad ending (Normal only)
@@ -228,7 +258,7 @@ s32 omm_sparkly_act_ending_1(struct MarioState *m) {
             case 3: {
                 switch (m->actionTimer) {
                     case 1: {
-                        play_transition(WARP_TRANSITION_FADE_INTO_COLOR, 14, 255, 255, 255);
+                        play_transition(WARP_TRANSITION_FADE_INTO_COLOR, 14, 0xFF, 0xFF, 0xFF);
                     } break;
 
                     case 2: {
@@ -248,7 +278,7 @@ s32 omm_sparkly_act_ending_1(struct MarioState *m) {
                     } break;
 
                     case 44: {
-                        play_transition(WARP_TRANSITION_FADE_FROM_COLOR, 192, 255, 255, 255);
+                        play_transition(WARP_TRANSITION_FADE_FROM_COLOR, 192, 0xFF, 0xFF, 0xFF);
                     } break;
 
                     case 276: {

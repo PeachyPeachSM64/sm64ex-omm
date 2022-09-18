@@ -261,7 +261,7 @@ static Gfx **omm_cappy_gfx_get_display_lists(u32 id, bool metal, bool mirror) {
     Gfx **gfx = omm_new(Gfx *, 2);
 
     // Display lists
-    const Gfx gfx_[3][0x20] = { {
+    const Gfx gfx_[4][0x20] = { {
         gsDPSetEnvColor(0xFF, 0xFF, 0xFF, 0xFF),
         gsSPClearGeometryMode(G_TEXTURE_GEN | G_CULL_BOTH),
         gsSPSetGeometryMode(mirror ? G_CULL_FRONT : G_CULL_BACK),
@@ -297,10 +297,29 @@ static Gfx **omm_cappy_gfx_get_display_lists(u32 id, bool metal, bool mirror) {
         gsSPTexture(0xFFFF, 0xFFFF, 0, G_TX_RENDERTILE, G_OFF),
         gsDPSetCombineLERP(0, 0, 0, SHADE, 0, 0, 0, ENVIRONMENT, 0, 0, 0, SHADE, 0, 0, 0, ENVIRONMENT), // G_CC_SHADEFADEA
         gsSPClearGeometryMode(G_TEXTURE_ALPHA),
+        gsDPPipeSync(), // gfx + 16: gsDPPipeSync if Vanish, gsSPEndDisplayList otherwise
+        gsSPEndDisplayList(),
+    }, {
+        gsDPSetEnvColor(0xFF, 0xFF, 0xFF, 0xFF),
+        gsSPClearGeometryMode(G_TEXTURE_GEN | G_CULL_BOTH),
+        gsSPSetGeometryMode(G_LIGHTING | G_TEXTURE_ALPHA | (mirror ? G_CULL_FRONT : G_CULL_BACK)),
+        gsDPSetCombineLERP(TEXEL0, 0, SHADE, 0, TEXEL0, 0, ENVIRONMENT, 0, TEXEL0, 0, SHADE, 0, TEXEL0, 0, ENVIRONMENT, 0),
+        gsSPTexture(0xFFFF, 0xFFFF, 0, G_TX_RENDERTILE, G_ON),
+        gsDPLoadTextureBlock(OMM_TEXTURE_CAPPY_EYE, G_IM_FMT_RGBA, G_IM_SIZ_32b, 128, 128, 0, G_TX_CLAMP, G_TX_CLAMP, 0, 0, 0, 0),
+        gsSPDisplayList(tri1),
+        gsSPTexture(0xFFFF, 0xFFFF, 0, G_TX_RENDERTILE, G_OFF),
+        gsDPSetCombineLERP(0, 0, 0, SHADE, 0, 0, 0, ENVIRONMENT, 0, 0, 0, SHADE, 0, 0, 0, ENVIRONMENT), // G_CC_SHADEFADEA
+        gsSPClearGeometryMode(G_TEXTURE_ALPHA),
+        gsDPPipeSync(), // gfx + 16: gsDPPipeSync if Vanish, gsSPEndDisplayList otherwise
+        gsSPClearGeometryMode(G_LIGHTING),
+        gsSPSetGeometryMode(G_TEXTURE_GEN),
+        gsDPSetCombineLERP(0, 0, 0, TEXEL0, 0, 0, 0, ENVIRONMENT, 0, 0, 0, TEXEL0, 0, 0, 0, ENVIRONMENT), // G_CC_DECALFADE
+        gsDPLoadTextureBlock(OMM_TEXTURE_CAPPY_METAL, G_IM_FMT_RGBA, G_IM_SIZ_32b, 128, 128, 0, 0, 0, 0, 0, 0, 0),
+        gsSPTexture(0x1F00, 0x1F00, 0, G_TX_RENDERTILE, G_ON),
         gsSPEndDisplayList(),
     } };
-    gfx[0] = omm_dup(gfx_[metal], sizeof(gfx_[metal]));
-    gfx[1] = omm_dup(gfx_[2], sizeof(gfx_[2]));
+    gfx[0] = omm_dup(gfx_[0 + metal], sizeof(gfx_[0 + metal]));
+    gfx[1] = omm_dup(gfx_[2 + metal], sizeof(gfx_[2 + metal]));
     
     // Triangles and vertices
     for (s32 sign = -1; sign <= +1; sign += 2) {
@@ -355,9 +374,17 @@ static void omm_cappy_gfx_draw(u32 id, u8 alpha, bool metal, bool mirror, void (
     Gfx **displayLists = (Gfx **) omm_map_get_val(sDisplayLists, ptr, i);
     if (displayLists) {
         gDPSetEnvColor(displayLists[0], 0xFF, 0xFF, 0xFF, alpha);
-        append(displayLists[0], (alpha != 0xFF) ? LAYER_TRANSPARENT : LAYER_OPAQUE);
-        gDPSetEnvColor(displayLists[1], 0xFF, 0xFF, 0xFF, alpha);
-        append(displayLists[1], LAYER_TRANSPARENT);
+        if (alpha != 0xFF) {
+            append(displayLists[0], LAYER_TRANSPARENT);
+            gDPSetEnvColor(displayLists[1], 0xFF, 0xFF, 0xFF, alpha);
+            gDPPipeSync(displayLists[1] + 16);
+            append(displayLists[1], LAYER_TRANSPARENT);
+        } else {
+            append(displayLists[0], LAYER_OPAQUE);
+            gDPSetEnvColor(displayLists[1], 0xFF, 0xFF, 0xFF, alpha);
+            gSPEndDisplayList(displayLists[1] + 16);
+            append(displayLists[1], LAYER_TRANSPARENT);
+        }
     }
 }
 

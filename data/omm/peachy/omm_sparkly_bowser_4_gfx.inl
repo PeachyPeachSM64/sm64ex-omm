@@ -71,7 +71,7 @@ static const Gfx *omm_sparkly_bowser_4_enable_gfx(s32 callContext, struct GraphN
     return NULL;
 }
 
-void omm_sparkly_bowser_4_process_graph_node(struct Object *obj, bool enable, void (*geoFunc)(struct GraphNodeGenerated *)) {
+static struct GraphNodeGenerated *omm_sparkly_bowser_4_process_graph_node(struct Object *obj, bool enable) {
     if (OMM_UNLIKELY(omm_sparkly_is_bowser_4_battle() && (obj_check_model(obj, MODEL_BOWSER) || obj_check_model(obj, MODEL_BOWSER2)))) {
         static struct GraphNodeGenerated sOmmSparklyBowser4Nodes[2];
         struct GraphNodeGenerated *node = &sOmmSparklyBowser4Nodes[enable];
@@ -83,8 +83,11 @@ void omm_sparkly_bowser_4_process_graph_node(struct Object *obj, bool enable, vo
         node->fnNode.node.children = NULL;
         node->fnNode.func = (GraphNodeFunc) omm_sparkly_bowser_4_enable_gfx;
         node->parameter = enable;
-        geoFunc(node);
+        return node;
     }
+    return NULL;
 }
+
+GEO_REGISTER_OBJECT_EFFECTS(omm_sparkly_bowser_4_process_graph_node);
 
 #endif

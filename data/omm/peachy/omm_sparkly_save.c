@@ -247,7 +247,9 @@ void omm_sparkly_write(char **buffer) {
 //
 
 bool omm_sparkly_is_available(s32 mode) {
-    return ((OMM_SPARKLY_BLOCK_AVAILABLE >> mode) & 1);
+    CHECK_MODE(true);
+    static const bool is_available[] = OMM_SPARKLY_BLOCK_AVAILABLE;
+    return is_available[mode - 1];
 }
 
 bool omm_sparkly_is_unlocked(s32 mode) {

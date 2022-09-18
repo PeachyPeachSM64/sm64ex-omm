@@ -22,18 +22,6 @@ bool omm_is_ending_cutscene();
 bool omm_is_ending_cake_screen();
 void omm_speedrun_split(s32 numStars);
 
-#if OMM_GAME_IS_SM74
-void omm_opt_sm74_change_mode(UNUSED void *opt, s32 arg);
-#define sm74_mode__omm_save                     ((omm_is_main_menu() ? (s32) sWarpDest.areaIdx : (s32) gCurrAreaIndex) - 1)
-#define sm74_mode__omm_level_script             sWarpDest.areaIdx
-#define sm74_mode__omm_opt_init_warp_to_level   sWarpDest.areaIdx
-#define sm74_mode__omm_stars_get_bits_total     sWarpDest.areaIdx
-#define sm74_mode__omm_level_get_name           sWarpDest.areaIdx
-#define sm74_mode__omm_level_get_act_name       sWarpDest.areaIdx
-#define sm74_mode__omm_render_pause_castle      gCurrAreaIndex
-#define sm74_mode__omm_dialog_get_table         gCurrAreaIndex
-#endif
-
 //
 // Profiling
 //
@@ -133,9 +121,9 @@ u8 *omm_text_copy(const u8 *str64, bool heapAlloc);
 u8 *omm_text_capitalize(u8 *str64);
 u8 *omm_text_decapitalize(u8 *str64);
 u8 *omm_text_replace_char(u8 *str64, u8 from, u8 to);
-u8 *omm_text_replace_names(u8 *str64);
+u8 *omm_text_get_string_for_selected_player(u8 *str64);
 s32 omm_text_length(const u8 *str64);
-struct DialogEntry **omm_dialog_get_table();
+s32 omm_text_compare(const u8 *str1, const u8 *str2);
 struct DialogEntry *omm_dialog_get_entry(void **dialogTable, s16 dialogId, s32 mode);
 
 //

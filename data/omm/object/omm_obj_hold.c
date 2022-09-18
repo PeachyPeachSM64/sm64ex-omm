@@ -46,7 +46,7 @@ static void bhv_omm_hold_update() {
                             o->oInteractStatus = (ATTACK_KICK_OR_TRIP | INT_STATUS_INTERACTED | INT_STATUS_WAS_ATTACKED);
                             gCurBhvCommand = ((const BehaviorScript *) o->oBhvCommand) - 2;
                             o->curBhvCommand = ((const BehaviorScript *) o->oBhvCommand);
-                            o->bhvStackIndex = o->oBhvStackIndex;
+                            o->bhvStackIndex = (u32) o->oBhvStackIndex;
                             o->oIntangibleTimer = 0;
                             o->oHeldState = HELD_FREE;
                             obj_set_vel(o, 0, 0, 0);
@@ -69,7 +69,7 @@ static void bhv_omm_hold_update() {
                         default: {
                             gCurBhvCommand = ((const BehaviorScript *) o->oBhvCommand) - 2;
                             o->curBhvCommand = ((const BehaviorScript *) o->oBhvCommand);
-                            o->bhvStackIndex = o->oBhvStackIndex;
+                            o->bhvStackIndex = (u32) o->oBhvStackIndex;
                             o->oAction = h->nextAction;
                             o->oIntangibleTimer = 0;
                             o->oHeldState = HELD_FREE;
@@ -98,7 +98,7 @@ static void bhv_omm_hold_update() {
                     if (o->oVelY < 4.f || o->oForwardVel < 1.f) {
                         gCurBhvCommand = ((const BehaviorScript *) o->oBhvCommand) - 2;
                         o->curBhvCommand = ((const BehaviorScript *) o->oBhvCommand);
-                        o->bhvStackIndex = o->oBhvStackIndex;
+                        o->bhvStackIndex = (u32) o->oBhvStackIndex;
                         o->oIntangibleTimer = 0;
                         o->oHeldState = HELD_FREE;
                         obj_set_vel(o, 0, 0, 0);
@@ -132,9 +132,9 @@ bool omm_obj_is_holdable(struct Object *o) {
 }
 
 bool omm_obj_hold(struct Object *o) {
-    if (o->oHeldState == HELD_FREE && omm_obj_is_holdable(o) && obj_alloc_fields(o)) {
-        o->oBhvCommand = o->curBhvCommand;
-        o->oBhvStackIndex = o->bhvStackIndex;
+    if (o->oHeldState == HELD_FREE && omm_obj_is_holdable(o)) {
+        o->oBhvCommand = (void *) o->curBhvCommand;
+        o->oBhvStackIndex = (s32) o->bhvStackIndex;
         o->curBhvCommand = bhvOmmHold;
         o->bhvStackIndex += 1;
         o->oHeldState = HELD_HELD;

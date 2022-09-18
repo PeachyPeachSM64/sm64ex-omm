@@ -42,6 +42,7 @@ static const OmmNameValue sOmmFlags[] = {
     { "upstairs_door", SAVE_FLAG_UNLOCKED_UPSTAIRS_DOOR },
 };
 #define OMM_FLAGS_COUNT omm_static_array_length(sOmmFlags)
+#define OMM_FLAGS_BITS (~(SAVE_FLAG_CAP_ON_GROUND | SAVE_FLAG_CAP_ON_KLEPTO | SAVE_FLAG_CAP_ON_UKIKI | SAVE_FLAG_CAP_ON_MR_BLIZZARD))
 
 static const OmmNameValue sOmmCourses[] = {
     { "bob", COURSE_BOB },
@@ -105,17 +106,18 @@ typedef struct {
     OmmSaveFile files[NUM_SAVE_FILES][2];
 } OmmSaveBuffer;
 
-static OmmSaveBuffer sOmmSaveBuffers[] = {
-    { "smex", 1, 7, NULL, { { { 0 } } } },
-    { "smms", 1, 7, NULL, { { { 0 } } } },
+static OmmSaveBuffer sOmmSaveBuffers[OMM_GAME_COUNT] = {
+    [OMM_GAME_SMEX] = { "smex", 1, 7, NULL, { { { 0 } } } },
+    [OMM_GAME_XALO] = { "xalo", 1, 7, NULL, { { { 0 } } } },
 #if OMM_GAME_IS_R96X
-    { "r96x", 1, 7, "b00" STRINGIFY(NUM_KEYS) "b" STRINGIFY(NUM_KEYS) STRINGIFY(NUM_WARIO_COINS), { { { 0 } } } },
+    [OMM_GAME_R96X] = { "r96x", 1, 7, "b00" STRINGIFY(NUM_KEYS) "b" STRINGIFY(NUM_KEYS) STRINGIFY(NUM_WARIO_COINS), { { { 0 } } } },
 #else
-    { "r96x", 1, 7, "b0016b1616", { { { 0 } } } },
+    [OMM_GAME_R96X] = { "r96x", 1, 7, "b0016b1616", { { { 0 } } } },
 #endif
-    { "xalo", 1, 7, NULL, { { { 0 } } } },
-    { "sm74", 2, 7, NULL, { { { 0 } } } },
-    { "smsr", 1, 7, NULL, { { { 0 } } } },
+    [OMM_GAME_SMMS] = { "smms", 1, 7, NULL, { { { 0 } } } },
+    [OMM_GAME_SM74] = { "sm74", 2, 7, NULL, { { { 0 } } } },
+    [OMM_GAME_SMSR] = { "smsr", 1, 7, NULL, { { { 0 } } } },
+    [OMM_GAME_SMGS] = { "smgs", 1, 7, NULL, { { { 0 } } } },
 };
 
 //
@@ -613,7 +615,7 @@ s32 save_file_exists(s32 fileIndex) {
 
 u32 save_file_get_flags() {
     if (gCurrCreditsEntry || gCurrDemoInput) return 0;
-    return (sOmmCurrSaveFile->flags);
+    return (sOmmCurrSaveFile->flags & OMM_FLAGS_BITS);
 }
 
 u32 save_file_get_star_flags(s32 fileIndex, s32 courseIndex) {
@@ -687,11 +689,13 @@ u16 save_file_get_sound_mode() {
 
 void save_file_set_flags(u32 flags) {
     sOmmCurrSaveFile->flags |= flags;
+    sOmmCurrSaveFile->flags &= OMM_FLAGS_BITS;
     gSaveFileModified = true;
 }
 
 void save_file_clear_flags(u32 flags) {
     sOmmCurrSaveFile->flags &= ~flags;
+    sOmmCurrSaveFile->flags &= OMM_FLAGS_BITS;
     sOmmCurrSaveFile->flags |= SAVE_FLAG_FILE_EXISTS;
     gSaveFileModified = true;
 }
@@ -867,7 +871,7 @@ OMM_ROUTINE_UPDATE(omm_auto_save) {
 
 void omm_set_complete_save_file(s32 fileIndex) {
     gCurrSaveFileNum = fileIndex + 1;
-    for (gCurrAreaIndex = 1; gCurrAreaIndex <= DEF(1, 1, 1, 1, 2, 1); ++gCurrAreaIndex) {
+    for (gCurrAreaIndex = 1; gCurrAreaIndex <= OMM_NUM_SAVE_FILES; ++gCurrAreaIndex) {
         sWarpDest.areaIdx = (u8) gCurrAreaIndex;
 
         // Flags

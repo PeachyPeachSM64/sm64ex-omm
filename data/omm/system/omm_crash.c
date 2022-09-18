@@ -178,19 +178,7 @@ static LONG omm_crash_handler(EXCEPTION_POINTERS *ExceptionInfo) {
     omm_crash_handler_set_text(105, 1, 0xFF, 0xFF, 0x80, "%s", "Rev.: ");
     omm_crash_handler_set_text( -1, 1, 0x00, 0xC0, 0xFF, "%s", STRINGIFY(OMM_REVISION));
     omm_crash_handler_set_text(105, 2, 0xFF, 0xFF, 0x80, "%s", "Game: ");
-#if   OMM_GAME_IS_SMEX
-    omm_crash_handler_set_text( -1, 2, 0x00, 0xC0, 0xFF, "%s", "SMEX (ex-nightly)");
-#elif OMM_GAME_IS_SMMS
-    omm_crash_handler_set_text( -1, 2, 0x00, 0xC0, 0xFF, "%s", "SMMS (Moonshine)");
-#elif OMM_GAME_IS_R96X
-    omm_crash_handler_set_text( -1, 2, 0x00, 0xC0, 0xFF, "%s", "R96X (Render96)");
-#elif OMM_GAME_IS_XALO
-    omm_crash_handler_set_text( -1, 2, 0x00, 0xC0, 0xFF, "%s", "XALO (ex-alo-master)");
-#elif OMM_GAME_IS_SM74
-    omm_crash_handler_set_text( -1, 2, 0x00, 0xC0, 0xFF, "%s", "SM74 (Super Mario 74)");
-#elif OMM_GAME_IS_SMSR
-    omm_crash_handler_set_text( -1, 2, 0x00, 0xC0, 0xFF, "%s", "SMSR (Star Road)");
-#endif
+    omm_crash_handler_set_text( -1, 2, 0x00, 0xC0, 0xFF, "%s", OMM_GAME_CODE);
     omm_crash_handler_set_text(105, 3, 0xFF, 0xFF, 0x80, "%s", "Arch: ");
 #if IS_64_BIT
     omm_crash_handler_set_text( -1, 3, 0x00, 0xC0, 0xFF, "%s", "64-bit");

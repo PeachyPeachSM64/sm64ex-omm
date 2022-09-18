@@ -68,6 +68,39 @@ omm_number_define_gfx(2digits_x7, 7, 8);
 omm_number_define_gfx(2digits_x8, 8, 8);
 omm_number_define_gfx(2digits_x9, 9, 8);
 
+omm_number_define_gfx(1digit_0b, 0b, 0);
+omm_number_define_gfx(1digit_1b, 1b, 0);
+omm_number_define_gfx(1digit_2b, 2b, 0);
+omm_number_define_gfx(1digit_3b, 3b, 0);
+omm_number_define_gfx(1digit_4b, 4b, 0);
+omm_number_define_gfx(1digit_5b, 5b, 0);
+omm_number_define_gfx(1digit_6b, 6b, 0);
+omm_number_define_gfx(1digit_7b, 7b, 0);
+omm_number_define_gfx(1digit_8b, 8b, 0);
+omm_number_define_gfx(1digit_9b, 9b, 0);
+
+omm_number_define_gfx(2digits_0xb, 0b, 4);
+omm_number_define_gfx(2digits_1xb, 1b, 4);
+omm_number_define_gfx(2digits_2xb, 2b, 4);
+omm_number_define_gfx(2digits_3xb, 3b, 4);
+omm_number_define_gfx(2digits_4xb, 4b, 4);
+omm_number_define_gfx(2digits_5xb, 5b, 4);
+omm_number_define_gfx(2digits_6xb, 6b, 4);
+omm_number_define_gfx(2digits_7xb, 7b, 4);
+omm_number_define_gfx(2digits_8xb, 8b, 4);
+omm_number_define_gfx(2digits_9xb, 9b, 4);
+
+omm_number_define_gfx(2digits_x0b, 0b, 8);
+omm_number_define_gfx(2digits_x1b, 1b, 8);
+omm_number_define_gfx(2digits_x2b, 2b, 8);
+omm_number_define_gfx(2digits_x3b, 3b, 8);
+omm_number_define_gfx(2digits_x4b, 4b, 8);
+omm_number_define_gfx(2digits_x5b, 5b, 8);
+omm_number_define_gfx(2digits_x6b, 6b, 8);
+omm_number_define_gfx(2digits_x7b, 7b, 8);
+omm_number_define_gfx(2digits_x8b, 8b, 8);
+omm_number_define_gfx(2digits_x9b, 9b, 8);
+
 //
 // Geo functions
 //
@@ -167,23 +200,51 @@ const GeoLayout omm_geo_number[] = {
     GEO_END(),
 };
 
-const GeoLayout omm_geo_star_number[] = {
+const GeoLayout omm_geo_number_b[] = {
     GEO_NODE_START(),
     GEO_OPEN_NODE(),
         GEO_BILLBOARD(),
         GEO_OPEN_NODE(),
             GEO_SWITCH_CASE(11, omm_geo_number_switch_1digit),
             GEO_OPEN_NODE(),
-                GEO_DISPLAY_LIST(LAYER_ALPHA, omm_number_1digit_0_gfx),
-                GEO_DISPLAY_LIST(LAYER_ALPHA, omm_number_1digit_1_gfx),
-                GEO_DISPLAY_LIST(LAYER_ALPHA, omm_number_1digit_2_gfx),
-                GEO_DISPLAY_LIST(LAYER_ALPHA, omm_number_1digit_3_gfx),
-                GEO_DISPLAY_LIST(LAYER_ALPHA, omm_number_1digit_4_gfx),
-                GEO_DISPLAY_LIST(LAYER_ALPHA, omm_number_1digit_5_gfx),
-                GEO_DISPLAY_LIST(LAYER_ALPHA, omm_number_1digit_6_gfx),
-                GEO_DISPLAY_LIST(LAYER_ALPHA, omm_number_1digit_7_gfx),
-                GEO_DISPLAY_LIST(LAYER_ALPHA, omm_number_1digit_8_gfx),
-                GEO_DISPLAY_LIST(LAYER_ALPHA, omm_number_1digit_9_gfx),
+                GEO_DISPLAY_LIST(LAYER_ALPHA, omm_number_1digit_0b_gfx),
+                GEO_DISPLAY_LIST(LAYER_ALPHA, omm_number_1digit_1b_gfx),
+                GEO_DISPLAY_LIST(LAYER_ALPHA, omm_number_1digit_2b_gfx),
+                GEO_DISPLAY_LIST(LAYER_ALPHA, omm_number_1digit_3b_gfx),
+                GEO_DISPLAY_LIST(LAYER_ALPHA, omm_number_1digit_4b_gfx),
+                GEO_DISPLAY_LIST(LAYER_ALPHA, omm_number_1digit_5b_gfx),
+                GEO_DISPLAY_LIST(LAYER_ALPHA, omm_number_1digit_6b_gfx),
+                GEO_DISPLAY_LIST(LAYER_ALPHA, omm_number_1digit_7b_gfx),
+                GEO_DISPLAY_LIST(LAYER_ALPHA, omm_number_1digit_8b_gfx),
+                GEO_DISPLAY_LIST(LAYER_ALPHA, omm_number_1digit_9b_gfx),
+                GEO_DISPLAY_LIST(LAYER_ALPHA, NULL),
+            GEO_CLOSE_NODE(),
+            GEO_SWITCH_CASE(11, omm_geo_number_switch_2digits_left),
+            GEO_OPEN_NODE(),
+                GEO_DISPLAY_LIST(LAYER_ALPHA, omm_number_2digits_0xb_gfx),
+                GEO_DISPLAY_LIST(LAYER_ALPHA, omm_number_2digits_1xb_gfx),
+                GEO_DISPLAY_LIST(LAYER_ALPHA, omm_number_2digits_2xb_gfx),
+                GEO_DISPLAY_LIST(LAYER_ALPHA, omm_number_2digits_3xb_gfx),
+                GEO_DISPLAY_LIST(LAYER_ALPHA, omm_number_2digits_4xb_gfx),
+                GEO_DISPLAY_LIST(LAYER_ALPHA, omm_number_2digits_5xb_gfx),
+                GEO_DISPLAY_LIST(LAYER_ALPHA, omm_number_2digits_6xb_gfx),
+                GEO_DISPLAY_LIST(LAYER_ALPHA, omm_number_2digits_7xb_gfx),
+                GEO_DISPLAY_LIST(LAYER_ALPHA, omm_number_2digits_8xb_gfx),
+                GEO_DISPLAY_LIST(LAYER_ALPHA, omm_number_2digits_9xb_gfx),
+                GEO_DISPLAY_LIST(LAYER_ALPHA, NULL),
+            GEO_CLOSE_NODE(),
+            GEO_SWITCH_CASE(11, omm_geo_number_switch_2digits_right),
+            GEO_OPEN_NODE(),
+                GEO_DISPLAY_LIST(LAYER_ALPHA, omm_number_2digits_x0b_gfx),
+                GEO_DISPLAY_LIST(LAYER_ALPHA, omm_number_2digits_x1b_gfx),
+                GEO_DISPLAY_LIST(LAYER_ALPHA, omm_number_2digits_x2b_gfx),
+                GEO_DISPLAY_LIST(LAYER_ALPHA, omm_number_2digits_x3b_gfx),
+                GEO_DISPLAY_LIST(LAYER_ALPHA, omm_number_2digits_x4b_gfx),
+                GEO_DISPLAY_LIST(LAYER_ALPHA, omm_number_2digits_x5b_gfx),
+                GEO_DISPLAY_LIST(LAYER_ALPHA, omm_number_2digits_x6b_gfx),
+                GEO_DISPLAY_LIST(LAYER_ALPHA, omm_number_2digits_x7b_gfx),
+                GEO_DISPLAY_LIST(LAYER_ALPHA, omm_number_2digits_x8b_gfx),
+                GEO_DISPLAY_LIST(LAYER_ALPHA, omm_number_2digits_x9b_gfx),
                 GEO_DISPLAY_LIST(LAYER_ALPHA, NULL),
             GEO_CLOSE_NODE(),
         GEO_CLOSE_NODE(),
@@ -217,14 +278,42 @@ const BehaviorScript bhvOmmStarNumber[] = {
     0x09000000,
 };
 
+static void bhv_omm_blue_coins_number_loop() {
+    struct MarioState *m = gMarioState;
+    struct Object *o = gCurrentObject;
+    struct Object *p = m->marioObj->platform;
+    if (p && p->behavior == bhvBlueCoinSwitch && p->oAction == BLUE_COIN_SWITCH_ACT_IDLE) {
+        o->oBhvArgs2ndByte = obj_get_count_with_behavior(bhvHiddenBlueCoin);
+        obj_set_pos(o, m->pos[0], m->pos[1] + 200, m->pos[2]);
+        obj_set_angle(o, 0, 0, 0);
+        obj_set_scale(o, 0.8f, 0.8f, 0.8f);
+    } else {
+        obj_mark_for_deletion(o);
+    }
+}
+
+const BehaviorScript bhvOmmBlueCoinsNumber[] = {
+    OBJ_TYPE_UNIMPORTANT,
+    0x11010001,
+    0x08000000,
+    0x0C000000, (uintptr_t) bhv_omm_blue_coins_number_loop,
+    0x09000000,
+};
+
 //
 // Spawner
 //
 
-struct Object *omm_spawn_number(struct Object *o, s32 n) {
+struct Object *omm_spawn_orange_number(struct Object *o, s32 n) {
     struct Object *number = spawn_object_relative(n, 0, 0, 0, o, MODEL_NONE, bhvOrangeNumber);
     number->oGraphNode = geo_layout_to_graph_node(NULL, omm_geo_number);
     number->oPosY += 25.f;
+    return number;
+}
+
+struct Object *omm_spawn_blue_coins_number(struct Object *o) {
+    struct Object *number = obj_spawn_from_geo(o, omm_geo_number_b, bhvOmmBlueCoinsNumber);
+    number->oBhvArgs2ndByte = 0;
     return number;
 }
 

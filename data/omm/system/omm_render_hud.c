@@ -160,9 +160,6 @@ bool omm_render_hud_stars(s16 x, s16 y, u8 alpha, s32 level, bool cond, bool sha
     // Star counter
     u8 t = omm_stars_get_bits_total(level);
     if (t == 0 || !cond ||
-#if OMM_GAME_IS_SMSR
-        level == LEVEL_ENDING ||
-#endif
         level == LEVEL_BOWSER_1 ||
         level == LEVEL_BOWSER_2 ||
         level == LEVEL_BOWSER_3) {
@@ -637,7 +634,8 @@ static s16 omm_render_hud_star_count(struct MarioState *m, s16 y) {
     if (gHudDisplay.flags & HUD_DISPLAY_FLAG_STAR_COUNT) {
         u8 alpha = vanishing_hud_update_timer_and_get_alpha(m, &sOmmHudStarsTimer);
         if (alpha) {
-            if (omm_render_hud_stars(OMM_RENDER_VALUE_GLYPH_X, y, alpha, gCurrLevelNum, !omm_is_game_paused(), false)) {
+            s32 levelNum = gCurrLevelNum;
+            if (omm_render_hud_stars(OMM_RENDER_VALUE_GLYPH_X, y, alpha, levelNum, !omm_is_game_paused() && levelNum != OMM_LEVEL_END, false)) {
                 y -= OMM_RENDER_OFFSET_Y;
             } else {
 

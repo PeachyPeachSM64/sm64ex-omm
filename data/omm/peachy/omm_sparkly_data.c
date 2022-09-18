@@ -40,7 +40,7 @@ const OmmSparklyData gOmmSparklyData[4][OMM_SPARKLY_STARS_MAX] = {
 {
 {  0,  0, OMM_GAME_SM64, LEVEL_BOB,     1,   4360,   4500,   1230, -5200,     0,  6750, 0xC000, HINT_AREA_1,     0, CONDITION },
 {  1,  1, OMM_GAME_SM64, LEVEL_WF,      1,      0,   6250,      0,  3075,   256,  5245, 0xC000, HINT_AREA_1,     0, CONDITION | COINS(90) | COIN_Y },
-{  2,  2, OMM_GAME_SM64, LEVEL_JRB,     1,   5000,   2500,   2500, -6060,  1126,   940, 0xA000, HINT_AREA_1,     0, CONDITION | COINS(80) },
+{  2,  2, OMM_GAME_SM64, LEVEL_JRB,     1,   5000,   2500,   2500, -6060,  1126,   940, 0xA000, HINT_AREA_1,     0, CONDITION | COINS(101) },
 {  3,  3, OMM_GAME_SM64, LEVEL_CCM,     2,  -4880,   4800,   5000, -5730,  6656, -5665, 0x8000, HINT_AREA_2,     0, 0 },
 {  4,  4, OMM_GAME_SM64, LEVEL_BBH,     1,    666,   4000,    260,   916,  -204,  3064, 0x0000, HINT_AREA_1,     0, CONDITION | COINS(100) | COIN_B },
 {  5,  5, OMM_GAME_SM64, LEVEL_HMC,     1,   6000,   4500,   6200, -7100,  2048,  5900, 0x2000, HINT_AREA_1,     0, 0 },
@@ -81,7 +81,7 @@ const OmmSparklyData gOmmSparklyData[4][OMM_SPARKLY_STARS_MAX] = {
 {  7,  7, OMM_GAME_SM64, LEVEL_SSL,     2,      0,   5650,    256,   600,     0,  4500, 0xC000, HINT_AREA_2,   450, CONDITION | COINS(62) },
 {  8,  8, OMM_GAME_SM64, LEVEL_DDD,     2,   3900,   4000,   6000,  4700,   110,  6100, 0x8000, HINT_AREA_1,     0, 0 },
 {  9,  9, OMM_GAME_SM64, LEVEL_SL,      1,      0,   5700,      0,  2035,  1023,   475, 0x6000, HINT_AREA_1,     0, CONDITION | COINS(85) | NO_CAPTURE },
-{ 10, 10, OMM_GAME_SM64, LEVEL_WDW,     0,      0,      0,      0,  1400,     0,  -700, 0x4000, HINT_AREA_1,     0, CONDITION },
+{ 10, 10, OMM_GAME_SM64, LEVEL_WDW,     0,      0,      0,      0,  1400,     0,  -700, 0x4000, HINT_AREA_1,     0, CONDITION | NO_CAPTURE },
 { 11, 11, OMM_GAME_SM64, LEVEL_TTM,     2, -16240,  13850, -16240,  6300, 18781,  6700, 0x2000, HINT_AREA_2,     0, 0 },
 { 12, 12, OMM_GAME_SM64, LEVEL_THI,     1,      0,   8765,  -1540, -7800, -2969,  7800, 0xE000, HINT_AREA_1,     0, CONDITION },
 { 13, 13, OMM_GAME_SM64, LEVEL_TTC,     1,      0,   8000,      0,   800, -4822,   140, 0x6000, HINT_AREA_1,  1050, 0 },

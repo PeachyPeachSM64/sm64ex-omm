@@ -867,6 +867,33 @@ void omm_mario_update_action(struct MarioState *m) {
         (m->action == ACT_SPAWN_NO_SPIN_LANDING))) {
         omm_mario_set_action(m, ACT_WATER_IDLE, 0, 0);
     }
+
+    // Instant cap power-up: unlocked after collecting all stars in a course
+    // Hold L and press a D-pad direction to wear a cap
+    if (OMM_CHEAT_CAP_MODIFIER || (
+        gCurrCourseNum != COURSE_NONE &&
+        gCurrLevelNum != LEVEL_BOWSER_1 &&
+        gCurrLevelNum != LEVEL_BOWSER_2 &&
+        gCurrLevelNum != LEVEL_BOWSER_3 &&
+        save_file_get_star_flags(gCurrSaveFileNum - 1, gCurrCourseNum - 1) == omm_stars_get_bits_total(gCurrLevelNum))) {
+        if (gPlayer1Controller->buttonDown & L_TRIG) {
+            const BehaviorScript *capBhv = NULL;
+            switch (gPlayer1Controller->buttonPressed & (U_JPAD | D_JPAD | L_JPAD | R_JPAD)) {
+                case U_JPAD: capBhv = bhvWingCap; break;
+                case L_JPAD: capBhv = bhvVanishCap; break;
+                case R_JPAD: capBhv = bhvMetalCap; break;
+                case D_JPAD: capBhv = bhvNormalCap; break;
+            }
+            if (capBhv != NULL) {
+                struct Object *cap = NULL; // Prevent cap spamming
+                while ((cap = obj_get_first_with_behavior_and_field_s32(bhvWingCap, 0x00, 1)) != NULL) obj_mark_for_deletion(cap);
+                while ((cap = obj_get_first_with_behavior_and_field_s32(bhvVanishCap, 0x00, 1)) != NULL) obj_mark_for_deletion(cap);
+                while ((cap = obj_get_first_with_behavior_and_field_s32(bhvMetalCap, 0x00, 1)) != NULL) obj_mark_for_deletion(cap);
+                while ((cap = obj_get_first_with_behavior_and_field_s32(bhvNormalCap, 0x00, 1)) != NULL) obj_mark_for_deletion(cap);
+                spawn_object(m->marioObj, MODEL_NONE, capBhv)->oBooDeathStatus = 1;
+            }
+        }
+    }
 }
 
 void omm_mario_update_camera_mode(struct MarioState *m) {
@@ -954,7 +981,7 @@ void bhv_mario_update() {
     }
 
     // Update old Cheats flags
-#if OMM_GAME_IS_XALO || OMM_GAME_IS_SM74 || OMM_GAME_IS_SMSR
+#if OMM_GAME_IS_RF14
     omm_zero(&Cheats, sizeof(Cheats));
     Cheats.EnableCheats = gOmmCheatEnable;
     Cheats.Responsive = OMM_CHEAT_SUPER_RESPONSIVE;

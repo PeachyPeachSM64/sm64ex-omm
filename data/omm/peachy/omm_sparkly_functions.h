@@ -47,7 +47,6 @@ bool omm_sparkly_check_game_state(struct MarioState *m);
 bool omm_sparkly_check_star_block(struct MarioState *m);
 bool omm_sparkly_check_anti_cheat(struct MarioState *m);
 bool omm_sparkly_check_bowser_4(struct MarioState *m);
-void omm_sparkly_bowser_4_process_graph_node(struct Object *obj, bool enable, void (*geoFunc)(struct GraphNodeGenerated *));
 
 void omm_sparkly_state_set(s32 state, bool sound);
 s32  omm_sparkly_context_get_data(u64 flags);
@@ -70,6 +69,7 @@ s32  omm_sparkly_act_ending_2(struct MarioState *m);
 bool omm_sparkly_interact_star(struct MarioState *m, struct Object *o);
 void omm_sparkly_interact_grand_star(struct MarioState *m, struct Object *o);
 
+void omm_sparkly_ending_dialog();
 void omm_sparkly_ending_cutscene();
 void omm_sparkly_ending_screen();
 

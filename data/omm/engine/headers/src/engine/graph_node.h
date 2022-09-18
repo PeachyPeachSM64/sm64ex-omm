@@ -230,4 +230,8 @@ s16   geo_update_animation_frame(struct AnimInfoStruct *obj, s32 *accelAssist);
 void *geo_get_geo_data(struct Object *o, s32 size, const Gfx *gfxSrc, s32 gfxSize);
 Gfx  *geo_link_geo_data(s32 callContext, struct GraphNode *node, void *context);
 
+typedef struct GraphNodeGenerated *(*ObjectEffectFunc)(struct Object *, bool);
+void geo_register_object_effects(ObjectEffectFunc func);
+#define GEO_REGISTER_OBJECT_EFFECTS(func) OMM_AT_STARTUP static void geo_register_object_effects__##func() { geo_register_object_effects(func); }
+
 #endif

@@ -102,25 +102,27 @@
 #define G_MTX_NOPUSH                        0x00
 #define G_MTX_PUSH                          0x01
 
-// Flags for G_SETGEOMETRYMODE
-#define G_ZBUFFER                           0x00000001
-#define G_SHADE                             0x00000004
-#define G_TEXTURE_ENABLE                    0x00000000
-#define G_SHADING_SMOOTH                    0x00200000
-#define G_CULL_FRONT                        0x00000200
-#define G_CULL_BACK                         0x00000400
-#define G_CULL_BOTH                         0x00000600
+// Flags for G_GEOMETRYMODE (24 bits)
+#define G_TEXTURE_ENABLE                    0x000000
+#define G_ZBUFFER                           0x000001
+#define G_SHADE                             0x000004
+#define G_TRANSPARENCY                      0x0001F8
+#define G_TRANSPARENCY_(transparency)       ((((transparency) >> 2) & 0x3F) << 3)
+#define G_CULL_FRONT                        0x000200
+#define G_CULL_BACK                         0x000400
+#define G_CULL_BOTH                         0x000600
 #if defined(SMMS)
-#define G_FOG                               0x00000000
+#define G_FOG                               0x000000
 #else
-#define G_FOG                               0x00010000
+#define G_FOG                               0x010000
 #endif
-#define G_LIGHTING                          0x00020000
-#define G_TEXTURE_GEN                       0x00040000
-#define G_TEXTURE_GEN_LINEAR                0x00080000
-#define G_LOD                               0x00100000
-#define G_TEXTURE_ALPHA                     0x00400000
-#define G_CLIPPING                          0x00800000
+#define G_LIGHTING                          0x020000
+#define G_TEXTURE_GEN                       0x040000
+#define G_TEXTURE_GEN_LINEAR                0x080000
+#define G_LOD                               0x100000
+#define G_SHADING_SMOOTH                    0x200000
+#define G_TEXTURE_ALPHA                     0x400000
+#define G_CLIPPING                          0x800000
 
 // G_SETIMG fmt: set image formats
 #define G_IM_FMT_RGBA                       0

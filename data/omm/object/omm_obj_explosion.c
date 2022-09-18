@@ -28,7 +28,21 @@ static void bhv_omm_explosion_update() {
     obj_scale(o, 1.f + (o->oTimer / 3.f));
     o->oOpacity = max_s(0, 0xFF - (0x1C * o->oTimer));
     o->oAnimState++;
-    omm_obj_process_interactions(o, OBJ_INT_PRESET_EXPLOSION);
+
+    // Damage King Bob-omb
+    for_each_object_with_behavior(kbo, bhvKingBobomb) { if (kbo->oAction == 6) { kbo->oIntangibleTimer = 0; } }
+    struct Object *interacted = omm_obj_process_interactions(o, OBJ_INT_PRESET_EXPLOSION);
+    if (interacted &&
+        interacted->behavior == bhvKingBobomb &&
+        interacted->oHeldState == HELD_FREE && (
+        interacted->oAction == 1 ||
+        interacted->oAction == 2 ||
+        interacted->oAction == 6)) {
+        obj_set_angle(interacted, 0, obj_get_object1_angle_yaw_to_object2(o, interacted), 0);
+        obj_set_forward_and_y_vel(interacted, 20, 50);
+        obj_anim_play_with_sound(interacted, 6, 1, 0, true);
+        interacted->oAction = 4;
+    }
 }
 
 const BehaviorScript bhvOmmExplosion[] = {

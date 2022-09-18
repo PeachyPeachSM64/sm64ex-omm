@@ -90,7 +90,7 @@ s32 random_sign(void);
 
 void *vec2f_and_dist_to_3d(Vec3f dest3d, Vec2f src2d, f32 dist2d, Vec3f o, Vec3f n, Vec3f e1, Vec3f e2);
 void *vec2f_to_3d_plane(Vec3f dest, Vec2f src, Vec3f o, Vec3f e1, Vec3f e1Scale, Vec3f e2, Vec3f e2Scale);
-void *vec2f_get_projected_point_on_line(Vec2f dest, Vec2f p, Vec2f a, Vec2f b);
+void *vec2f_get_projected_point_on_line(Vec2f dest, f32 *t, Vec2f p, Vec2f a, Vec2f b);
 
 f32   vec3f_length(Vec3f v);
 f32   vec3f_dot(Vec3f a, Vec3f b);
@@ -114,6 +114,7 @@ void  vec3f_to_polar_coords(Vec3f v, f32 *dist, s16 *pitch, s16 *yaw);
 void  vec3f_get_nullspace(Vec3f destAxisN, Vec3f destAxisE1, Vec3f destAxisE2, Vec3f n);
 void *vec3f_project_point(Vec3f dest, Vec3f v, Vec3f o, Vec3f n);
 void *vec3f_project_vector(Vec3f dest, Vec3f v, Vec3f n);
+void *vec3f_get_projected_point_on_line(Vec3f dest, f32 *t, Vec3f p, Vec3f a, Vec3f b);
 void  vec3f_to_2d_plane(Vec2f dest2d, f32 *dist2d, Vec3f src3d, Vec3f o, Vec3f n, Vec3f e1, Vec3f e2);
 void *vec3f_rotate_zxy(Vec3f dest, Vec3f v, s16 pitch, s16 yaw, s16 roll);
 void *vec3f_rotate_around_n(Vec3f dest, Vec3f v, Vec3f n, s16 r);

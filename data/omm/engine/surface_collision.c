@@ -401,6 +401,11 @@ static struct Surface *find_floor_from_list(OmmArray surfaces, s32 count, f32 x,
             continue;
         }
 
+        // Reject perfecty vertical surfaces
+        if (surf->normal.y == 0) {
+            continue;
+        }
+
         // Skip if too high or below the previous floor
         f32 height = get_surface_height_at_pos(x, z, surf);
         if (height > y + 78.f || height <= *pHeight) {
@@ -647,6 +652,21 @@ f32 find_floor(f32 x, f32 y, f32 z, struct Surface **pFloor) {
     if (dFloor && dHeight > sHeight) {
         *pFloor = dFloor;
         return dHeight;
+    }
+
+    // Is it truly out of bounds?
+    // If a slightly slanted wall is between two floors, the previous find_floor_from_list can fail to find a floor
+    // To avoid an unintended out of bounds step, treat slanted walls as floors
+    //         o
+    //         |  ______
+    //         | /
+    //         |/
+    //         /
+    //        /|
+    // ______/ |
+    //         v
+    if (!sFloor && OMM_COLLISION_FIX_OUT_OF_BOUNDS_SLANTED_WALLS) {
+        sFloor = find_floor_from_list(gOmmWalls(0, cx, cz)->data, gOmmWalls(0, cx, cz)->count, x, y, z, &sHeight);
     }
     *pFloor = sFloor;
     return sHeight;

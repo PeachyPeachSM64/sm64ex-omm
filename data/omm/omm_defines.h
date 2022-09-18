@@ -24,6 +24,7 @@
 #define OMM_COLLISION_CHECK_PUS                         OMM_MOVESET_ODYSSEY
 #define OMM_COLLISION_CHECK_NEIGHBOR_CELLS              OMM_MOVESET_ODYSSEY
 #define OMM_COLLISION_FIX_UNREFERENCED_WALLS            OMM_MOVESET_ODYSSEY
+#define OMM_COLLISION_FIX_OUT_OF_BOUNDS_SLANTED_WALLS   OMM_MOVESET_ODYSSEY
 #define OMM_STEP_NUM_SUB_STEPS                          (OMM_MOVESET_ODYSSEY ? 16 : 4)
 #define OMM_STEP_NUM_SUB_STEPS_WATER                    (OMM_MOVESET_ODYSSEY ? 16 : 1)
 #define OMM_STEP_NUM_SUB_STEPS_CAPTURE                  (OMM_MOVESET_ODYSSEY ? 8 : 4)
@@ -82,7 +83,7 @@
 #define OMM_EXTRAS_VANISHING_HUD                        (gOmmExtrasVanishingHUD)
 #define OMM_EXTRAS_REVEAL_SECRETS                       (gOmmExtrasRevealSecrets)
 #define OMM_EXTRAS_RED_COINS_RADAR                      (gOmmExtrasRedCoinsRadar)
-#define OMM_EXTRAS_SHOW_STAR_NUMBER                     (gOmmExtrasShowStarNumber && !omm_is_ending_cutscene() && (!OMM_GAME_IS_SMSR || (gCurrLevelNum != LEVEL_ENDING)))
+#define OMM_EXTRAS_SHOW_STAR_NUMBER                     (gOmmExtrasShowStarNumber && !omm_is_ending_cutscene() && gCurrLevelNum != OMM_LEVEL_END)
 #define OMM_EXTRAS_INVISIBLE_MODE                       (gOmmExtrasInvisibleMode)
 #define OMM_EXTRAS_SPARKLY_STARS_REWARD                 (gOmmExtrasSparklyStarsReward)
 #define OMM_CHEAT_UNLIMITED_CAPPY_BOUNCES               (gOmmCheatUnlimitedCappyBounces == 1)
@@ -99,6 +100,7 @@
 #define OMM_CHEAT_SUPER_SPEED                           (false) // Handled by R96X
 #define OMM_CHEAT_SUPER_RESPONSIVE                      (Cheats.EnableCheats && ((Cheats.Responsive && !Cheats.ChaosMode) || ((Cheats.ChaosControls >> 0) & 1)))
 #define OMM_CHEAT_NO_FALL_DAMAGE                        (Cheats.EnableCheats && (Cheats.GodMode && !Cheats.ChaosMode))
+#define OMM_CHEAT_CAP_MODIFIER                          (false) // Handled by R96X
 #define OMM_CHEAT_WALK_ON_LAVA                          (Cheats.EnableCheats && (Cheats.WalkOnHazards && !Cheats.ChaosMode))
 #define OMM_CHEAT_WALK_ON_QUICKSAND                     (Cheats.EnableCheats && (Cheats.WalkOnHazards && !Cheats.ChaosMode))
 #define OMM_CHEAT_WALK_ON_WATER                         (false) // Not implemented in R96X
@@ -113,6 +115,7 @@
 #define OMM_CHEAT_SUPER_SPEED                           (gOmmCheatEnable && gOmmCheatSuperSpeed)
 #define OMM_CHEAT_SUPER_RESPONSIVE                      (gOmmCheatEnable && gOmmCheatSuperResponsive)
 #define OMM_CHEAT_NO_FALL_DAMAGE                        (gOmmCheatEnable && gOmmCheatNoFallDamage)
+#define OMM_CHEAT_CAP_MODIFIER                          (gOmmCheatEnable && gOmmCheatCapModifier)
 #define OMM_CHEAT_WALK_ON_LAVA                          (gOmmCheatEnable && gOmmCheatWalkOnLava)
 #define OMM_CHEAT_WALK_ON_QUICKSAND                     (gOmmCheatEnable && gOmmCheatWalkOnQuicksand)
 #define OMM_CHEAT_WALK_ON_WATER                         (gOmmCheatEnable && gOmmCheatWalkOnWater)
@@ -128,6 +131,7 @@
                                                          OMM_CHEAT_SUPER_SPEED || \
                                                          OMM_CHEAT_SUPER_RESPONSIVE || \
                                                          OMM_CHEAT_NO_FALL_DAMAGE || \
+                                                         OMM_CHEAT_CAP_MODIFIER || \
                                                          OMM_CHEAT_WALK_ON_LAVA || \
                                                          OMM_CHEAT_WALK_ON_QUICKSAND || \
                                                          OMM_CHEAT_WALK_ON_WATER || \
@@ -158,6 +162,7 @@
                                                          gOmmCheatSuperSpeed = false; \
                                                          gOmmCheatSuperResponsive = false; \
                                                          gOmmCheatNoFallDamage = false; \
+                                                         gOmmCheatCapModifier = false; \
                                                          gOmmCheatWalkOnLava = false; \
                                                          gOmmCheatWalkOnQuicksand = false; \
                                                          gOmmCheatWalkOnWater = false; \
@@ -260,7 +265,10 @@
 #define OMM_TEXTURE_(id, str) extern const char OMM_TEXTURE_##id[];
 #include "data/omm/omm_defines_textures.inl"
 #undef OMM_TEXTURE_
-extern const char *OMM_TEXTURE_MENU_FONT_[];
+extern const char *OMM_TEXTURE_STAR_BODY_[20];
+extern const char *OMM_TEXTURE_STAR_FULL_[20];
+extern const char *OMM_TEXTURE_MENU_FONT_[96];
+extern int OMM_STAR_COLOR_[20];
 
 //
 // Assets

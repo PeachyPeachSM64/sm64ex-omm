@@ -502,39 +502,36 @@ typedef struct {
 } OmmStarGeoData;
 
 static OmmStarGeoData *omm_geo_star_get_data(struct Object *o) {
-    if (obj_alloc_fields(o)) {
-        if (!o->oGeoData) {
-            OmmStarGeoData *data = omm_memory_new(gOmmMemoryPoolGeoData, sizeof(OmmStarGeoData), o);
+    if (!o->oGeoData) {
+        OmmStarGeoData *data = omm_memory_new(gOmmMemoryPoolGeoData, sizeof(OmmStarGeoData), o);
 
-            // Init display lists
-            omm_copy(data->glow.gfx, omm_star_glow_gfx, sizeof(omm_star_glow_gfx));
-            omm_copy(data->rays[0].gfx, omm_star_ray_0_gfx, sizeof(omm_star_ray_0_gfx));
-            omm_copy(data->rays[1].gfx, omm_star_ray_1_gfx, sizeof(omm_star_ray_1_gfx));
-            omm_copy(data->rays[2].gfx, omm_star_ray_2_gfx, sizeof(omm_star_ray_2_gfx));
-            omm_copy(data->rays[3].gfx, omm_star_ray_3_gfx, sizeof(omm_star_ray_3_gfx));
-            omm_copy(data->rays[4].gfx, omm_star_ray_4_gfx, sizeof(omm_star_ray_4_gfx));
-            omm_copy(data->rays[5].gfx, omm_star_ray_5_gfx, sizeof(omm_star_ray_5_gfx));
+        // Init display lists
+        omm_copy(data->glow.gfx, omm_star_glow_gfx, sizeof(omm_star_glow_gfx));
+        omm_copy(data->rays[0].gfx, omm_star_ray_0_gfx, sizeof(omm_star_ray_0_gfx));
+        omm_copy(data->rays[1].gfx, omm_star_ray_1_gfx, sizeof(omm_star_ray_1_gfx));
+        omm_copy(data->rays[2].gfx, omm_star_ray_2_gfx, sizeof(omm_star_ray_2_gfx));
+        omm_copy(data->rays[3].gfx, omm_star_ray_3_gfx, sizeof(omm_star_ray_3_gfx));
+        omm_copy(data->rays[4].gfx, omm_star_ray_4_gfx, sizeof(omm_star_ray_4_gfx));
+        omm_copy(data->rays[5].gfx, omm_star_ray_5_gfx, sizeof(omm_star_ray_5_gfx));
 
-            // Init rays
-            for (s32 i = 0; i != 6; ++i) {
-                data->rays[i].scale = 0.5f + (0.3f * random_float());
-                data->rays[i].angle = random_u16();
-                data->rays[i].alpha = 0x80 + (random_u16() & 0x7F);
-            }
-
-            // Init data
-            data->prevTimer = 0;
-            data->counter = 0;
-            data->texture = NULL;
-            data->color.r = 0;
-            data->color.g = 0;
-            data->color.b = 0;
-            data->color.a = 0;
-            o->oGeoData = (void *) data;
+        // Init rays
+        for (s32 i = 0; i != 6; ++i) {
+            data->rays[i].scale = 0.5f + (0.3f * random_float());
+            data->rays[i].angle = random_u16();
+            data->rays[i].alpha = 0x80 + (random_u16() & 0x7F);
         }
-        return (OmmStarGeoData *) o->oGeoData;
+
+        // Init data
+        data->prevTimer = 0;
+        data->counter = 0;
+        data->texture = NULL;
+        data->color.r = 0;
+        data->color.g = 0;
+        data->color.b = 0;
+        data->color.a = 0;
+        o->oGeoData = (void *) data;
     }
-    return NULL;
+    return (OmmStarGeoData *) o->oGeoData;
 }
 
 static void omm_geo_star_set_env_color(Gfx *displayList, u32 r, u32 g, u32 b, u32 a) {

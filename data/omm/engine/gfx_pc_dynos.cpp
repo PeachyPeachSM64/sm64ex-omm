@@ -1,3 +1,5 @@
+#if defined(DYNOS)
+#include "data/dynos.cpp.h"
 extern "C" {
 #include "data/omm/omm_defines.h"
 #include "data/omm/omm_patches.h"
@@ -5,8 +7,6 @@ extern "C" {
 #include "data/omm/system/omm_memory.h"
 #include "pc/gfx/gfx_rendering_api.h"
 }
-#if OMM_CODE_DYNOS
-#include "data/dynos.cpp.h"
 
 typedef struct { u32 hash, id; u8 cms, cmt, lin; } GfxTexture;
 

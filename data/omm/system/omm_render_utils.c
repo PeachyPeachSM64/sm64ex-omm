@@ -696,5 +696,5 @@ s32 omm_render_get_string_width_hud(const u8 *str64) {
 }
 
 u8 *omm_render_get_star_glyph(s32 index, bool colored) {
-    return (u8 *) gOmmFontHud[colored ? 0x80 + index : GLYPH_STAR];
+    return (u8 *) gOmmFontHud[colored ? 0x80 + OMM_STAR_COLOR_[index] : GLYPH_STAR];
 }

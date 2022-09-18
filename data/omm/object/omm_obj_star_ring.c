@@ -298,7 +298,7 @@ static void bhv_omm_star_ring_update() {
             // Collected?
             if (collected) {
                 s32 number = 1 + o->oBhvArgs2ndByte - obj_get_count_with_behavior_and_field_s32(bhvOmmStarRing, 0x31, 1);
-                omm_spawn_number(o, number);
+                omm_spawn_orange_number(o, number);
                 play_sound(SOUND_MENU_COLLECT_SECRET + (max_s(0, 4 + number - o->oBhvArgs2ndByte) << 16), gGlobalSoundArgs);
                 o->oAction = 2;
             }

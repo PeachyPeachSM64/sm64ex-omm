@@ -1,11 +1,11 @@
-#ifndef OMM_MACROS_SMEX_H
-#define OMM_MACROS_SMEX_H
+#ifndef OMM_MACROS_SMGS_H
+#define OMM_MACROS_SMGS_H
 
 // Game macros
-#define OMM_GAME_CODE                                   "SMEX"
-#define OMM_GAME_NAME                                   "Super Mario 64 (ex-nightly)"
-#define OMM_GAME_TYPE                                   OMM_GAME_SM64
-#define OMM_GAME_SAVE                                   OMM_GAME_SMEX
+#define OMM_GAME_CODE                                   "SMGS"
+#define OMM_GAME_NAME                                   "Super Mario 64 The Green Stars"
+#define OMM_GAME_TYPE                                   OMM_GAME_SMGS
+#define OMM_GAME_SAVE                                   OMM_GAME_SMGS
 #define OMM_GAME_MODE                                   0
 
 // Better camera
@@ -128,31 +128,31 @@
 #define INPUT_BOUNCE                                    INPUT_UNKNOWN_10
 
 // OMM
-#define OMM_STAR_COLORS                                 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19
+#define OMM_STAR_COLORS                                 0, 1, 13, 3, 4, 2, 5, 14, 8, 9, 7, 11, 12, 6, 10, 15, 16, 17, 18, 19
 #define OMM_LEVEL_ENTRY_WARP(level)                     0x0A
-#define OMM_LEVEL_EXIT_DISTANCE                         500
+#define OMM_LEVEL_EXIT_DISTANCE                         150
 #define OMM_LEVEL_SLIDE                                 LEVEL_PSS
-#define OMM_LEVEL_RETURN_TO_CASTLE                      LEVEL_CASTLE, 1, 0x1F, 0
-#define OMM_LEVEL_END                                   LEVEL_ENDING
-#define OMM_CAMERA_LOOK_UP_WARP_STARS                   10
+#define OMM_LEVEL_RETURN_TO_CASTLE                      LEVEL_CASTLE_GROUNDS, 1, 0xF3, 0
+#define OMM_LEVEL_END                                   LEVEL_WMOTR
+#define OMM_CAMERA_LOOK_UP_WARP_STARS                   0
 #define OMM_CAMERA_IS_BOWSER_FIGHT                      omm_camera_is_bowser_fight()
 #define OMM_NUM_PLAYABLE_CHARACTERS                     2
 #define OMM_NUM_SAVE_FILES                              1
-#define OMM_PALETTE_EDITOR_MUSIC                        SEQ_MENU_TITLE_SCREEN
+#define OMM_PALETTE_EDITOR_MUSIC                        0x31
 #define OMM_TEXT_FORMAT(id, str)                        str
 #define STAR                                            "STAR"
 #define Star                                            "Star"
 
 // Sparkly stars
-#define OMM_SPARKLY_REQUIREMENT                         120
-#define OMM_SPARKLY_BLOCK_LEVEL                         LEVEL_GROUNDS
+#define OMM_SPARKLY_REQUIREMENT                         131
+#define OMM_SPARKLY_BLOCK_LEVEL                         LEVEL_COURT
 #define OMM_SPARKLY_BLOCK_AREA                          1
-#define OMM_SPARKLY_BLOCK_COUNT                         3
-#define OMM_SPARKLY_BLOCK_AVAILABLE                     { 1, 1, 1 }
+#define OMM_SPARKLY_BLOCK_COUNT                         1
+#define OMM_SPARKLY_BLOCK_AVAILABLE                     { 0, 0, 1 }
 #define OMM_SPARKLY_BLOCK_X                             0
-#define OMM_SPARKLY_BLOCK_Y                             820
-#define OMM_SPARKLY_BLOCK_Z                             480
-#define OMM_SPARKLY_BLOCK_ANGLE                         0x4000
+#define OMM_SPARKLY_BLOCK_Y                             0
+#define OMM_SPARKLY_BLOCK_Z                             0
+#define OMM_SPARKLY_BLOCK_ANGLE                         0x0000
 
 // Files
 #define FILE_MACRO_PRESETS_H                            "macro_preset_names.h"

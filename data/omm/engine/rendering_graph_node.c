@@ -214,7 +214,7 @@ void gfx_clear_frame_mtx() {
 //
 
 #define gNode           ((struct GraphNode *) node)
-#define gNodeLayer      (gNode->flags >> 8)
+#define gNodeLayer      ((gCurrGraphNodeObject && gCurrGraphNodeObject->oTransparency) ? LAYER_TRANSPARENT : (gNode->flags >> 8))
 #define gDisplayList    (((struct GraphNodeDisplayList *) node)->displayList)
 #define gChildren       (gNode->children)
 #define gFnNode         ((struct FnGraphNode *) node)
@@ -601,6 +601,104 @@ static bool obj_is_in_view(struct Object *obj, Mat4 matrix) {
     // Render the object
     return true;
 }
+
+//
+// Object effects
+//
+
+static OmmArray sObjectEffects = omm_array_zero;
+static void geo_process_generated_list(struct GraphNodeGenerated *node);
+
+void geo_register_object_effects(ObjectEffectFunc func) {
+    omm_array_add(sObjectEffects, ptr, func);
+}
+
+static void geo_process_object_effects(struct Object *obj, bool enable) {
+    omm_array_for_each(sObjectEffects, p) {
+        ObjectEffectFunc func = p->as_ptr;
+        struct GraphNodeGenerated *node = func(obj, enable);
+        if (node) geo_process_generated_list(node);
+    }
+}
+
+static struct GraphNodeGenerated *geo_process_object_transparency(struct Object *obj, bool enable) {
+    if (obj->oTransparency) {
+        static Gfx sObjectTransparencyGfx[0x40][2] = {
+            { gsSPClearGeometryMode(G_TRANSPARENCY),      gsSPEndDisplayList() },
+            { gsSPSetGeometryMode(G_TRANSPARENCY_(0x04)), gsSPEndDisplayList() },
+            { gsSPSetGeometryMode(G_TRANSPARENCY_(0x08)), gsSPEndDisplayList() },
+            { gsSPSetGeometryMode(G_TRANSPARENCY_(0x0C)), gsSPEndDisplayList() },
+            { gsSPSetGeometryMode(G_TRANSPARENCY_(0x10)), gsSPEndDisplayList() },
+            { gsSPSetGeometryMode(G_TRANSPARENCY_(0x14)), gsSPEndDisplayList() },
+            { gsSPSetGeometryMode(G_TRANSPARENCY_(0x18)), gsSPEndDisplayList() },
+            { gsSPSetGeometryMode(G_TRANSPARENCY_(0x1C)), gsSPEndDisplayList() },
+            { gsSPSetGeometryMode(G_TRANSPARENCY_(0x20)), gsSPEndDisplayList() },
+            { gsSPSetGeometryMode(G_TRANSPARENCY_(0x24)), gsSPEndDisplayList() },
+            { gsSPSetGeometryMode(G_TRANSPARENCY_(0x28)), gsSPEndDisplayList() },
+            { gsSPSetGeometryMode(G_TRANSPARENCY_(0x2C)), gsSPEndDisplayList() },
+            { gsSPSetGeometryMode(G_TRANSPARENCY_(0x30)), gsSPEndDisplayList() },
+            { gsSPSetGeometryMode(G_TRANSPARENCY_(0x34)), gsSPEndDisplayList() },
+            { gsSPSetGeometryMode(G_TRANSPARENCY_(0x38)), gsSPEndDisplayList() },
+            { gsSPSetGeometryMode(G_TRANSPARENCY_(0x3C)), gsSPEndDisplayList() },
+            { gsSPSetGeometryMode(G_TRANSPARENCY_(0x40)), gsSPEndDisplayList() },
+            { gsSPSetGeometryMode(G_TRANSPARENCY_(0x44)), gsSPEndDisplayList() },
+            { gsSPSetGeometryMode(G_TRANSPARENCY_(0x48)), gsSPEndDisplayList() },
+            { gsSPSetGeometryMode(G_TRANSPARENCY_(0x4C)), gsSPEndDisplayList() },
+            { gsSPSetGeometryMode(G_TRANSPARENCY_(0x50)), gsSPEndDisplayList() },
+            { gsSPSetGeometryMode(G_TRANSPARENCY_(0x54)), gsSPEndDisplayList() },
+            { gsSPSetGeometryMode(G_TRANSPARENCY_(0x58)), gsSPEndDisplayList() },
+            { gsSPSetGeometryMode(G_TRANSPARENCY_(0x5C)), gsSPEndDisplayList() },
+            { gsSPSetGeometryMode(G_TRANSPARENCY_(0x60)), gsSPEndDisplayList() },
+            { gsSPSetGeometryMode(G_TRANSPARENCY_(0x64)), gsSPEndDisplayList() },
+            { gsSPSetGeometryMode(G_TRANSPARENCY_(0x68)), gsSPEndDisplayList() },
+            { gsSPSetGeometryMode(G_TRANSPARENCY_(0x6C)), gsSPEndDisplayList() },
+            { gsSPSetGeometryMode(G_TRANSPARENCY_(0x70)), gsSPEndDisplayList() },
+            { gsSPSetGeometryMode(G_TRANSPARENCY_(0x74)), gsSPEndDisplayList() },
+            { gsSPSetGeometryMode(G_TRANSPARENCY_(0x78)), gsSPEndDisplayList() },
+            { gsSPSetGeometryMode(G_TRANSPARENCY_(0x7C)), gsSPEndDisplayList() },
+            { gsSPSetGeometryMode(G_TRANSPARENCY_(0x80)), gsSPEndDisplayList() },
+            { gsSPSetGeometryMode(G_TRANSPARENCY_(0x84)), gsSPEndDisplayList() },
+            { gsSPSetGeometryMode(G_TRANSPARENCY_(0x88)), gsSPEndDisplayList() },
+            { gsSPSetGeometryMode(G_TRANSPARENCY_(0x8C)), gsSPEndDisplayList() },
+            { gsSPSetGeometryMode(G_TRANSPARENCY_(0x90)), gsSPEndDisplayList() },
+            { gsSPSetGeometryMode(G_TRANSPARENCY_(0x94)), gsSPEndDisplayList() },
+            { gsSPSetGeometryMode(G_TRANSPARENCY_(0x98)), gsSPEndDisplayList() },
+            { gsSPSetGeometryMode(G_TRANSPARENCY_(0x9C)), gsSPEndDisplayList() },
+            { gsSPSetGeometryMode(G_TRANSPARENCY_(0xA0)), gsSPEndDisplayList() },
+            { gsSPSetGeometryMode(G_TRANSPARENCY_(0xA4)), gsSPEndDisplayList() },
+            { gsSPSetGeometryMode(G_TRANSPARENCY_(0xA8)), gsSPEndDisplayList() },
+            { gsSPSetGeometryMode(G_TRANSPARENCY_(0xAC)), gsSPEndDisplayList() },
+            { gsSPSetGeometryMode(G_TRANSPARENCY_(0xB0)), gsSPEndDisplayList() },
+            { gsSPSetGeometryMode(G_TRANSPARENCY_(0xB4)), gsSPEndDisplayList() },
+            { gsSPSetGeometryMode(G_TRANSPARENCY_(0xB8)), gsSPEndDisplayList() },
+            { gsSPSetGeometryMode(G_TRANSPARENCY_(0xBC)), gsSPEndDisplayList() },
+            { gsSPSetGeometryMode(G_TRANSPARENCY_(0xC0)), gsSPEndDisplayList() },
+            { gsSPSetGeometryMode(G_TRANSPARENCY_(0xC4)), gsSPEndDisplayList() },
+            { gsSPSetGeometryMode(G_TRANSPARENCY_(0xC8)), gsSPEndDisplayList() },
+            { gsSPSetGeometryMode(G_TRANSPARENCY_(0xCC)), gsSPEndDisplayList() },
+            { gsSPSetGeometryMode(G_TRANSPARENCY_(0xD0)), gsSPEndDisplayList() },
+            { gsSPSetGeometryMode(G_TRANSPARENCY_(0xD4)), gsSPEndDisplayList() },
+            { gsSPSetGeometryMode(G_TRANSPARENCY_(0xD8)), gsSPEndDisplayList() },
+            { gsSPSetGeometryMode(G_TRANSPARENCY_(0xDC)), gsSPEndDisplayList() },
+            { gsSPSetGeometryMode(G_TRANSPARENCY_(0xE0)), gsSPEndDisplayList() },
+            { gsSPSetGeometryMode(G_TRANSPARENCY_(0xE4)), gsSPEndDisplayList() },
+            { gsSPSetGeometryMode(G_TRANSPARENCY_(0xE8)), gsSPEndDisplayList() },
+            { gsSPSetGeometryMode(G_TRANSPARENCY_(0xEC)), gsSPEndDisplayList() },
+            { gsSPSetGeometryMode(G_TRANSPARENCY_(0xF0)), gsSPEndDisplayList() },
+            { gsSPSetGeometryMode(G_TRANSPARENCY_(0xF4)), gsSPEndDisplayList() },
+            { gsSPSetGeometryMode(G_TRANSPARENCY_(0xF8)), gsSPEndDisplayList() },
+            { gsSPSetGeometryMode(G_TRANSPARENCY_(0xFC)), gsSPEndDisplayList() },
+        };
+        if (enable) {
+            geo_append_display_list(sObjectTransparencyGfx[(obj->oTransparency >> 2) & 0x3F], LAYER_TRANSPARENT);
+        } else {
+            geo_append_display_list(sObjectTransparencyGfx[0], LAYER_TRANSPARENT);
+        }
+    }
+    return NULL;
+}
+
+GEO_REGISTER_OBJECT_EFFECTS(geo_process_object_transparency);
 
 //
 // Graph nodes
@@ -1153,7 +1251,7 @@ NOT_PREPROCESS {
 NOT_PREPROCESS {
         // Don't interpolate the frame the object spawns
         // Force a gfx update to avoid weird (0, 0, 0) interpolations on later frames
-        if (obj_alloc_fields(obj) && !obj->oGfxInited) {
+        if (!obj->oGfxInited) {
             obj_update_gfx(obj);
             update_timestamp_vec3f(node->_pos, node->pos);
             update_timestamp_vec3s(node->_angle, node->angle);
@@ -1262,9 +1360,9 @@ NOT_PREPROCESS {
                     sCurrObjectSlot = (&obj->header.gfx == &gMirrorMario ? OBJECT_POOL_CAPACITY : obj_get_slot_index(obj));
                     gCurGraphNodeObject = (struct GraphNodeObject *) node;
                     node->sharedChild->parent = gNode;
-                    omm_sparkly_bowser_4_process_graph_node(obj, true, geo_process_generated_list);
+                    geo_process_object_effects(obj, true);
                     geo_process_node_and_siblings(node->sharedChild);
-                    omm_sparkly_bowser_4_process_graph_node(obj, false, geo_process_generated_list);
+                    geo_process_object_effects(obj, false);
                     node->sharedChild->parent = NULL;
                     gCurGraphNodeObject = NULL;
                     sCurrObjectSlot = 0;
@@ -1307,7 +1405,7 @@ NOT_PREPROCESS {
 NOT_PREPROCESS {
         // Don't interpolate the frame the object spawns
         // Force a gfx update to avoid weird (0, 0, 0) interpolations on later frames
-        if (obj_alloc_fields(heldObj) && !heldObj->oGfxInited) {
+        if (!heldObj->oGfxInited) {
             obj_update_gfx(heldObj);
             update_timestamp_vec3s(node->_translation, node->translation);
             update_timestamp_mtxf(node->_throwMatrix, *gCurGraphNodeObject->throwMatrix);

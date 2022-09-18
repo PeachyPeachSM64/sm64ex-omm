@@ -136,6 +136,7 @@ struct GraphNodeObject
     /*0x4C*/ struct SpawnInfo *unk4C;
     /*0x50*/ Mat4 *throwMatrix; // matrix ptr
     /*0x54*/ Vec3f cameraToObject;
+    ObjFields _oFields;
     Vec3s_ts _angle;
     Vec3f_ts _pos;
     Vec3f_ts _scale;

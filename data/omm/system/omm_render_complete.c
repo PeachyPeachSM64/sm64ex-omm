@@ -52,9 +52,10 @@ static s16 omm_render_course_complete_coins(s16 y) {
 }
 
 static s16 omm_render_course_complete_stars(s16 y) {
+    s32 levelNum = OMM_BOWSER_IN_THE_LEVEL(gLastCompletedCourseNum);
     u8 *textStars = omm_text_convert(OMM_TEXT_MY_STARS, false);
     omm_render_string_right_align(OMM_RENDER_COURSE_COMPLETE_RIGHT_ALIGN_X, y, 0xFF, 0xFF, 0xFF, sCompleteAlpha, textStars, true);
-    omm_render_hud_stars(OMM_RENDER_COURSE_COMPLETE_LEFT_ALIGN_X, y - ((OMM_RENDER_GLYPH_SIZE - 8) / 2), sCompleteAlpha, OMM_BOWSER_IN_THE_LEVEL(gLastCompletedCourseNum), true, false);
+    omm_render_hud_stars(OMM_RENDER_COURSE_COMPLETE_LEFT_ALIGN_X, y - ((OMM_RENDER_GLYPH_SIZE - 8) / 2), sCompleteAlpha, levelNum, levelNum != OMM_LEVEL_END, false);
     y += OMM_RENDER_COURSE_COMPLETE_OFFSET_Y;
     return y;
 }

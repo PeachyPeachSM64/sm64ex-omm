@@ -688,7 +688,7 @@ static void bitdw__goomba_and_coins() {
     if (OMM_SPARKLY_STATE_IS_OK && sMario->action != ACT_READING_SIGN) {
         struct Object *goomba = obj_get_nearest_with_behavior(sMario->marioObj, bhvGoomba);
         if (goomba && goomba == sBitdwGoomba && !obj_is_dormant(goomba)) {
-            if (omm_mario_possess_object(sMario, goomba, false, true)) {
+            if (omm_mario_possess_object(sMario, goomba, OMM_MARIO_POSSESS_FORCE_CAPTURE)) {
                 sBitdwGoomba = NULL;
             }
         }
@@ -800,7 +800,7 @@ static void bits__bobomb_and_enemies() {
     if (OMM_SPARKLY_STATE_IS_OK && sMario->action != ACT_READING_SIGN) {
         struct Object *bobomb = obj_get_nearest_with_behavior(sMario->marioObj, bhvBobomb);
         if (bobomb && bobomb == sBitsBobomb && !obj_is_dormant(bobomb)) {
-            if (omm_mario_possess_object(sMario, bobomb, false, true)) {
+            if (omm_mario_possess_object(sMario, bobomb, OMM_MARIO_POSSESS_FORCE_CAPTURE)) {
                 sBitsBobomb = NULL;
             }
         }

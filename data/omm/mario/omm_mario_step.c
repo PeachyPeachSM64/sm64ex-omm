@@ -389,7 +389,7 @@ u32 mario_update_quicksand(struct MarioState *m, f32 sinkingSpeed) {
                         } else {
                             set_camera_shake_from_hit(SHAKE_FALL_DAMAGE);
                             m->hurtCounter = 1;
-                            m->invincTimer = 60;
+                            m->invincTimer = 30;
                         }
                     }
                 } else {

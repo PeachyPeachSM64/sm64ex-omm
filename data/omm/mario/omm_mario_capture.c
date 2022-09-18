@@ -388,8 +388,8 @@ s32 omm_act_possession(struct MarioState *m) {
 // Possess
 //
 
-bool omm_mario_possess_object(struct MarioState *m, struct Object *o, bool checkTangibility, bool forceCapture) {
-    if (!forceCapture) {
+bool omm_mario_possess_object(struct MarioState *m, struct Object *o, u32 possessFlags) {
+    if (!(possessFlags & OMM_MARIO_POSSESS_FORCE_CAPTURE)) {
 
         // Don't capture things
         if (!OMM_CAP_CAPPY_CAPTURE) {
@@ -399,7 +399,7 @@ bool omm_mario_possess_object(struct MarioState *m, struct Object *o, bool check
         // 'Press' mode: Press X to capture, hold to attack
         // 'Hold' mode: Press X to attack, hold to capture
         // Note that flaming bob-ombs are always captured, never attacked
-        if (o->behavior != bhvOmmFlamingBobomb) {
+        if (o->behavior != bhvOmmFlamingBobomb && !(possessFlags & OMM_MARIO_POSSESS_IGNORE_PRESS_HOLD)) {
             if ((OMM_CAP_CAPPY_CAPTURE_PRESS && (m->controller->buttonDown & X_BUTTON)) ||
                 (OMM_CAP_CAPPY_CAPTURE_HOLD && !(m->controller->buttonDown & X_BUTTON))) {
                 return false;
@@ -418,7 +418,7 @@ bool omm_mario_possess_object(struct MarioState *m, struct Object *o, bool check
     }
 
     // Not tangible
-    if (checkTangibility && o->oIntangibleTimer != 0) {
+    if ((possessFlags & OMM_MARIO_POSSESS_CHECK_TANGIBILITY) && o->oIntangibleTimer != 0) {
         return false;
     }
 

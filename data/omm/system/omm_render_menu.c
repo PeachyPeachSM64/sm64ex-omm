@@ -189,7 +189,7 @@ static void omm_render_menu_character_button(struct Object *characterSelectButto
 }
 
 static void omm_render_menu_mode_display(u8 alpha) {
-#if defined(WIDESCREEN) && (OMM_GAME_IS_XALO || OMM_GAME_IS_SM74 || OMM_GAME_IS_SMSR)
+#if defined(WIDESCREEN) && OMM_GAME_IS_RF14
     s16 hardModeX = GFX_DIMENSIONS_RECT_FROM_LEFT_EDGE(3);
 #else
     s16 hardModeX = max_s(-6, GFX_DIMENSIONS_RECT_FROM_LEFT_EDGE(3));

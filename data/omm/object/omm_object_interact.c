@@ -3,11 +3,11 @@
 #undef OMM_ALL_HEADERS
 
 OMM_INLINE u32 omm_obj_get_behavior_types(struct Object *o) {
-    if (obj_alloc_fields(o) && o->oBhvPointer != o->behavior) {
-        o->oBhvTypes = omm_behavior_data_get_types(o->behavior);
-        o->oBhvPointer = o->behavior;
+    if (o->oBhvPointer != o->behavior) {
+        o->oBhvTypes = (s32) omm_behavior_data_get_types(o->behavior);
+        o->oBhvPointer = (void *) o->behavior;
     }
-    return o->oBhvTypes;
+    return (u32) o->oBhvTypes;
 }
 
 //
@@ -336,7 +336,7 @@ static void omm_obj_interact_heal_mario(struct Object *target, u32 interactionFl
 static bool omm_obj_interact_defeat_in_one_hit(struct Object *o, struct Object *target) {
 
     // King Bob-omb
-    if (target->behavior == bhvKingBobomb && target->oHealth) {
+    if (target->behavior == bhvKingBobomb && target->oHealth > 0) {
         obj_play_sound(target, SOUND_OBJ_KING_BOBOMB);
         obj_spawn_white_puff(target, SOUND_OBJ2_KING_BOBOMB_DAMAGE);
         set_camera_shake_from_point(SHAKE_POS_SMALL, target->oPosX, target->oPosY, target->oPosZ);
@@ -347,7 +347,7 @@ static bool omm_obj_interact_defeat_in_one_hit(struct Object *o, struct Object *
     }
 
     // King Whomp
-    if (target->behavior == bhvWhompKingBoss && target->oHealth) {
+    if (target->behavior == bhvWhompKingBoss && target->oHealth > 0) {
         set_camera_shake_from_point(SHAKE_POS_SMALL, target->oPosX, target->oPosY, target->oPosZ);
         obj_set_forward_vel(target, 0, 0, 0);
         obj_destroy(target);
@@ -393,7 +393,7 @@ static bool omm_obj_interact_defeat_in_one_hit(struct Object *o, struct Object *
     // Bowser
     if (target->behavior == bhvBowserBodyAnchor) {
         struct Object *bowser = target->parentObj;
-        if (bowser && bowser->behavior == bhvBowser && bowser->oHealth && gIsBowserInteractible[bowser->oAction]) {
+        if (bowser && bowser->behavior == bhvBowser && bowser->oHealth > 0 && gIsBowserInteractible[bowser->oAction]) {
 #if OMM_GAME_IS_R96X
             // Spamba Bowser
             if (bowser->oInteractType == INTERACT_DAMAGE) {
@@ -429,7 +429,7 @@ bool omm_obj_process_one_surface_interaction(struct Object *o, struct Object *ta
 
 OMM_CAPPY_ONLY_CODE(
         // Capture
-        if (omm_cappy_is_mario_available(m, true) && omm_mario_possess_object(m, target, false, false)) {
+        if (omm_cappy_is_mario_available(m, true) && omm_mario_possess_object(m, target, 0)) {
             omm_cappy_unload();
             sStopAndReturn = true;
             return true;
@@ -488,6 +488,15 @@ OMM_CAPPY_ONLY_CODE(
                 }
             }
         }
+
+OMM_CAPPY_ONLY_CODE(
+        // If no interaction, check Capture again
+        if (!interacted && omm_cappy_is_mario_available(m, true) && omm_mario_possess_object(m, target, OMM_MARIO_POSSESS_IGNORE_PRESS_HOLD)) {
+            omm_cappy_unload();
+            sStopAndReturn = true;
+            return true;
+        }
+);
     }
     return interacted;
 }
@@ -516,7 +525,7 @@ bool omm_obj_process_one_object_interaction(struct Object *o, struct Object *tar
 
 OMM_CAPPY_ONLY_CODE(
             // Capture
-            if (omm_cappy_is_mario_available(m, true) && omm_mario_possess_object(m, target, true, false)) {
+            if (omm_cappy_is_mario_available(m, true) && omm_mario_possess_object(m, target, OMM_MARIO_POSSESS_CHECK_TANGIBILITY)) {
                 omm_cappy_unload();
                 sStopAndReturn = true;
                 return true;
@@ -634,7 +643,7 @@ OMM_CAPPY_ONLY_CODE(
                                 (target->behavior == bhvWigglerHead))) {
                                 target->oInteractStatus = (ATTACK_GROUND_POUND_OR_TWIRL | INT_STATUS_INTERACTED | INT_STATUS_WAS_ATTACKED);
                             } else {
-                                target->oInteractStatus = (ATTACK_KICK_OR_TRIP | INT_STATUS_INTERACTED | INT_STATUS_WAS_ATTACKED);
+                                target->oInteractStatus = (ATTACK_KICK_OR_TRIP | INT_STATUS_INTERACTED | INT_STATUS_WAS_ATTACKED | INT_STATUS_TOUCHED_BOB_OMB);
                             }
                         }
                         omm_obj_interact_heal_mario(target, interactionFlags);
@@ -726,6 +735,15 @@ OMM_CAPPY_ONLY_CODE(
                     }
                 }
             }
+
+OMM_CAPPY_ONLY_CODE(
+            // If no interaction, check Capture again
+            if (!interacted && omm_cappy_is_mario_available(m, true) && omm_mario_possess_object(m, target, OMM_MARIO_POSSESS_CHECK_TANGIBILITY | OMM_MARIO_POSSESS_IGNORE_PRESS_HOLD)) {
+                omm_cappy_unload();
+                sStopAndReturn = true;
+                return true;
+            }
+);
         }
     }
     return interacted;

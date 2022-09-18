@@ -6,7 +6,7 @@
 // From options_menu.c
 //
 
-#if OMM_OPT_TYPES_IMPL
+#if !OMM_GAME_IS_RF14
 enum OptType { OPT_INVALID = 0, OPT_TOGGLE, OPT_CHOICE, OPT_SCROLL, OPT_SUBMENU, OPT_BIND, OPT_BUTTON, };
 struct SubMenu;
 struct Option { enum OptType type; const u8 *label; union { u32 *uval; bool *bval; }; union { struct { const u8 **choices; s32 numChoices; }; struct { u32 scrMin; u32 scrMax; u32 scrStep; }; struct SubMenu *nextMenu; void (*actionFn)(struct Option *, s32); }; };
@@ -81,6 +81,7 @@ DEFINE_TOGGLE(gOmmCheatInvincible, 0);                  // Disabled
 DEFINE_TOGGLE(gOmmCheatSuperSpeed, 0);                  // Disabled
 DEFINE_TOGGLE(gOmmCheatSuperResponsive, 0);             // Disabled
 DEFINE_TOGGLE(gOmmCheatNoFallDamage, 0);                // Disabled
+DEFINE_TOGGLE(gOmmCheatCapModifier, 0);                 // Disabled
 DEFINE_TOGGLE(gOmmCheatWalkOnLava, 0);                  // Disabled
 DEFINE_TOGGLE(gOmmCheatWalkOnQuicksand, 0);             // Disabled
 DEFINE_TOGGLE(gOmmCheatWalkOnWater, 0);                 // Disabled
@@ -845,6 +846,7 @@ void omm_opt_init() {
                 omm_opt_make_toggle(OMM_TEXT_OPT_CHEAT_SUPER_SPEED, &gOmmCheatSuperSpeed),
                 omm_opt_make_toggle(OMM_TEXT_OPT_CHEAT_SUPER_RESPONSIVE, &gOmmCheatSuperResponsive),
                 omm_opt_make_toggle(OMM_TEXT_OPT_CHEAT_NO_FALL_DAMAGE, &gOmmCheatNoFallDamage),
+                omm_opt_make_toggle(OMM_TEXT_OPT_CHEAT_CAP_MODIFIER, &gOmmCheatCapModifier),
                 omm_opt_make_toggle(OMM_TEXT_OPT_CHEAT_WALK_ON_LAVA, &gOmmCheatWalkOnLava),
                 omm_opt_make_toggle(OMM_TEXT_OPT_CHEAT_WALK_ON_QUICKSAND, &gOmmCheatWalkOnQuicksand),
                 omm_opt_make_toggle(OMM_TEXT_OPT_CHEAT_WALK_ON_WATER, &gOmmCheatWalkOnWater),
@@ -852,7 +854,7 @@ void omm_opt_init() {
                 omm_opt_make_toggle(OMM_TEXT_OPT_CHEAT_WALK_ON_SLOPE, &gOmmCheatWalkOnSlope),
                 omm_opt_make_toggle(OMM_TEXT_OPT_CHEAT_WALK_ON_DEATH_BARRIER, &gOmmCheatWalkOnDeathBarrier),
                 omm_opt_make_toggle(OMM_TEXT_OPT_CHEAT_BLJ_ANYWHERE, &gOmmCheatBljAnywhere),
-            ), 14);
+            ), 15);
         gOmmOptCheats.label = omm_dup(optCheats.label, omm_opt_text_length(optCheats.label) + 1);
         gOmmOptCheats.subMenu = omm_dup(optCheats.nextMenu, sizeof(struct SubMenu));
 #endif

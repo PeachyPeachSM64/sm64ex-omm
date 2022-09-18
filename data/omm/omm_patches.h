@@ -53,6 +53,13 @@
 #define render_course_complete_screen_1 render_course_complete_screen()
 #define render_course_complete_screen(...) CAT(render_course_complete_screen_, N_ARGS(__VA_ARGS__))
 
+// SM64: do_cutscene_handler is replaced by omm_sparkly_ending_dialog
+#if OMM_GAME_IS_SM64
+#define do_cutscene_handler_0 omm_sparkly_ending_dialog()
+#define do_cutscene_handler_1 do_cutscene_handler()
+#define do_cutscene_handler(...) CAT(do_cutscene_handler_, N_ARGS(__VA_ARGS__))
+#endif
+
 // bhv_mario_update uses OMM Mario update
 #define bhv_mario_update_0 bhv_mario_update()
 #define bhv_mario_update_1 bhv_mario_update_unused(void)

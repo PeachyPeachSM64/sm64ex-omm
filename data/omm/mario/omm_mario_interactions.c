@@ -312,6 +312,29 @@ static bool omm_mario_interact_damage(struct MarioState *m, struct Object *o) {
     return false;
 }
 
+static bool omm_mario_interact_koopa_shell(struct MarioState *m, struct Object *o) {
+    if (!(m->action & ACT_FLAG_RIDING_SHELL) && !(o->oInteractStatus & INT_STATUS_STOP_RIDING) && !o->oSubAction) {
+        u32 interaction = determine_interaction(m, o);
+        if ((interaction & (INT_GROUND_POUND_OR_TWIRL | INT_KICK | INT_HIT_FROM_ABOVE)) || m->action == ACT_WALKING || m->action == ACT_HOLD_WALKING) {
+            m->interactObj = o;
+            m->usedObj = o;
+            m->riddenObj = o;
+            o->oInteractStatus = INT_STATUS_INTERACTED;
+            mario_drop_held_object(m);
+            update_mario_sound_and_camera(m);
+            audio_play_shell_music();
+            if (m->action & ACT_FLAG_AIR) {
+                omm_mario_set_action(m, ACT_RIDING_SHELL_FALL, 0, Z_TRIG);
+            } else {
+                omm_mario_set_action(m, ACT_RIDING_SHELL_GROUND, 0, Z_TRIG);
+            }
+            return true;
+        }
+        push_mario_out_of_object(m, o, 2);
+    }
+    return true; // don't execute the vanilla interaction
+}
+
 static s32 get_cap(struct Object *o) {
     if (o->behavior == bhvNormalCap) return MARIO_NORMAL_CAP;
     if (o->behavior == bhvWingCap)   return MARIO_WING_CAP;
@@ -375,6 +398,7 @@ static const struct OmmInteractionHandler sOmmInteractionHandlers[] = {
     { INTERACT_MR_BLIZZARD,     omm_mario_interact_mr_blizzard },
     { INTERACT_UNKNOWN_08,      omm_mario_interact_unknown_08 },
     { INTERACT_DAMAGE,          omm_mario_interact_damage },
+    { INTERACT_KOOPA_SHELL,     omm_mario_interact_koopa_shell },
     { INTERACT_CAP,             omm_mario_interact_cap },
     { INTERACT_POLE,            omm_mario_interact_pole },
     { INTERACT_GRABBABLE,       omm_mario_interact_grabbable },

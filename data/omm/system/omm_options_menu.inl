@@ -9,13 +9,7 @@
 static s32 sNumOpts = 0;
 
 void omm_opt_init_main_menu() {
-    sNumOpts = menuMain.numOpts + 1;
-#if !OMM_CODE_DYNOS
-    sNumOpts += 2;
-#endif
-#if OMM_GAME_IS_SM74
-    sNumOpts += 1;
-#endif
+    sNumOpts = menuMain.numOpts + 1 + (2 * !OMM_CODE_DYNOS) + (1 * OMM_GAME_IS_SM74);
     struct Option *opts = (struct Option *) omm_new(struct Option, sNumOpts);
     struct Option *head = opts;
 

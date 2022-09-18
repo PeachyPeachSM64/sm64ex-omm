@@ -200,7 +200,7 @@ static void omm_pre_render_update_stars_models() {
         sOmmStarGraphNodes[33] = geo_layout_to_graph_node(NULL, omm_geo_star_16_transparent);
     }
 
-    s32 starColor = clamp_s(gCurrCourseNum, 0, 16);
+    s32 starColor = OMM_STAR_COLOR_[clamp_s(gCurrCourseNum, 0, 16)];
     omm_array_for_each(omm_obj_get_star_model_behaviors(), p) {
         const BehaviorScript *bhv = (const BehaviorScript *) p->as_ptr;
         for_each_object_with_behavior(obj, bhv) {
@@ -324,11 +324,13 @@ void *omm_update_cmd(void *cmd, s32 reg) {
         }
     }
 
+#if OMM_GAME_IS_SM64
     // Skip Intro cutscene (NOT Lakitu and Bowser's laugh)
     static const uintptr_t cmd_lvl_init_from_save_file[] = { CALL(0, lvl_init_from_save_file) };
     if (omm_same(cmd, cmd_lvl_init_from_save_file, sizeof(cmd_lvl_init_from_save_file))) {
         configSkipIntro = sOmmSkipIntro;
     }
+#endif
 
     // Level Entry
     static const uintptr_t cmd_level_entry[] = { CALL(0, lvl_init_or_update) };

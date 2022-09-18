@@ -13,6 +13,12 @@ enum OmmActionResult {
     OMM_MARIO_ACTION_RESULT_CONTINUE
 };
 
+enum OmmPossessFlag {
+    OMM_MARIO_POSSESS_CHECK_TANGIBILITY = (1 << 0),
+    OMM_MARIO_POSSESS_FORCE_CAPTURE     = (1 << 1),
+    OMM_MARIO_POSSESS_IGNORE_PRESS_HOLD = (1 << 2),
+};
+
 enum OmmUnpossessAction {
     OMM_MARIO_UNPOSSESS_ACT_NONE,
     OMM_MARIO_UNPOSSESS_ACT_JUMP_OUT,
@@ -99,7 +105,7 @@ void omm_mario_update_castle_collisions         (struct MarioState *m);
 // Capture
 //
 
-bool omm_mario_possess_object                   (struct MarioState *m, struct Object *o, bool checkTangibility, bool forceCapture);
+bool omm_mario_possess_object                   (struct MarioState *m, struct Object *o, u32 possessFlags);
 bool omm_mario_unpossess_object                 (struct MarioState *m, u8 unpossessAct, bool isBackwards, u32 objIntangibleFrames);
 bool omm_mario_lock                             (struct MarioState *m, s32 duration);
 bool omm_mario_lock_star_grab                   (struct MarioState *m);

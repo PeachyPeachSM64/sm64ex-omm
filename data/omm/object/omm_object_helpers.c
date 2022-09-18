@@ -31,7 +31,8 @@ bool obj_has_graph_node(struct Object *o, struct GraphNode *node) {
 
 bool obj_is_surface(struct Object *o) {
     s32 type = obj_get_list_index(o);
-    return (type == OBJ_LIST_SURFACE) || (type == OBJ_LIST_POLELIKE);
+    return type == OBJ_LIST_SURFACE ||
+           type == OBJ_LIST_POLELIKE;
 }
 
 bool obj_is_on_ground(struct Object *o) {
@@ -67,8 +68,8 @@ s32 obj_get_object1_angle_yaw_to_object2(struct Object *o1, struct Object *o2) {
 
 bool obj_is_object1_facing_object2(struct Object *o1, struct Object *o2, s16 angleRange) {
     s16 yawObj1ToObj2 = obj_get_object1_angle_yaw_to_object2(o1, o2);
-    s32 yawDiff = (s32) ((s16) ((s32) (yawObj1ToObj2) - (s32) (o1->oFaceAngleYaw)));
-    return (-angleRange <= yawDiff) && (yawDiff <= angleRange);
+    s32 yawDiff = (s32) ((s16) ((s32) yawObj1ToObj2 - (s32) o1->oFaceAngleYaw));
+    return -angleRange <= yawDiff && yawDiff <= angleRange;
 }
 
 bool obj_is_object2_hit_from_above(struct Object *o1, struct Object *o2) {
@@ -95,7 +96,7 @@ bool obj_is_object2_pushing_object1_backwards(struct Object *o1, struct Object *
     s16 yawObj1toObj2 = obj_get_object1_angle_yaw_to_object2(o1, o2);
     s32 yawDiff = (s32) ((s16) ((s32) (yawObj1toObj2) - (s32) (o1->oFaceAngleYaw)));
     if (setObj1FaceYaw) o1->oFaceAngleYaw = yawObj1toObj2;
-    return (-0x4000 <= yawDiff) && (yawDiff <= +0x4000);
+    return -0x4000 <= yawDiff && yawDiff <= +0x4000;
 }
 
 struct Box { f32 radius; f32 height; };
@@ -160,8 +161,8 @@ bool obj_detect_hitbox_overlap(struct Object *o1, struct Object *o2, u32 obj1Fla
     f32 o2lb = o2->oPosY - o2->hitboxDownOffset;
     f32 o2ub = box2.height + o2lb;
     f32 osoh = box1.height + box2.height;
-    if (((o2ub - o1lb) > osoh) ||
-        ((o1ub - o2lb) > osoh)) {
+    if (o2ub - o1lb > osoh ||
+        o1ub - o2lb > osoh) {
         return false;
     }
 
@@ -211,7 +212,7 @@ static void obj_safe_step_set_coords(struct Object *o, struct Surface *s) {
     Vec3f a = { s->vertex1[0], 0, s->vertex1[2] };
     Vec3f b = { s->vertex2[0], 0, s->vertex2[2] };
     Vec3f c = { s->vertex3[0], 0, s->vertex3[2] };
-    vec3f_get_barycentric_coords(&o->oSafeStepCoords, p, a, b, c);
+    vec3f_get_barycentric_coords(o->oSafeStepCoords, p, a, b, c);
 }
 
 static void obj_safe_step_set_new_pos(struct Object *o, struct Surface *s) {
@@ -219,13 +220,12 @@ static void obj_safe_step_set_new_pos(struct Object *o, struct Surface *s) {
     Vec3f a = { s->vertex1[0], 0, s->vertex1[2] };
     Vec3f b = { s->vertex2[0], 0, s->vertex2[2] };
     Vec3f c = { s->vertex3[0], 0, s->vertex3[2] };
-    vec3f_from_barycentric_coords(p, &o->oSafeStepCoords, a, b, c);
+    vec3f_from_barycentric_coords(p, o->oSafeStepCoords, a, b, c);
     o->oPosX = p[0];
     o->oPosZ = p[2];
 }
 
 void obj_safe_step(struct Object *o, bool afterUpdate) {
-    if (!obj_alloc_fields(o)) return;
     struct Surface *floor = NULL;
 
     // Check unload, capture or Goomba stack
@@ -235,7 +235,7 @@ void obj_safe_step(struct Object *o, bool afterUpdate) {
         return;
     }
 
-    // Do nothing if ignored or attacked (goombas, bob-ombs)
+    // Do nothing if ignored, attacked or not free
     if (o->oSafeStepIgnore || o->oAction >= 100 || o->oHeldState != HELD_FREE) {
         o->oSafeStepIgnore = true;
         return;
@@ -306,37 +306,19 @@ void obj_safe_step(struct Object *o, bool afterUpdate) {
 }
 
 void obj_update_blink_state(struct Object *o, s32 *timer, s16 base, s16 range, s16 length) {
-    if (*timer != 0) {
-        (*timer)--;
-    } else {
-        *timer = base + (s16)(range * random_float());
-    }
-
-    if (*timer > length) {
-        o->oAnimState = 0;
-    } else {
-        o->oAnimState = 1;
-    }
+    if (*timer > 0) (*timer)--;
+    else *timer = base + (s16) (range * random_float());
+    o->oAnimState = (*timer <= length);
 }
 
 void obj_random_blink(struct Object *o, s32 *timer) {
-    if (*timer == 0) {
-        if ((s16)(random_float() * 100.0f) == 0) {
-            o->oAnimState = 1;
-            *timer = 1;
-        }
-    } else {
+    if (*timer > 0) {
         (*timer)++;
-        if (*timer >= 6) {
-            o->oAnimState = 0;
-        }
-        if (*timer >= 11) {
-            o->oAnimState = 1;
-        }
-        if (*timer >= 16) {
-            o->oAnimState = 0;
-            *timer = 0;
-        }
+        *timer *= (*timer < 16);
+        o->oAnimState = 1 - (((*timer + 9) / 5) & 1);
+    } else if (random_u16() % 100 == 0) {
+        o->oAnimState = 1;
+        *timer = 1;
     }
 }
 
@@ -358,8 +340,8 @@ void obj_make_step_sound_and_particle(struct Object *o, f32 *dist, f32 distMin, 
         if (particles & OBJ_PARTICLE_WATER_DROPLET) {
             for (s32 i = 0; i != 2; ++i) {
                 struct Object *drop = spawn_object_with_scale(o, MODEL_WHITE_PARTICLE_SMALL, bhvWaterDroplet, 1.5f);
-                drop->oVelY = random_float() * 30.0f;
-                obj_translate_xz_random(drop, 110.0f);
+                drop->oVelY = random_float() * 30.f;
+                obj_translate_xz_random(drop, 110.f);
             }
         }
         if (particles & OBJ_PARTICLE_FIRE) {
@@ -567,7 +549,7 @@ static void obj_destroy_explosion(struct Object *o, s32 numCoins) {
     set_camera_shake_from_point(SHAKE_POS_SMALL, o->oPosX, o->oPosY, o->oPosZ);
     obj_spawn_white_puff(o, SOUND_GENERAL2_BOBOMB_EXPLOSION);
     struct Object *explosion = spawn_object(o, MODEL_EXPLOSION, bhvExplosion);
-    explosion->oGraphYOffset += 100.0f;
+    explosion->oGraphYOffset += 100.f;
     obj_mark_for_deletion(o);
 }
 
@@ -723,12 +705,12 @@ void obj_set_params(struct Object *o, s32 interactType, s32 damageOrCoinValue, s
 }
 
 void obj_reset_hitbox(struct Object *o, f32 hitboxRadius, f32 hitboxHeight, f32 hurtboxRadius, f32 hurtboxHeight, f32 wallHitboxRadius, f32 hitboxDownOffset) {
-    o->hitboxRadius = o->oScaleX * hitboxRadius;
-    o->hitboxHeight = o->oScaleY * hitboxHeight;
-    o->hurtboxRadius = o->oScaleX * hurtboxRadius;
-    o->hurtboxHeight = o->oScaleY * hurtboxHeight;
-    o->oWallHitboxRadius = o->oScaleX * wallHitboxRadius;
-    o->hitboxDownOffset = o->oScaleY * hitboxDownOffset;
+    o->hitboxRadius = abs_f(o->oScaleX) * hitboxRadius;
+    o->hitboxHeight = abs_f(o->oScaleY) * hitboxHeight;
+    o->hurtboxRadius = abs_f(o->oScaleX) * hurtboxRadius;
+    o->hurtboxHeight = abs_f(o->oScaleY) * hurtboxHeight;
+    o->oWallHitboxRadius = abs_f(o->oScaleX) * wallHitboxRadius;
+    o->hitboxDownOffset = abs_f(o->oScaleY) * hitboxDownOffset;
     o->oInteractStatus = 0;
     o->oInteractionSubtype = 0;
 }
@@ -901,7 +883,7 @@ static void open_door(struct Object *o, struct Object *door1, struct Object *doo
     Vec2f pA = { cX, cZ };
     Vec2f pB = { cX + vX, cZ + vZ };
     Vec2f pP = { o->oPosX, o->oPosZ };
-    Vec2f pQ; vec2f_get_projected_point_on_line(pQ, pA, pB, pP);
+    Vec2f pQ; vec2f_get_projected_point_on_line(pQ, NULL, pA, pB, pP);
 
     // Init first door
     sOmmDoor[0].obj         = door1;

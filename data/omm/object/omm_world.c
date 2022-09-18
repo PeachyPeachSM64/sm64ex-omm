@@ -181,131 +181,6 @@ static void omm_update_warp_pipes(struct MarioState *m) {
 }
 
 //
-// Power-up Boxes
-//
-
-static void load_power_up_box(u8 level, s8 area, u8 type, s16 x, s16 y, s16 z, s16 angle) {
-    if (gCurrLevelNum == level && gCurrAreaIndex == area) {
-
-        // Look for a box at (x, z)
-        for_each_object_with_behavior(box, bhvExclamationBox) {
-            if (box->oPosX == x && box->oPosZ == z) {
-                return;
-            }
-        }
-
-        // If not found, spawn it
-        struct Object *box = obj_spawn_from_geo(gMarioObject, exclamation_box_geo, bhvExclamationBox);
-        box->oPosX = x;
-        box->oPosY = y;
-        box->oPosZ = z;
-        box->oHomeX = x;
-        box->oHomeY = y;
-        box->oHomeZ = z;
-        box->oFaceAnglePitch = 0;
-        box->oFaceAngleYaw = angle;
-        box->oFaceAngleRoll = 0;
-        box->oMoveAnglePitch = 0;
-        box->oMoveAngleYaw = angle;
-        box->oMoveAngleRoll = 0;
-        box->oBhvArgs = 0;
-        box->oBhvArgs2ndByte = type;
-    }
-}
-
-static void omm_update_power_ups() {
-    if (save_file_get_star_flags(gCurrSaveFileNum - 1, gCurrCourseNum - 1) != 0x7F) {
-        return;
-    }
-    
-#if OMM_GAME_IS_SM64
-    // BOB
-    load_power_up_box(LEVEL_BOB, 1, 0, -5300, 428, 5600, 0x0000);
-    load_power_up_box(LEVEL_BOB, 1, 1, -5700, 428, 5200, 0x0000);
-    load_power_up_box(LEVEL_BOB, 1, 2, -6100, 428, 5600, 0x0000);
-    
-    // WF
-    load_power_up_box(LEVEL_WF, 1, 0, 3000, 556, 4600, 0x0000);
-    load_power_up_box(LEVEL_WF, 1, 1, 3500, 556, 4600, 0x0000);
-    load_power_up_box(LEVEL_WF, 1, 2, 4000, 556, 4600, 0x0000);
-    
-    // JRB
-    load_power_up_box(LEVEL_JRB, 1, 0, -5800, 1340,   50, 0x0000);
-    load_power_up_box(LEVEL_JRB, 1, 1, -5400, 1340, -350, 0x0000);
-    load_power_up_box(LEVEL_JRB, 1, 2, -6200, 1340, -350, 0x0000);
-    
-    // CCM
-    load_power_up_box(LEVEL_CCM, 1, 0,     0, 2860, -2700, 0x0000);
-    load_power_up_box(LEVEL_CCM, 1, 1,  -500, 2860, -2700, 0x0000);
-    load_power_up_box(LEVEL_CCM, 1, 2, -1000, 2860, -2700, 0x0000);
-    
-    // BBH
-    load_power_up_box(LEVEL_BBH, 1, 0,  166, 96, 4000, 0x0000);
-    load_power_up_box(LEVEL_BBH, 1, 1,  666, 96, 4000, 0x0000);
-    load_power_up_box(LEVEL_BBH, 1, 2, 1166, 96, 4000, 0x0000);
-    
-    // HMC
-    load_power_up_box(LEVEL_HMC, 1, 0, 3650, 300, 4970, 0x0000);
-    load_power_up_box(LEVEL_HMC, 1, 1, 4050, 300, 4570, 0x0000);
-    load_power_up_box(LEVEL_HMC, 1, 2, 4050, 300, 5370, 0x0000);
-    
-    // LLL
-    load_power_up_box(LEVEL_LLL, 1, 0, -500, 607,  3700, 0x0000);
-    load_power_up_box(LEVEL_LLL, 1, 1,    0, 607,  3700, 0x0000);
-    load_power_up_box(LEVEL_LLL, 1, 2,  500, 607,  3700, 0x0000);
-    load_power_up_box(LEVEL_LLL, 2, 0,    0, 382, -1440, 0x0000);
-    load_power_up_box(LEVEL_LLL, 2, 1,  500, 382, -1440, 0x0000);
-    load_power_up_box(LEVEL_LLL, 2, 2, 1000, 382, -1440, 0x0000);
-    
-    // SSL
-    load_power_up_box(LEVEL_SSL, 1, 0, 2500, 300, 7050, 0x0000);
-    load_power_up_box(LEVEL_SSL, 1, 1, 3000, 300, 7050, 0x0000);
-    load_power_up_box(LEVEL_SSL, 1, 2, 3500, 300, 7050, 0x0000);
-    load_power_up_box(LEVEL_SSL, 2, 0, -500, 300, 3600, 0x0000);
-    load_power_up_box(LEVEL_SSL, 2, 1,    0, 300, 3600, 0x0000);
-    load_power_up_box(LEVEL_SSL, 2, 2,  500, 300, 3600, 0x0000);
-    
-    // DDD
-    load_power_up_box(LEVEL_DDD, 2, 0, 3400, 410, 5900, 0x0000);
-    load_power_up_box(LEVEL_DDD, 2, 1, 3900, 410, 5900, 0x0000);
-    load_power_up_box(LEVEL_DDD, 2, 2, 4400, 410, 5900, 0x0000);
-    
-    // SL
-    load_power_up_box(LEVEL_SL, 1, 0, 5400, 1324, 4050, 0x0000);
-    load_power_up_box(LEVEL_SL, 1, 1, 5400, 1324, 4550, 0x0000);
-    load_power_up_box(LEVEL_SL, 1, 2, 5400, 1324, 5050, 0x0000);
-    
-    // WDW
-    load_power_up_box(LEVEL_WDW, 1, 0, 4500, 300, 1550, 0x0000);
-    load_power_up_box(LEVEL_WDW, 1, 1, 4500, 300, 2050, 0x0000);
-    load_power_up_box(LEVEL_WDW, 1, 2, 4500, 300, 2550, 0x0000);
-    
-    // TTM
-    load_power_up_box(LEVEL_TTM, 1, 0, -400, -4020, 5250, 0x0000);
-    load_power_up_box(LEVEL_TTM, 1, 1,  100, -4020, 5250, 0x0000);
-    load_power_up_box(LEVEL_TTM, 1, 2,  600, -4020, 5250, 0x0000);
-    
-    // THI
-    load_power_up_box(LEVEL_THI, 1, 0, -6100, -2190,  700, 0x0000);
-    load_power_up_box(LEVEL_THI, 1, 1, -6100, -2190, 1500, 0x0000);
-    load_power_up_box(LEVEL_THI, 1, 2, -6500, -2190, 1100, 0x0000);
-    load_power_up_box(LEVEL_THI, 2, 0,  -150,  -620, 1400, 0x0000);
-    load_power_up_box(LEVEL_THI, 2, 1,  -650,  -620, 1400, 0x0000);
-    load_power_up_box(LEVEL_THI, 2, 2,   350,  -620, 1400, 0x0000);
-    
-    // TTC
-    load_power_up_box(LEVEL_TTC, 1, 0, -500, 281, -1800, 0x0000);
-    load_power_up_box(LEVEL_TTC, 1, 1,    0, 281, -1800, 0x0000);
-    load_power_up_box(LEVEL_TTC, 1, 2,  500, 281, -1800, 0x0000);
-    
-    // RR
-    load_power_up_box(LEVEL_RR, 1, 0, 2245, -1533, 2071, 0x0000);
-    load_power_up_box(LEVEL_RR, 1, 1, 2645, -1533, 1671, 0x0000);
-    load_power_up_box(LEVEL_RR, 1, 2, 2645, -1533, 2471, 0x0000);
-#endif
-}
-
-//
 // Worlds
 //
 
@@ -423,6 +298,25 @@ static void omm_update_worlds(struct MarioState *m) {
 
         // Star Leap Tower Grounds (Ending)
         case COURSE_CAKE_END: {
+        } break;
+
+#elif OMM_GAME_IS_SMMS
+
+        // Sweet Sweet Rush
+        // - Add more coins to be able to get the 100 coins star
+        case COURSE_LLL: {
+            struct Object *box3coins = obj_get_first_with_behavior_and_field_s32(bhvExclamationBox, 0x2F, 0x05);
+            if (box3coins && !obj_is_dormant(box3coins)) {
+                spawn_object_abs_with_rot(m->marioObj, 0, MODEL_EXCLAMATION_BOX, bhvExclamationBox, -2136,  993, -2347, 0, 0x0000, 0)->oBhvArgs2ndByte = 0x06;
+                spawn_object_abs_with_rot(m->marioObj, 0, MODEL_NONE,            bhvCoinFormation,  -5391, -979,  3167, 0, 0x0000, 0)->oBhvArgs2ndByte = COIN_FORMATION_FLAG_RING;
+                spawn_object_abs_with_rot(m->marioObj, 0, MODEL_NONE,            bhvCoinFormation,  -6900,  570,  1400, 0, 0x0000, 0)->oBhvArgs2ndByte = COIN_FORMATION_FLAG_RING;
+                spawn_object_abs_with_rot(m->marioObj, 0, MODEL_NONE,            bhvCoinFormation,   4444, 5480, -4444, 0, 0x0000, 0)->oBhvArgs2ndByte = COIN_FORMATION_FLAG_RING;
+                spawn_object_abs_with_rot(m->marioObj, 0, MODEL_NONE,            bhvCoinFormation,   -380,  570,  4200, 0, 0x0000, 0)->oBhvArgs2ndByte = COIN_FORMATION_FLAG_RING;
+                spawn_object_abs_with_rot(m->marioObj, 0, MODEL_NONE,            bhvCoinFormation,   4600,  270,  4060, 0, 0x0000, 0)->oBhvArgs2ndByte = 0;
+                spawn_object_abs_with_rot(m->marioObj, 0, MODEL_NONE,            bhvCoinFormation,  -6090,  625, -6300, 0, 0x4000, 0)->oBhvArgs2ndByte = 0;
+                spawn_object_abs_with_rot(m->marioObj, 0, MODEL_NONE,            bhvCoinFormation,  -2730, 1000, -6400, 0, 0x0000, 0)->oBhvArgs2ndByte = COIN_FORMATION_FLAG_FLYING;
+                obj_set_dormant(box3coins, true);
+            }
         } break;
 
 #elif OMM_GAME_IS_SM64
@@ -651,7 +545,7 @@ static void omm_update_worlds(struct MarioState *m) {
 
     // Set recovery hearts dormant in Sparkly Stars Lunatic mode
     omm_world_behavior_set_dormant(bhvRecoveryHeart, OMM_SPARKLY_MODE_IS_LUNATIC);
-#if GAME_IS_SMSR
+#if OMM_GAME_IS_SMSR
     omm_world_behavior_set_dormant(bhvCustomSMSRRecoveryBubbleWater, OMM_SPARKLY_MODE_IS_LUNATIC);
 #endif
     
@@ -668,11 +562,9 @@ static void omm_update_worlds(struct MarioState *m) {
         omm_world_behavior_set_dormant(bhvBowserBomb, true);
     }
 #endif
-    
-#if !OMM_GAME_IS_SMMS
+
     // Hide red coins star markers if Colored Stars
     omm_world_behavior_set_dormant(bhvRedCoinStarMarker, OMM_EXTRAS_COLORED_STARS);
-#endif
 }
 
 // Water is always treated as cold water
@@ -700,7 +592,6 @@ void omm_world_update(struct MarioState *m) {
     sOmmWorldShadow = false;
     if (!omm_is_ending_cutscene()) {
         omm_update_warp_pipes(m);
-        omm_update_power_ups();
         omm_update_worlds(m);
         omm_update_frozen(m);
         omm_update_flooded();

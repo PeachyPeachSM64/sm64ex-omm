@@ -2,6 +2,7 @@
 #define OMM_ALL_HEADERS
 #include "data/omm/omm_includes.h"
 #undef OMM_ALL_HEADERS
+#include "gfx_patches.inl"
 #include <unistd.h>
 #if OMM_WAPI_DXGI
 #include <windows.h>
@@ -106,9 +107,10 @@ typedef struct {
     // Colors
     bool fog, alpha;
     u32 combineMode, otherModeL, otherModeH;
-    Vec4f envColor, primColor, fogColor, fillColor;
+    Vec4f envColor, primColor, fogColor, fillColor, transpColor;
     f32 *envColors[3];
     f32 *primColors[3];
+    f32 *transpColors[3];
     XYWH viewport;
     void *zBufAddress;
     void *colorImageAddress;
@@ -136,6 +138,7 @@ struct GfxDimensions gfx_current_dimensions;
 static f32 gfx_adjust_for_aspect_ratio;
 
 static const f32 INV32 = 1.f / 32.f;
+static const f32 INV64 = 1.f / 64.f;
 static const f32 INV256 = 1.f / 256.f;
 static f32 *gVec4fZero3[3] = { gVec4fZero, gVec4fZero, gVec4fZero };
 static f32 *gVec4fOne3[3] = { gVec4fOne, gVec4fOne, gVec4fOne };
@@ -608,9 +611,11 @@ static void gfx_update_color_combiner() {
     // Color effects
     bool edge = (sGfxRdp->otherModeL & CVG_X_ALPHA) == CVG_X_ALPHA;
     bool noise = (sGfxRdp->otherModeL & G_AC_DITHER) == G_AC_DITHER;
+    bool transp = (sGfxRsp->geometryMode & G_TRANSPARENCY) != 0;
     sGfxRdp->fog = (sGfxRdp->otherModeL >> 30) == G_BL_CLR_FOG && !GFX_NO_FOG;
-    sGfxRdp->alpha = edge || ((sGfxRdp->otherModeL & (G_BL_A_MEM << 18)) == 0);
-    edge &= !(sGfxRsp->geometryMode & G_TEXTURE_ALPHA);
+    sGfxRdp->alpha = (transp || edge || ((sGfxRdp->otherModeL & (G_BL_A_MEM << 18)) == 0));
+    edge &= !transp && !(sGfxRsp->geometryMode & G_TEXTURE_ALPHA);
+    sGfxRdp->transpColor[3] = 1.f - transp * ((sGfxRsp->geometryMode & G_TRANSPARENCY) >> 3) * INV64;
 
     // Color combiner id
     u32 ccId = sGfxRdp->combineMode;
@@ -655,7 +660,7 @@ OMM_INLINE void gfx_geometry_mode_changed(u32 clr, u32 set) {
         gfx_flush();
         sGfxRapi->set_depth_test(depthTest);
     )
-    if_changed(textureAlpha, (sGfxRsp->geometryMode & G_TEXTURE_ALPHA) != 0,
+    if_changed(textureAlpha, sGfxRsp->geometryMode & (G_TEXTURE_ALPHA | G_TRANSPARENCY),
         gfx_update_color_combiner();
     )
 }
@@ -945,7 +950,7 @@ static void gfx_sp_tri(u8 v1i, u8 v2i, u8 v3i) {
     // Vertex colors
     Vertex *va[3] = { v1, v2, v3 };
     f32 *va_colors[3] = { v1->color, v2->color, v3->color };
-    f32 **colors[8][2]; // input, rgb/a
+    f32 **colors[4][2]; // input, rgb/a
     for (s32 j = 0; j != sGfxShaderProgram->numInputs; ++j) {
 
         // RGB
@@ -957,12 +962,14 @@ static void gfx_sp_tri(u8 v1i, u8 v2i, u8 v3i) {
         }
         
         // Alpha
-        if (sGfxRdp->alpha) {
+        if (sGfxRdp->transpColor[3] < 1.f) {
+            colors[j][1] = sGfxRdp->transpColors;
+        } else if (sGfxRdp->alpha) {
             switch (sGfxColorCombiner->mapShaderInput[1][j]) {
                 case CC_PRIM:  colors[j][1] = sGfxRdp->primColors; break;
                 case CC_SHADE: colors[j][1] = (sGfxRdp->fog ? gVec4fOne3 : va_colors); break;
                 case CC_ENV:   colors[j][1] = sGfxRdp->envColors; break;
-                default:       colors[j][1] = gVec4fZero3; break;
+                default:       colors[j][1] = gVec4fOne3; break;
             }
         }
     }
@@ -1101,10 +1108,10 @@ static void gfx_sp_texture() {
 static void gfx_sp_dl() {
     if (GFX_C0(16, 1) == 0) {
         Gfx *cmd = sGfxCmd;
-        gfx_run_dl(GFX_W1P);
+        gfx_run_dl(gfx_patch_display_list(GFX_W1P));
         sGfxCmd = cmd;
     } else {
-        sGfxCmd = GFX_W1P;
+        sGfxCmd = gfx_patch_display_list(GFX_W1P);
         sGfxCmd--;
     }
 }
@@ -1636,12 +1643,20 @@ void gfx_init(struct GfxWindowManagerAPI *wapi, struct GfxRenderingAPI *rapi, co
 #if OMM_WAPI_DXGI
     sGfxWapi->handle_events = gfx_dxgi_handle_events;
 #endif
+    vec4f_copy(sGfxRdp->envColor, gVec4fOne);
+    vec4f_copy(sGfxRdp->primColor, gVec4fOne);
+    vec4f_copy(sGfxRdp->fogColor, gVec4fOne);
+    vec4f_copy(sGfxRdp->fillColor, gVec4fOne);
+    vec4f_copy(sGfxRdp->transpColor, gVec4fOne);
     sGfxRdp->envColors[0] = sGfxRdp->envColor;
     sGfxRdp->envColors[1] = sGfxRdp->envColor;
     sGfxRdp->envColors[2] = sGfxRdp->envColor;
     sGfxRdp->primColors[0] = sGfxRdp->primColor;
     sGfxRdp->primColors[1] = sGfxRdp->primColor;
     sGfxRdp->primColors[2] = sGfxRdp->primColor;
+    sGfxRdp->transpColors[0] = sGfxRdp->transpColor;
+    sGfxRdp->transpColors[1] = sGfxRdp->transpColor;
+    sGfxRdp->transpColors[2] = sGfxRdp->transpColor;
     static u32 sPrecompiledShaders[] = {
         0x01200200, 0x00000045, 0x00000200, 0x01200a00,
         0x00000a00, 0x01a00045, 0x00000551, 0x01045045,

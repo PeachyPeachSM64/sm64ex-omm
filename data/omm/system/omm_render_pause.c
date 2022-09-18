@@ -30,7 +30,7 @@ static void omm_render_pause_sparkly_timer(s16 x, s16 y, s16 w, u8 alpha, s32 mo
         OMM_TEXTURE_HUD_8,
         OMM_TEXTURE_HUD_9,
         OMM_TEXTURE_HUD_DOTS,
-        OMM_TEXTURE_STAR_FULL_16,
+        OMM_TEXTURE_WHITE,
         OMM_TEXTURE_STAR_FULL_17,
         OMM_TEXTURE_STAR_FULL_18,
         OMM_TEXTURE_STAR_FULL_19,
@@ -351,7 +351,11 @@ static void omm_render_pause_castle_course() {
     s32 courseIndex = omm_level_get_course(levelNum) - 1;
     
     // Course name
-    const u8 *textCourseName = ((courseIndex != -1) ? omm_level_get_name(levelNum, false, true) : omm_text_convert(OMM_TEXT_LEVEL_SECRET_STARS, false));
+    const u8 *textCourseName = ((courseIndex != -1) ? (save_file_get_star_flags(gCurrSaveFileNum - 1, courseIndex) ? 
+        omm_level_get_name(levelNum, false, true) :
+        omm_text_convert(OMM_TEXT_LEVEL_UNKNOWN, false)) :
+        omm_text_convert(OMM_TEXT_LEVEL_SECRET_STARS, false)
+    );
     omm_render_string_centered(OMM_RENDER_PAUSE_CASTLE_BOX_LINE_1_Y, 0xFF, 0xFF, 0xFF, sPauseAlpha, textCourseName, false);
 
     // Course stars
@@ -426,7 +430,7 @@ static void omm_render_pause_castle_sm74_edition() {
 #if OMM_GAME_IS_SM74
     const u8 *textSm74 = omm_text_convert(OMM_TEXT_SM74_SUPER_MARIO_74, false);
     omm_render_string_centered(SCREEN_HEIGHT - 40, 0xFF, 0xFF, 0xFF, sPauseAlpha, textSm74, true);
-    switch (sm74_mode__omm_render_pause_castle) {
+    switch (gCurrAreaIndex) {
         case 1: {
             const u8 *textMode = omm_text_convert(OMM_TEXT_SM74_NORMAL_EDITION, false);
             omm_render_string_centered(SCREEN_HEIGHT - 54, 0x40, 0xFF, 0x40, sPauseAlpha, textMode, true);

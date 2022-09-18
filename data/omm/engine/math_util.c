@@ -65,13 +65,15 @@ void *vec2f_to_3d_plane(Vec3f dest, Vec2f src, Vec3f o, Vec3f e1, Vec3f e1Scale,
     return dest;
 }
 
-void *vec2f_get_projected_point_on_line(Vec2f dest, Vec2f p, Vec2f a, Vec2f b) {
+void *vec2f_get_projected_point_on_line(Vec2f dest, f32 *t, Vec2f p, Vec2f a, Vec2f b) {
     Vec2f ab = { b[0] - a[0], b[1] - a[1] };
     Vec2f ap = { p[0] - a[0], p[1] - a[1] };
     f32 dota = (ab[0] * ap[0]) + (ab[1] * ap[1]);
     f32 iab2 = 1.f / ((ab[0] * ab[0]) + (ab[1] * ab[1]));
-    dest[0] = a[0] + ab[0] * dota * iab2;
-    dest[1] = a[1] + ab[1] * dota * iab2;
+    f32 abt = dota * iab2;
+    dest[0] = a[0] + ab[0] * abt;
+    dest[1] = a[1] + ab[1] * abt;
+    if (t) *t = abt;
     return dest;
 }
 
@@ -239,6 +241,19 @@ void *vec3f_project_vector(Vec3f dest, Vec3f v, Vec3f n) {
     dest[0] = v[0] - dot * n[0];
     dest[1] = v[1] - dot * n[1];
     dest[2] = v[2] - dot * n[2];
+    return dest;
+}
+
+void *vec3f_get_projected_point_on_line(Vec3f dest, f32 *t, Vec3f p, Vec3f a, Vec3f b) {
+    Vec3f ab = { b[0] - a[0], b[1] - a[1], b[2] - a[2] };
+    Vec3f ap = { p[0] - a[0], p[1] - a[1], p[2] - a[2] };
+    f32 dota = (ab[0] * ap[0]) + (ab[1] * ap[1]) + (ab[2] * ap[2]);
+    f32 iab2 = 1.f / ((ab[0] * ab[0]) + (ab[1] * ab[1]) + (ab[2] * ab[2]));
+    f32 abt = dota * iab2;
+    dest[0] = a[0] + ab[0] * abt;
+    dest[1] = a[1] + ab[1] * abt;
+    dest[2] = a[2] + ab[2] * abt;
+    if (t) *t = abt;
     return dest;
 }
 

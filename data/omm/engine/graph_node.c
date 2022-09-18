@@ -444,26 +444,23 @@ s16 geo_update_animation_frame(struct AnimInfoStruct *animInfo, s32 *accelAssist
 //
 
 void *geo_get_geo_data(struct Object *o, s32 size, const Gfx *gfxSrc, s32 gfxSize) {
-    if (obj_alloc_fields(o)) {
-        if (!o->oGeoData) {
-            void *data = omm_memory_new(gOmmMemoryPoolGeoData, size, o);
-            omm_copy(data, gfxSrc, gfxSize);
-            for (s32 i = 0, n = gfxSize / sizeof(const Gfx); i != n; ++i) {
-                Gfx *gfx = ((Gfx *) data) + i;
-                if (_SHIFTR(gfx->words.w0, 24, 8) == G_DL && gfx->words.w1 == (uintptr_t) null) {
-                    gfx->words.w1 = (uintptr_t) (((u8 *) data) + gfxSize);
-                    break;
-                }
+    if (!o->oGeoData) {
+        void *data = omm_memory_new(gOmmMemoryPoolGeoData, size, o);
+        omm_copy(data, gfxSrc, gfxSize);
+        for (s32 i = 0, n = gfxSize / sizeof(const Gfx); i != n; ++i) {
+            Gfx *gfx = ((Gfx *) data) + i;
+            if (_SHIFTR(gfx->words.w0, 24, 8) == G_DL && gfx->words.w1 == (uintptr_t) null) {
+                gfx->words.w1 = (uintptr_t) (((u8 *) data) + gfxSize);
+                break;
             }
-            o->oGeoData = (void *) data;
         }
-        return o->oGeoData;
+        o->oGeoData = (void *) data;
     }
-    return NULL;
+    return o->oGeoData;
 }
 
 Gfx *geo_link_geo_data(s32 callContext, struct GraphNode *node, UNUSED void *context) {
-    if (gCurrGraphNodeObject && gCurrGraphNodeObject->oFields && callContext == GEO_CONTEXT_RENDER) {
+    if (gCurrGraphNodeObject && callContext == GEO_CONTEXT_RENDER) {
         struct GraphNodeDisplayList *displayListNode = (struct GraphNodeDisplayList *) node->next;
         displayListNode->displayList = gCurrGraphNodeObject->oGeoData;
     }

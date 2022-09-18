@@ -165,7 +165,7 @@ static OmmMemoryObject *omm_memory_get_free_slot(OmmMemoryPool *omp) {
         // If that's the case, it means the block is in use, so skip it
         if (omp == gOmmMemoryPoolGeoData) {
             struct Object *o = (struct Object *) obj->owner;
-            if (o && o->oFields && o->oGeoData && o->oGeoData == obj->data) {
+            if (o && o->oGeoData && o->oGeoData == obj->data) {
                 obj = NULL;
             }
         }
@@ -215,7 +215,7 @@ OMM_AT_STARTUP static void omm_memory_init_pools() {
         OmmMemoryObject *obj = &omp->objects[i];
         if (omp == gOmmMemoryPoolGeoData) {
             struct Object *o = (struct Object *) obj->owner;
-            if (o && o->oFields && o->oGeoData && o->oGeoData == obj->data) {
+            if (o && o->oGeoData && o->oGeoData == obj->data) {
                 usedCount++;
             }
         }

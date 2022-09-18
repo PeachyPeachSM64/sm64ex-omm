@@ -74,6 +74,7 @@ DECLARE_TOGGLE(gOmmCheatInvincible);
 DECLARE_TOGGLE(gOmmCheatSuperSpeed);
 DECLARE_TOGGLE(gOmmCheatSuperResponsive);
 DECLARE_TOGGLE(gOmmCheatNoFallDamage);
+DECLARE_TOGGLE(gOmmCheatCapModifier);
 DECLARE_TOGGLE(gOmmCheatWalkOnLava);
 DECLARE_TOGGLE(gOmmCheatWalkOnQuicksand);
 DECLARE_TOGGLE(gOmmCheatWalkOnWater);
@@ -151,6 +152,9 @@ DECLARE_SCROLL(gOmmDevSparklyStarsHard);
 DECLARE_SCROLL(gOmmDevSparklyStarsLunatic);
 #endif
 
+#if OMM_GAME_IS_SM74
+void omm_opt_sm74_change_mode(UNUSED void *opt, s32 arg);
+#endif
 void omm_opt_return_to_main_menu(UNUSED void *opt, s32 arg);
 void omm_opt_reset_binds(u32 *binds);
 bool omm_mario_colors_read(const char **tokens);
