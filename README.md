@@ -18,11 +18,11 @@
 
 ### Prerequisites:
 
-Make sure you have the following dependencies before starting: `MSYS2` (Windows only), `git`, `zip`, `unzip`, `p7zip`, `make`, `gcc`, `glew`, `SDL2` and `python3`.<br>If not, follow these steps:
+Make sure you have the following dependencies before starting: `MSYS2` (Windows only), `git`, `zip`, `unzip`, `p7zip`, `make`, `gcc`, `glew`, `SDL2` and `Python v3.9+`.<br>If not, follow these steps:
 
 - **Windows**:
 
-  - Download the [OMM Builder Setup Script](https://drive.google.com/u/0/uc?id=10bd4jMOS98XDqdIZUz2SetyfaqLlnh9H&export=download).
+  - Download the [OMM Builder Setup Script](https://github.com/PeachyPeachSM64/sm64ex-omm-resources/raw/master/omm_builder_setup.zip).<br>Extract the `.zip` archive and execute `omm_builder_setup.bat`.
 
 - **Linux**:
 
@@ -84,11 +84,12 @@ omm_builder.py
 
 Games that can be built with *Odyssey Mario's Moveset*:
 1. - ***Super Mario 64 ex-nightly***
-2. - ***Super Mario 64 Moonshine***
-3. - ***Super Mario 64 ex-alo***
+2. - ***Super Mario 64 ex-alo***
+3. - ***Super Mario 64 Moonshine***
 4. - ***Super Mario 74***
 5. - ***Super Mario Star Road***
-6. - ***Render96***
+6. - ***Super Mario 64: The Green Stars***
+7. - ***Render96***
 
 Some shortcuts (replace `X` by the game's number):
 |||
@@ -119,23 +120,15 @@ If you want more customization or simply build the game the usual way, select th
 
 ## Q&A
 
-### The builder is spitting out errors like `gcc: No such file or directory`. What does it mean?
-
-You're missing dependencies. See the **[Prerequisites](https://github.com/PeachyPeachSM64/sm64ex-omm/tree/master#prerequisites)** part.
-
-### MSYS2: There is a weird Python error that fails the assets extraction...
+### MSYS2 (Windows): There is a weird Python error that fails the assets extraction...
 
 Your install of MSYS2 is broken. To repair it, do the following:
 - Remove entirely MSYS2 from your computer. Delete the `msys64` directory at the root of your system.
-- Download the latest version from https://www.msys2.org/.
-- Launch it and run: `pacman -Syu`.
-- Once done close it and reopen it.
-- Run again: `pacman -Syu`.
-- Close it again, open it a third time.
-- This time, run: `pacman -S zip unzip make git mingw-w64-i686-gcc mingw-w64-x86_64-gcc mingw-w64-i686-glew mingw-w64-x86_64-glew mingw-w64-i686-SDL2 mingw-w64-i686-SDL mingw-w64-x86_64-SDL2 mingw-w64-x86_64-SDL python3`.
-- Close it once every package is installed.
+- Download the latest version from https://www.msys2.org/ and install it on your computer (DON'T change the installation path).
+- Download the [OMM Builder Setup Script](https://github.com/PeachyPeachSM64/sm64ex-omm-resources/raw/master/omm_builder_setup.zip).
+- Extract the `.zip` archive and execute `omm_builder_setup.bat`.
 
-### The game is built successfully, but the only thing I get when launching it is a black screen with the game over sound...
+### The game is built successfully, but the only thing I get when launching it is a black screen...
 
 You probably built the game with a renderer not supported by your computer.<br>Delete your build and try again by changing the `Render API` option from `OpenGL 2.1` to `DirectX 11`.
 
@@ -312,6 +305,49 @@ To install it and make it work, follow these steps:
 - [Model packs](https://sm64pc.info/downloads/model_pack/)
 
 -----
+
+## Version 7.3.2 (18/09/2022)
+
+### *OMM Builder*:
+- New game available: ***Super Mario 64: The Green Stars***.<br>Main changes compared to the original game:
+  - The Grand Star after defeating Bowser 3 warps the player to the unused level with the 131st star.<br>*Notes for speedrunning:*
+    - Like ***Super Mario Star Road***, *Any%* runs end when touching the Grand Star.
+    - The 131st star is required only in *131 Star* runs.
+  - *Course 9 - Sandy Seaside Bay* music has been replaced by ***Super Mario Star Road*** *Course 4 - Chuckya Harbor* music.
+- The following custom resources formats are now supported: `.7z`, `.gz`, `.tar`, `.rar`.
+- Updated the `Time Trials` patch to `v2.5` to be compatible with all available games and added it to the `custom` directory.
+- Updated the `DynOS` patch to `v1.2` to be compatible with all available games.
+
+### Bug fixes:
+- Bob-omb freeze when thrown near a ledge.
+- Koopa the Quick/Racing penguin path.
+- Find floor on slanted walls resulting in out-of-bounds.
+- Hitboxes being weird when scale is negative.
+- Incorrect dialog font height.
+- Cappy going through some enemies even when Capture is enabled.
+- *Bad ending* custcene (Toads dialog).
+- Moon Jump cheat with captures.
+
+### Changes:
+- Stand on a blue coin switch to display the number and location of hidden blue coins.
+- Boxes that appear when pressing a purple switch are now indestructible.
+- Eyerok's eyes (hands) can be hit by Cappy, Tiara and Peach attacks.
+- Pause menu: Courses that have not been visited (0 star collected) are now displayed as `???`.
+- Odyssey Moveset: Deadly quicksand invincibility frames are reduced from 2 seconds to 1 second.
+- Koopa shells are no longer destroyed when Mario leaves them. Instead, they become intangible for 0.5 second after leaving them.
+- Captured Bob-omb explosions can damage King Bob-omb.
+- Pink-Gold Stars: JRB: Increased number of required coins from 80 to 101.
+- Star colors now match better with the levels environment for all non-Vanilla games.
+- ***Super Mario 64***: Power-up boxes that appear after collecting all 7 stars of a course have been removed.
+  - Instead, the player unlocks the ability to wear any cap after collecting all stars of a course, **and that for almost all courses (not Castle and Bowser fights) and all games**.
+  - To wear a cap, hold **(L)** and press a **D-pad** button:
+    - **D-pad Up**: Wing cap
+    - **D-pad Left**: Vanish cap
+    - **D-pad Right**: Metal cap
+    - **D-pad Down**: Remove all caps
+  - Additionally, a new cheat has been added, `Cap Modifier`.<br>When enabled, give the player the ability to wear any cap anywhere, anytime.
+- ***Super Mario 64 Moonshine***: Added coins to *Sweet Sweet Rush* to be able to collect the 100 coins moon in one go.
+- ***Super Mario 74***: Select a save file with **(Start)** instead of **(A)** to swap directly to *Extreme Edition*.
 
 ## Version 7.2.0 (21/08/2022)
 
