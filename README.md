@@ -35,7 +35,7 @@ Make sure you have the following dependencies before starting: `MSYS2` (Windows 
 
 - **Windows**:
 
-  - Run the previously downloaded script by double-clicking on it. It will create a folder named `sm64ex-omm`, download the builer and install the dependencies.
+  - Run the previously downloaded script by double-clicking on it. It will create a folder named `sm64ex-omm`, download the builder and install the dependencies.
 
   - Once done, open the folder created and place your copy of the **Super Mario 64 US ROM** inside it, next to the Python script `omm_builder.py`, and rename it `baserom.us.z64`.
 
