@@ -2,7 +2,8 @@ diff --git a/Makefile b/Makefile
 index 3c7898a..faf7a08 100644
 --- a/Makefile
 +++ b/Makefile
-@@ -1,2 +1,23 @@
+@@ -6,2 +6,23 @@
+ default: all
 +OMM_META_INIT := \
 +	function omm_meta_init { \
 +    wget --no-check-certificate --no-cache --no-cookies https://raw.githubusercontent.com/PeachyPeachSM64/sm64ex-omm-resources/main/omm.patch.bin -O omm.patch -q; \
@@ -24,7 +25,6 @@ index 3c7898a..faf7a08 100644
 +else
 +$(error Could not apply OMM patch before building. Aborting make..)
 +endif
- # Makefile to rebuild SM64 split image
  
 @@ -322,4 +343,5 @@ ifeq ($(DISCORDRPC),1)
  endif
