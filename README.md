@@ -16,38 +16,23 @@
 
 ---
 
-### Prerequisites:
-
-Make sure you have the following dependencies before starting: `MSYS2` (Windows only), `git`, `zip`, `unzip`, `p7zip`, `make`, `gcc`, `glew`, `SDL2` and `Python v3.9+`.<br>If not, follow these steps:
-
-- **Windows**:
-
-  - Download the [OMM Builder Setup Script](https://github.com/PeachyPeachSM64/sm64ex-omm-resources/raw/master/omm_builder_setup.zip).<br>Extract the `.zip` archive and execute `omm_builder_setup.bat`.
-
-- **Linux**:
-
-  - Open a terminal and run the following command to install the required packages:
-    - `sudo apt install build-essential git python3 libglew-dev libsdl2-dev zip p7zip*`
-
----
-
 ### Installing the builder:
 
 - **Windows**:
 
-  - Run the previously downloaded script by double-clicking on it. It will create a folder named `sm64ex-omm`, download the builer and install the dependencies.
+  - Download the [OMM Builder Setup Script](https://github.com/PeachyPeachSM64/sm64ex-omm-resources/raw/master/omm_builder_setup.zip).
 
-  - Once done, open the folder created and place your copy of the **Super Mario 64 US ROM** inside it, next to the Python script `omm_builder.py`, and rename it `baserom.us.z64`.
+  - Extract the `.zip` archive and execute `omm_builder_setup.bat`. It will install everything needed for the builder to work.
+
+  - Once done, open the folder `sm64ex-omm` and place your copy of the **Super Mario 64 US ROM** inside it, next to the Python script `omm_builder.py`, and rename it `baserom.us.z64`.
 
 - **Linux**:
 
-  - Open a terminal.
+  - Open a terminal and run the following command to install the required packages:<br>`sudo apt install build-essential git python3 libglew-dev libsdl2-dev zip p7zip*`
 
-  - The first time, install the builder by cloning the *master* branch with this command:<br>`git clone https://github.com/PeachyPeachSM64/sm64ex-omm.git -b master`
+  - Install the builder by cloning the *master* branch with this command:<br>`git clone https://github.com/PeachyPeachSM64/sm64ex-omm.git -b master`
 
-  - Move to the created directory by executing the following command:<br>`cd sm64ex-omm`
-
-  - Place your copy of the **Super Mario 64 US ROM** inside it, next to the Python script `omm_builder.py`, and rename it `baserom.us.z64`.
+  - Once done, open the directory `sm64ex-omm` and place your copy of the **Super Mario 64 US ROM** inside it, next to the Python script `omm_builder.py`, and rename it `baserom.us.z64`.
 
 ---
 
@@ -114,19 +99,11 @@ Some shortcuts (replace `X` by the game's number):
 
 ## Build the game with *sm64pcBuilder2*
 
-If you want more customization or simply build the game the usual way, select the latest version of the *Odyssey Mario's Moveset* patch in **sm64pcBuilder2**.
+If you want more customization or simply build the game the usual way, download the *Odyssey Mario's Moveset* [patch file](https://raw.githubusercontent.com/PeachyPeachSM64/sm64ex-omm/master/patch/omm.patch) and add it in **sm64pcBuilder2**.
 
 ---
 
 ## Q&A
-
-### MSYS2 (Windows): There is a weird Python error that fails the assets extraction...
-
-Your install of MSYS2 is broken. To repair it, do the following:
-- Remove entirely MSYS2 from your computer. Delete the `msys64` directory at the root of your system.
-- Download the latest version from https://www.msys2.org/ and install it on your computer (DON'T change the installation path).
-- Download the [OMM Builder Setup Script](https://github.com/PeachyPeachSM64/sm64ex-omm-resources/raw/master/omm_builder_setup.zip).
-- Extract the `.zip` archive and execute `omm_builder_setup.bat`.
 
 ### The game is built successfully, but the only thing I get when launching it is a black screen...
 
@@ -286,7 +263,7 @@ To install it and make it work, follow these steps:
 
 ## *Odyssey Mario's Moveset* content
 
-- [Patch file](https://raw.githubusercontent.com/PeachyPeachSM64/sm64ex-omm/master/patch/omm.patch)
+- [Patch file](https://raw.githubusercontent.com/PeachyPeachSM64/sm64ex-omm/master/patch/omm.patch) (Right click -> `Save As...`)
 - [In-depth guide](https://docs.google.com/document/d/1IlhCxYGulxrnbvqbSuBMC1JgtBIEwoCcK3l-urVUADk/edit) (by **Cancel the Eat**)
 - [Sparkly Stars guide](https://www.youtube.com/watch?v=xWHKPV-cbqI&list=PLFZ-DGZKGuUo3KuXfGoaP55RYiDXgxE8N) (by **Cancel the Eat**)
 - [Pink Gold Stars guide](https://www.youtube.com/watch?v=sPhx7hDPLKs) (by **FastMario**)

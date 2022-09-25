@@ -15,11 +15,15 @@
 // - You need OMM v6.1.0 or later to make it work.                      //
 // - Make sure the executable you play is named "sm64.us.f3dex2e.exe".  //
 // - For star splits, you must indicate the amount of stars needed in   //
-//   brackets or parentheses like this: "[20]" or "(20)".               //
+//   brackets:                                                          //
+//   * Use square brackets to split upon star collection: "[20]".       //
+//   * Use parentheses to delay the split until the level exit: "(20)". //
 // - If a split has "Bowser" in its name but no star amount, it is      //
-//   interpreted as a Bowser key split or a Grand Star split.           //
+//   interpreted as a Bowser key split or a Grand Star split and the    //
+//   split is triggered on key/star collection.                         //
 // - If the final split has no star amount, it is interpreted as        //
-//   a Grand Star split (i.e. after defeating the last Bowser).         //
+//   a Grand Star split (i.e. after defeating the last Bowser) and      //
+//   immediately stops the timer.                                       //
 // -------------------------------------------------------------------- //
 
 state("sm64.us.f3dex2e") {
