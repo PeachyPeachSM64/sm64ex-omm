@@ -813,6 +813,7 @@ static bool bhv_spawned_star__above_floors_and_below_ceilings(NativeBhvFunc func
         if (ceilHeight > floorHeight) {
             o->oPosY = min_s(o->oPosY, ceilHeight - 60);
             o->oPosY = max_s(o->oPosY, floorHeight + 60);
+            o->oHomeY = max_s(o->oHomeY, floorHeight + 60) + 0.1f;
         }
     }
     return false;
