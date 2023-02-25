@@ -117,11 +117,11 @@ If you don't want or have trouble to compile your own build, download one of the
 
 | | OpenGL | DirectX |
 |:-:|:-:|:-:|
-| Super Mario 64 | [link](https://drive.google.com/file/d/10EDmhmD8AZzfrn_jJ0vP5rePXIclHPtL/view?usp=sharing) | [link](https://drive.google.com/file/d/10VMscgWnNqX9_U2uPLzYVPL6kIjPYKl0/view?usp=sharing) |
-| Super Mario 64 Moonshine | [link](https://drive.google.com/file/d/10GoiXn5ZGRF62xihXty_iwvZbr93KPK8/view?usp=sharing) | [link](https://drive.google.com/file/d/10dnwNURLKyT9Nv2dhsfQk9y2afBBAZR4/view?usp=sharing) |
-| Super Mario 74 | [link](https://drive.google.com/file/d/10ECKbjs35S3rJu7fTsViNBvyCK7MA3v9/view?usp=sharing) | [link](https://drive.google.com/file/d/10V6ctWuw5oo-j3zSh72aFM_P9Y7N1_99/view?usp=sharing) |
-| Super Mario Star Road | [link](https://drive.google.com/file/d/10DmlmFCLKu2Jfm_-V6OtQB-XRXOhJqBc/view?usp=sharing) | [link](https://drive.google.com/file/d/10Ubs18qGJ1b1Nq8Xe-mDS68m6pqv1x1I/view?usp=sharing) |
-| Super Mario 64: The Green Stars | [link](https://drive.google.com/file/d/10Fr9d3Lr92JUMz8rk2BTiocr_hQ1XEAa/view?usp=sharing) | [link](https://drive.google.com/file/d/10b3-vl9T-PBOGYJFESOa7c7TGS24R2xh/view?usp=sharing) |
+| Super Mario 64 | [smex.gl.zip](https://drive.google.com/file/d/10EDmhmD8AZzfrn_jJ0vP5rePXIclHPtL/view?usp=sharing) | [smex.dx.zip](https://drive.google.com/file/d/10VMscgWnNqX9_U2uPLzYVPL6kIjPYKl0/view?usp=sharing) |
+| Super Mario 64 Moonshine | [smms.gl.zip](https://drive.google.com/file/d/10GoiXn5ZGRF62xihXty_iwvZbr93KPK8/view?usp=sharing) | [smms.dx.zip](https://drive.google.com/file/d/10dnwNURLKyT9Nv2dhsfQk9y2afBBAZR4/view?usp=sharing) |
+| Super Mario 74 | [sm74.gl.zip](https://drive.google.com/file/d/10ECKbjs35S3rJu7fTsViNBvyCK7MA3v9/view?usp=sharing) | [sm74.dx.zip](https://drive.google.com/file/d/10V6ctWuw5oo-j3zSh72aFM_P9Y7N1_99/view?usp=sharing) |
+| Super Mario Star Road | [smsr.gl.zip](https://drive.google.com/file/d/10DmlmFCLKu2Jfm_-V6OtQB-XRXOhJqBc/view?usp=sharing) | [smsr.dx.zip](https://drive.google.com/file/d/10Ubs18qGJ1b1Nq8Xe-mDS68m6pqv1x1I/view?usp=sharing) |
+| Super Mario 64: The Green Stars | [smgs.gl.zip](https://drive.google.com/file/d/10Fr9d3Lr92JUMz8rk2BTiocr_hQ1XEAa/view?usp=sharing) | [smgs.dx.zip](https://drive.google.com/file/d/10b3-vl9T-PBOGYJFESOa7c7TGS24R2xh/view?usp=sharing) |
 
 Extract the archive, place your copy of the **Super Mario 64 US ROM** next to the executable, then double click to start the game.<br>**Note:** For ***Super Mario 64 Moonshine***, you also need to extract the **content** of the Moonshine archive (`MOONSHINE_FINALUPDATE.rar`) to the `res/gfx` folder.
 
@@ -292,7 +292,7 @@ To install it and make it work, follow these steps:
 ## *Odyssey Mario's Moveset* content
 
 - [Releases](https://github.com/PeachyPeachSM64/sm64ex-omm/tree/master#playing-the-game-with-an-already-built-release-windows-only) (Windows only)
-- [Patch file](https://raw.githubusercontent.com/PeachyPeachSM64/sm64ex-omm/master/patch/omm.patch) (Right click -> `Save As...`)
+- [Patch file](https://raw.githubusercontent.com/PeachyPeachSM64/sm64ex-omm/patch/omm.patch) (Right click -> `Save As...`)
 - [In-depth guide](https://docs.google.com/document/d/1IlhCxYGulxrnbvqbSuBMC1JgtBIEwoCcK3l-urVUADk/edit) (by **Cancel the Eat**)
 - [Sparkly Stars guide](https://www.youtube.com/watch?v=xWHKPV-cbqI&list=PLFZ-DGZKGuUo3KuXfGoaP55RYiDXgxE8N) (by **Cancel the Eat**)
 - [Pink Gold Stars guide](https://www.youtube.com/watch?v=sPhx7hDPLKs) (by **FastMario**)
