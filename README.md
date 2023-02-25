@@ -107,7 +107,7 @@ Some shortcuts (replace `X` by the game's number):
 
 ## Build the game with *sm64pcBuilder2*
 
-If you want more customization or simply build the game the usual way, download the *Odyssey Mario's Moveset* [patch file](https://raw.githubusercontent.com/PeachyPeachSM64/sm64ex-omm/master/patch/omm.patch) and add it in **sm64pcBuilder2**.
+If you want more customization or simply build the game the usual way, download the *Odyssey Mario's Moveset* [patch file](https://raw.githubusercontent.com/PeachyPeachSM64/sm64ex-omm/patch/omm.patch) and add it in **sm64pcBuilder2**.
 
 ---
 
