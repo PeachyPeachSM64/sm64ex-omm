@@ -141,7 +141,7 @@ OMM_BUILDER_GUI_KEY_BACK                = "xX0"
 OMM_BUILDER_GUI_KEY_DIGIT               = "123456789"
 
 OMM_BUILDER_BASEROM                     = None
-OMM_BUILDER_VERSION                     = "2.1.0"
+OMM_BUILDER_VERSION                     = "2.1.1"
 OMM_SOURCE_VERSION                      = ""
 OMM_SOURCE_REVISION                     = ""
 OMM_SOURCE_DIRNAME                      = ""
@@ -235,7 +235,7 @@ OMM_BUILDER_INFO = {
 #
 
 def PATH(path):
-    return "\\\"" + path + "\\\""
+    return "\"" + path + "\""
 
 def copy_file(path_from: str, path_to: str):
     __bash__(f"cp -f {PATH(path_from)} {PATH(path_to)}")
