@@ -4,13 +4,21 @@ import filecmp
 import subprocess
 
 OMM_IS_TEST             = os.path.isfile("sm64ex-omm-test")
-OMM_REPOSITORY          = f"sm64ex-omm" + ("-test" if OMM_IS_TEST else "")
-OMM_REPOSITORY_URL      = f"https://github.com/PeachyPeachSM64/{OMM_REPOSITORY}.git -b nightly"
-OMM_BUILDER_VERSION_URL = f"https://raw.githubusercontent.com/PeachyPeachSM64/{OMM_REPOSITORY}/master/omm_builder.py"
-OMM_VERSION_URL         = f"https://raw.githubusercontent.com/PeachyPeachSM64/{OMM_REPOSITORY}/nightly/omm.mk"
-OMM_META_PATCH_URL      = f"https://raw.githubusercontent.com/PeachyPeachSM64/{OMM_REPOSITORY}/master/patch/omm.patch"
-OMM_PATCH_URL           = f"https://raw.githubusercontent.com/PeachyPeachSM64/sm64ex-omm-resources/main/omm.patch.bin"
-DYNOS_PATCH_URL         = f"https://raw.githubusercontent.com/PeachyPeachSM64/sm64ex-omm-resources/main/dynos.patch"
+OMM_REPOSITORY_NAME     = "sm64ex-omm" + ("-test" if OMM_IS_TEST else "")
+OMM_REPOSITORY_URL      = "https://github.com/PeachyPeachSM64/" + OMM_REPOSITORY_NAME + ".git"
+OMM_BUILDER_VERSION_URL = "https://raw.githubusercontent.com/PeachyPeachSM64/" + OMM_REPOSITORY_NAME + "/builder/omm_builder.py"
+OMM_NIGHTLY_VERSION_URL = "https://raw.githubusercontent.com/PeachyPeachSM64/" + OMM_REPOSITORY_NAME + "/nightly/omm.mk"
+
+#
+# Windows vs Linux
+#
+
+if os.name == 'nt':
+    def __bash__(cmd): return os.system("bash -c \"" + cmd + "\"")
+    def __call__(cmd): return subprocess.check_output("bash -c \"" + cmd + "\"", shell=True)
+else:
+    def __bash__(cmd): return os.system(cmd)
+    def __call__(cmd): return subprocess.check_output(cmd, shell=True)
 
 #
 # Get a single char from stdin: basically wait for key press
@@ -20,7 +28,7 @@ get_char = None
 try:
     import msvcrt
     def __get_char():
-        return subprocess.check_output("bash -c \"read -srN1 x && echo -n $x\"", shell=True).decode("utf-8")
+        return __call__("read -srN1 x && echo -n $x").decode("utf-8")
     get_char = __get_char
 except ImportError:
     import tty, termios
@@ -78,15 +86,15 @@ BGC_LMAGENTA                            = "\033[105m"
 BGC_LCYAN                               = "\033[106m"
 BGC_WHITE                               = "\033[107m"
 
-OMM_BUILDER_ARG_HELP                    = { "arg": "-h", "info": "Display the help."                                                   }
-OMM_BUILDER_ARG_BUILD                   = { "arg": "-b", "info": "Only build the game, don't run it."                                  }
-OMM_BUILDER_ARG_RESET                   = { "arg": "-r", "info": "Force a reset before building the game."                             }
-OMM_BUILDER_ARG_LOCAL                   = { "arg": "-l", "info": "Use local OMM patch, don't try to check remote version."             }
-OMM_BUILDER_ARG_FORCE                   = { "arg": "-f", "info": "Force a download of the latest patch (ignore -l)."                   }
-OMM_BUILDER_ARG_DEBUG                   = { "arg": "-d", "info": "Build the game with the make flags DEBUG=1, OMM_DEBUG=1, OMM_DEV=1." }
-OMM_BUILDER_ARG_INPUT                   = { "arg": "-i", "info": "Run the input GUI keys one after another."                           }
-OMM_BUILDER_ARG_PATCH                   = { "arg": "-p", "info": "Create an OMM patch from the installed version."                     }
-OMM_BUILDER_ARG_CLEAR                   = { "arg": "-x", "info": "Clear all OMM patches."                                              }
+OMM_BUILDER_ARG_HELP                    = { "arg": "-h", "info": "Display the help."                                        }
+OMM_BUILDER_ARG_BUILD                   = { "arg": "-b", "info": "Only build the game, don't run it."                       }
+OMM_BUILDER_ARG_RESET                   = { "arg": "-r", "info": "Force a reset before building the game."                  }
+OMM_BUILDER_ARG_LOCAL                   = { "arg": "-l", "info": "Use local OMM source, don't try to check remote version." }
+OMM_BUILDER_ARG_FORCE                   = { "arg": "-f", "info": "Force a download of the latest source (ignore -l)."       }
+OMM_BUILDER_ARG_DEBUG                   = { "arg": "-d", "info": "Build the game with debug features."                      }
+OMM_BUILDER_ARG_INPUT                   = { "arg": "-i", "info": "Run the input GUI keys one after another."                }
+OMM_BUILDER_ARG_PATCH                   = { "arg": "-p", "info": "Create an OMM patch file from the installed version."     }
+OMM_BUILDER_ARG_CLEAR                   = { "arg": "-c", "info": "Clear all OMM sources."                                   }
 OMM_BUILDER_ARGS                        = [ OMM_BUILDER_ARG_HELP,
                                             OMM_BUILDER_ARG_BUILD,
                                             OMM_BUILDER_ARG_RESET,
@@ -133,11 +141,11 @@ OMM_BUILDER_GUI_KEY_BACK                = "xX0"
 OMM_BUILDER_GUI_KEY_DIGIT               = "123456789"
 
 OMM_BUILDER_BASEROM                     = None
-OMM_BUILDER_VERSION                     = "2.0.0"
-OMM_PATCH_VERSION                       = ""
-OMM_PATCH_REVISION                      = ""
-OMM_PATCH_DIRNAME                       = ""
-OMM_PATCH_TRUENAME                      = ""
+OMM_BUILDER_VERSION                     = "2.1.0"
+OMM_SOURCE_VERSION                      = ""
+OMM_SOURCE_REVISION                     = ""
+OMM_SOURCE_DIRNAME                      = ""
+OMM_SOURCE_TRUENAME                     = ""
 
 OMM_BUILDER_DATA = {
     "menus": [ {},
@@ -151,13 +159,13 @@ OMM_BUILDER_DATA = {
         { "name": "Audio Packs",   "list": "audios",   "prev": OMM_BUILDER_GUI_MENU_BUILD    },
     ],
     "game": [
-        { "name": "Super Mario 64 ex-nightly",       "path": "smex", "repo": "https://github.com/sm64pc/sm64ex.git -b nightly",           "commit": "",                                         "dep": "",          "dynos": True,  "model": True, "audio": False, "type": "menu", "val": OMM_BUILDER_GUI_MENU_COMMANDS, "set": "game" },
-        { "name": "Super Mario 64 ex-alo",           "path": "xalo", "repo": "https://github.com/AloXado320/sm64ex-alo.git -b master",    "commit": "b9283d080d8f82befe3917a916843cbfb1399411", "dep": "",          "dynos": True,  "model": True, "audio": False, "type": "menu", "val": OMM_BUILDER_GUI_MENU_COMMANDS, "set": "game" },
-        { "name": "Super Mario 64 Moonshine",        "path": "smms", "repo": "https://github.com/sm64pc/sm64ex.git -b nightly",           "commit": "",                                         "dep": "moonshine", "dynos": True,  "model": True, "audio": False, "type": "menu", "val": OMM_BUILDER_GUI_MENU_COMMANDS, "set": "game" },
-        { "name": "Super Mario 74",                  "path": "sm74", "repo": "https://github.com/PeachyPeachSM64/sm64ex-omm.git -b sm74", "commit": "",                                         "dep": "",          "dynos": True,  "model": True, "audio": False, "type": "menu", "val": OMM_BUILDER_GUI_MENU_COMMANDS, "set": "game" },
-        { "name": "Super Mario Star Road",           "path": "smsr", "repo": "https://github.com/PeachyPeachSM64/sm64ex-omm.git -b smsr", "commit": "",                                         "dep": "",          "dynos": True,  "model": True, "audio": False, "type": "menu", "val": OMM_BUILDER_GUI_MENU_COMMANDS, "set": "game" },
-        { "name": "Super Mario 64: The Green Stars", "path": "smgs", "repo": "https://github.com/PeachyPeachSM64/sm64ex-omm.git -b smgs", "commit": "",                                         "dep": "",          "dynos": True,  "model": True, "audio": False, "type": "menu", "val": OMM_BUILDER_GUI_MENU_COMMANDS, "set": "game" },
-        { "name": "Render96",                        "path": "r96x", "repo": "https://github.com/Render96/Render96ex.git -b tester",      "commit": "",                                         "dep": "",          "dynos": False, "model": True, "audio": True,  "type": "menu", "val": OMM_BUILDER_GUI_MENU_COMMANDS, "set": "game" },
+        { "name": "Super Mario 64 ex-nightly",       "path": "smex", "repo": "https://github.com/sm64pc/sm64ex.git -b nightly",           "commit": "",                                         "dep": "",          "audio": False, "type": "menu", "val": OMM_BUILDER_GUI_MENU_COMMANDS, "set": "game" },
+        { "name": "Super Mario 64 ex-alo",           "path": "xalo", "repo": "https://github.com/AloXado320/sm64ex-alo.git -b master",    "commit": "b9283d080d8f82befe3917a916843cbfb1399411", "dep": "",          "audio": False, "type": "menu", "val": OMM_BUILDER_GUI_MENU_COMMANDS, "set": "game" },
+        { "name": "Super Mario 64 Moonshine",        "path": "smms", "repo": "https://github.com/sm64pc/sm64ex.git -b nightly",           "commit": "",                                         "dep": "moonshine", "audio": False, "type": "menu", "val": OMM_BUILDER_GUI_MENU_COMMANDS, "set": "game" },
+        { "name": "Super Mario 74",                  "path": "sm74", "repo": "https://github.com/PeachyPeachSM64/sm64ex-omm.git -b sm74", "commit": "",                                         "dep": "",          "audio": False, "type": "menu", "val": OMM_BUILDER_GUI_MENU_COMMANDS, "set": "game" },
+        { "name": "Super Mario Star Road",           "path": "smsr", "repo": "https://github.com/PeachyPeachSM64/sm64ex-omm.git -b smsr", "commit": "",                                         "dep": "",          "audio": False, "type": "menu", "val": OMM_BUILDER_GUI_MENU_COMMANDS, "set": "game" },
+        { "name": "Super Mario 64: The Green Stars", "path": "smgs", "repo": "https://github.com/PeachyPeachSM64/sm64ex-omm.git -b smgs", "commit": "",                                         "dep": "",          "audio": False, "type": "menu", "val": OMM_BUILDER_GUI_MENU_COMMANDS, "set": "game" },
+        { "name": "Render96",                        "path": "r96x", "repo": "https://github.com/Render96/Render96ex.git -b tester",      "commit": "",                                         "dep": "",          "audio": True,  "type": "menu", "val": OMM_BUILDER_GUI_MENU_COMMANDS, "set": "game" },
     ],
     "commands": [
         { "name": "Build",  "type": "menu",   "val": OMM_BUILDER_GUI_MENU_BUILD,    "checks": "dep;rom" },
@@ -169,19 +177,18 @@ OMM_BUILDER_DATA = {
     "build": [
         { "name": "Build Speed",   "type": "choice", "val": "speed", "set": "speed"                               },
         { "name": "Render API",    "type": "choice", "val": "rapi",  "set": "rapi"                                },
-        { "name": "DynOS",         "type": "toggle",                 "set": "dynos",       "checks": "dynos"      },
         { "name": "Patches",       "type": "list",   "val": OMM_BUILDER_GUI_MENU_PATCHES,  "checks": "size"       },
         { "name": "Texture Packs", "type": "list",   "val": OMM_BUILDER_GUI_MENU_TEXTURES, "checks": "size"       },
         { "name": "Sound Packs",   "type": "list",   "val": OMM_BUILDER_GUI_MENU_SOUNDS,   "checks": "size"       },
-        { "name": "Model Packs",   "type": "list",   "val": OMM_BUILDER_GUI_MENU_MODELS,   "checks": "size;model" },
+        { "name": "Model Packs",   "type": "list",   "val": OMM_BUILDER_GUI_MENU_MODELS,   "checks": "size"       },
         { "name": "Audio Packs",   "type": "list",   "val": OMM_BUILDER_GUI_MENU_AUDIOS,   "checks": "size;audio" },
         { "name": "Build and Run", "type": "action", "val": OMM_BUILDER_GUI_ACTION_BUILD                          },
     ],
     "speed": [
-        { "name": "Slow",    "jobs":  ""                         },
-        { "name": "Fast",    "jobs": f" -j{os.cpu_count() // 2}" },
-        { "name": "Faster",  "jobs": f" -j{os.cpu_count()}"      },
-        { "name": "Fastest", "jobs":  " -j"                      },
+        { "name": "Slow",    "jobs": ""                               },
+        { "name": "Fast",    "jobs": " -j" + str(os.cpu_count() // 2) },
+        { "name": "Faster",  "jobs": " -j" + str(os.cpu_count()     ) },
+        { "name": "Fastest", "jobs": " -j"                            },
     ],
     "rapi": [
         { "name": "OpenGL 2.1", "flags": " RENDER_API=GL WINDOW_API=SDL2 AUDIO_API=SDL2 CONTROLLER_API=SDL2 GRUCODE=f3dex2e"    },
@@ -196,7 +203,7 @@ OMM_BUILDER_DATA = {
 
 OMM_BUILDER_INFO = {
     "game": [
-        { "info": "PC Port of Super Mario 64 with additional features. DynOS is available as a patch."                                },
+        { "info": "PC Port of Super Mario 64 with additional features."                                                               },
         { "info": "Up-to-date PC Port of Super Mario 64 featuring enhancements and optimizations from HackerSM64."                    },
         { "info": "PC Port mod developed by TurnFlashed, S4ys and Fito. Features 10 new worlds and a total of 50 Moons."              },
         { "info": "PC Port of Lugmillord's rom-hack, Super Mario 74. Features both Normal and Extreme Editions."                      },
@@ -214,7 +221,6 @@ OMM_BUILDER_INFO = {
     "build": [
         { "info": "Building process duration. The faster, the more power-consuming."                                                  },
         { "info": "Backend used to render the game."                                                                                  },
-        { "info": "Patch the latest version of DynOS to enable Model Packs support as well as an enhanced options menu."              },
         { "info": "Game-changing modifications. Not all patches are compatible, so expect errors with some of them."                  },
         { "info": "Replace the game's original textures by custom ones."                                                              },
         { "info": "Replace the game's original sounds by custom ones."                                                                },
@@ -223,6 +229,63 @@ OMM_BUILDER_INFO = {
         { "info": "Compile the game."                                                                                                 },
     ],
 }
+
+#
+# Commands
+#
+
+def PATH(path):
+    return "\\\"" + path + "\\\""
+
+def copy_file(path_from: str, path_to: str):
+    __bash__(f"cp -f {PATH(path_from)} {PATH(path_to)}")
+
+def copy_dir(path_from: str, path_to: str):
+    __bash__(f"cp -rf {PATH(path_from)} {PATH(path_to)}")
+
+def move_file(path_from: str, path_to: str):
+    __bash__(f"mv -f {PATH(path_from)} {PATH(path_to)}")
+
+def move_dir(path_from: str, path_to: str):
+    __bash__(f"rm -rf {PATH(path_to)}")
+    __bash__(f"mv -f {PATH(path_from)} {PATH(path_to)}")
+
+def remove_file(path: str):
+    __bash__(f"rm -f {PATH(path)}")
+
+def remove_dir(path: str):
+    __bash__(f"rm -rf {PATH(path)}")
+
+def wget(url: str, dest: str, quiet: bool = True):
+    __bash__(f"wget --no-check-certificate --no-cache --no-cookies {'-q' if quiet else ''} {url} -O {PATH(dest)} || rm -f {PATH(dest)}")
+
+def git_clone(url: str, branch: str, dest: str):
+    __bash__(f"git clone --single-branch {url} {('-b ' + branch) if branch else ''} {PATH(dest)}")
+
+def git_apply(path: str):
+    __bash__(f"git apply --reject --whitespace=nowarn {PATH(path)}")
+
+def git_reset(commit: str):
+    __bash__(f"git reset -q --hard {commit}")
+
+def git_diff(dest: str):
+    __bash__(f"git add .")
+    __bash__(f"git diff --diff-algorithm=minimal --unified=2 -p --staged --binary > {PATH(dest)}")
+
+def git_update(branch: str, commit: str, clean: bool):
+    __bash__(f"git config pull.rebase true")
+    if branch: __bash__(f"git checkout {branch} -q")
+    __bash__(f"git reset -q --hard")
+    if clean: __bash__(f"git clean -q -fdx")
+    __bash__(f"git pull -q")
+    if commit: __bash__(f"git reset -q --hard {commit}")
+
+def zip_files(path: str, dest: str):
+    import shutil
+    shutil.make_archive(dest, "zip", path, verbose=False)
+
+def unzip_files(path: str, dest: str):
+    __bash__(f"7z x {PATH(path)} -o{dest} > /dev/null 2>&1")
 
 #
 # Custom resources
@@ -248,7 +311,7 @@ def to_title(s: str) -> str:
     return s
 
 def is_patch_file(path: str) -> bool:
-    return os.path.isfile(path) and ".patch" in path and all([ exclude not in path.lower() for exclude in [ "omm", "dynos" ]])
+    return os.path.isfile(path) and ".patch" in path and all([ exclude not in path.lower() for exclude in [ "omm" ]])
 
 def get_patch_file(path: str) -> tuple[str, str]:
     name = path[path.rfind('/') + 1:path.find('.patch')]
@@ -305,6 +368,62 @@ OMM_BUILDER_CUSTOM_RESOURCES = {
 }
 
 #
+# Downloadable resources
+#
+
+def download_file(url: str, dest: str, args: dict):
+    wget(url, dest, False)
+
+def clone_repo_and_clean(url: str, dest: str, args: dict):
+    git_clone(url, args["branch"], dest)
+    remove_dir(dest + "/.git")
+    remove_dir(dest + "/.github")
+    for dir in args.get("clean", {}).get("dirs", []):
+        remove_dir(dest + "/" + dir)
+    for file in args.get("clean", {}).get("files", []):
+        remove_file(dest + "/" + file)
+    print("")
+
+OMM_BUILDER_DOWNLOADS = {
+    "@dynos_patch": {
+        "name": "DynOS",
+        "type": "patches",
+        "dest": "DynOS.patch",
+        "path": "DynOS.patch",
+        "url" : "https://raw.githubusercontent.com/PeachyPeachSM64/sm64ex-omm-resources/master/dynos.patch",
+        "func": download_file,
+        "args": {},
+    },
+    "@omm_hd_texture_pack": {
+        "name": "OMM HD",
+        "type": "textures",
+        "dest": "OMM_HD",
+        "path": "OMM_HD",
+        "url" : "https://github.com/PeachyPeachSM64/sm64ex-omm-resources.git",
+        "func": clone_repo_and_clean,
+        "args": { "branch": "omm-hd", "clean": {} },
+    },
+    "@render96_model_pack": {
+        "name": "Render96 Model Pack",
+        "type": "models",
+        "dest": "Render96_Model_Pack.7z",
+        "path": "Render96_Model_Pack/Render96_DynOs_v3.2",
+        "url" : "https://github.com/Render96/ModelPack/releases/download/3.2/Render96_DynOs_v3.2.7z",
+        "func": download_file,
+        "args": {},
+    },
+    "@render96_hd_texture_pack": {
+        "name": "Render96 HD",
+        "type": "textures",
+        "dest": "Render96_HD",
+        "path": "Render96_HD",
+        "url" : "https://github.com/pokeheadroom/RENDER96-HD-TEXTURE-PACK.git",
+        "func": clone_repo_and_clean,
+        "args": { "branch": "master", "clean": { "dirs": ["screenshots"] } },
+    },
+}
+
+#
 # Utils
 #
 
@@ -340,16 +459,6 @@ def check_availability(state: dict, menu_item: dict) -> tuple[bool, str]:
         if "size" in menu_item["checks"] and len(OMM_BUILDER_DATA[OMM_BUILDER_DATA["menus"][menu_item["val"]]["list"]]) == 0:
             return False, "There is no available element in " + OMM_BUILDER_DATA["menus"][menu_item["val"]]["name"] + "."
 
-        # Check DynOS patchable
-        if "dynos" in menu_item["checks"] and not game["dynos"]:
-            state["dynos"] = False
-            return False, "DynOS cannot be patched to " + game["name"] + "."
-
-        # Check Model Packs compatibility
-        if "model" in menu_item["checks"] and not game["model"]:
-            state["models"] = [ False for _ in state["models"] ]
-            return False, "Model Packs cannot be used without DynOS."
-
         # Check Audio Packs compatibility
         if "audio" in menu_item["checks"] and not game["audio"]:
             state["audios"] = [ False for _ in state["audios"] ]
@@ -371,6 +480,12 @@ def slen(s: str) -> int:
         if c == 'm': escape = False
     return length
 
+def sanitize_name(name):
+    sanitized_name = name
+    for c in [' ', '(', ')', '[', ']', '{', '}']:
+        sanitized_name = sanitized_name.replace(c, '_')
+    return sanitized_name
+
 #
 # File utils
 #
@@ -385,8 +500,7 @@ def get_exe(dir: str) -> str:
 def start_game(dir: str):
     exe = get_exe(dir)
     if not exe: raise_error("Game executable not found.")
-    if ".exe" in exe: os.system("start " + exe)
-    else: os.system("./" + exe + " &")
+    __bash__(f"./{exe} &")
 
 def get_omm_version(path: str) -> dict:
     version = {
@@ -403,7 +517,7 @@ def get_omm_version(path: str) -> dict:
                     version[k] = data[i0 + len(k + " :="):i1].lstrip(' \t\r\n').rstrip(' \t\r\n')
     return version
 
-def get_omm_patch_dir() -> str:
+def get_omm_source_dir() -> str:
     for dirname in os.listdir("."):
         if os.path.isdir(dirname) and "omm." in dirname:
             return dirname
@@ -416,15 +530,12 @@ def set_patched(name: str):
     os.makedirs("enhancements", exist_ok=True)
     with open("enhancements/" + name + ".patched", 'w') as f: f.write("")
 
-def apply_patch(filepath: str):
-    os.system("git apply --reject --whitespace=nowarn \"" + filepath + "\"")
-
-def remove_files(root: str, condition):
+def delete_files(root: str, condition):
     for dirpath, _, filenames in os.walk(root):
         for filename in filenames:
             filepath = dirpath + "/" + filename
             if os.path.isfile(filepath) and condition(root, filepath):
-                os.remove(filepath)
+                remove_file(filepath)
 
 def fix_typo(filepath: str, str_from: str, str_to: str):
     if os.path.isfile(filepath):
@@ -448,21 +559,20 @@ def fix_typo(filepath: str, str_from: str, str_to: str):
             file.close()
 
 def create_omm_patch():
-    dir = get_omm_patch_dir()
+    dir = get_omm_source_dir()
     if len(dir) > 0:
-        os.system("git clone --single-branch https://github.com/sm64pc/sm64ex.git -b nightly temp -q")
+        git_clone("https://github.com/sm64pc/sm64ex.git", "nighlty", "temp")
         if os.path.isdir("temp"):
             os.chdir("temp")
-            os.system("cp -rf \"../" + dir + "/.\" .")
-            os.system("git add .")
-            os.system("git diff --diff-algorithm=minimal --unified=2 -p --staged --binary > ../omm.patch.bin")
+            copy_dir("../" + dir + "/.", ".")
+            git_diff("../omm.patch.bin")
             os.chdir("..")
-            os.system("rm -rf temp")
+            remove_dir("temp")
 
-def clear_omm_patches():
+def clear_omm_sources():
     for dirname in os.listdir("."):
         if os.path.isdir(dirname) and "omm." in dirname:
-            os.system("rm -rf \"" + dirname + "\"")
+            remove_dir(dirname)
 
 #
 # GUI
@@ -489,7 +599,7 @@ def omm_builder_gui_print_buffer():
             if i == 0 or OMM_BUILDER_GUI_BUFFER_0[i] != OMM_BUILDER_GUI_BUFFER_1[i]:
                 print("\033[" + str(i + 1) + ";1H" + OMM_BUILDER_GUI_BUFFER_0[i])
     else:
-        os.system("clear")
+        __bash__("clear")
         for line in OMM_BUILDER_GUI_BUFFER_0: print(line)
     OMM_BUILDER_GUI_BUFFER_1 = OMM_BUILDER_GUI_BUFFER_0[:]
 
@@ -501,8 +611,8 @@ def omm_builder_gui_get_header_info(state: dict, label: str, menu: int, var: str
 def omm_builder_gui_print_header(state: dict):
     header = [
         [ omm_builder_gui_get_header_info(state, "Builder Ver ", OMM_BUILDER_GUI_MENU_CLOSE,    OMM_BUILDER_VERSION), COL_LMAGENTA + "<E>" + COL_LGRAY + "  Up    ", FMT_BOLD + COL_LYELLOW + OMM_BUILDER_GUI_LOGO_0 ],
-        [ omm_builder_gui_get_header_info(state, "OMM Version ", OMM_BUILDER_GUI_MENU_CLOSE,    OMM_PATCH_VERSION  ), COL_LMAGENTA + "<D>" + COL_LGRAY + "  Down  ", FMT_BOLD + COL_LYELLOW + OMM_BUILDER_GUI_LOGO_1 ],
-        [ omm_builder_gui_get_header_info(state, "OMM Revision", OMM_BUILDER_GUI_MENU_CLOSE,    OMM_PATCH_REVISION ), COL_LMAGENTA + "<S>" + COL_LGRAY + "  Left  ", FMT_BOLD + COL_LYELLOW + OMM_BUILDER_GUI_LOGO_2 ],
+        [ omm_builder_gui_get_header_info(state, "OMM Version ", OMM_BUILDER_GUI_MENU_CLOSE,    OMM_SOURCE_VERSION  ), COL_LMAGENTA + "<D>" + COL_LGRAY + "  Down  ", FMT_BOLD + COL_LYELLOW + OMM_BUILDER_GUI_LOGO_1 ],
+        [ omm_builder_gui_get_header_info(state, "OMM Revision", OMM_BUILDER_GUI_MENU_CLOSE,    OMM_SOURCE_REVISION ), COL_LMAGENTA + "<S>" + COL_LGRAY + "  Left  ", FMT_BOLD + COL_LYELLOW + OMM_BUILDER_GUI_LOGO_2 ],
         [ omm_builder_gui_get_header_info(state, "Game Name   ", OMM_BUILDER_GUI_MENU_COMMANDS, "game"             ), COL_LMAGENTA + "<F>" + COL_LGRAY + "  Right ", FMT_BOLD + COL_LYELLOW + OMM_BUILDER_GUI_LOGO_3 ],
         [ omm_builder_gui_get_header_info(state, "Build Speed ", OMM_BUILDER_GUI_MENU_BUILD,    "speed"            ), COL_LMAGENTA + "<C>" + COL_LGRAY + "  Select", FMT_BOLD + COL_LYELLOW + OMM_BUILDER_GUI_LOGO_4 ],
         [ omm_builder_gui_get_header_info(state, "Render API  ", OMM_BUILDER_GUI_MENU_BUILD,    "rapi"             ), COL_LMAGENTA + "<X>" + COL_LGRAY + "  Back  ", FMT_BOLD + COL_LYELLOW + OMM_BUILDER_GUI_LOGO_5 ],
@@ -595,8 +705,8 @@ def omm_builder_gui_process_input(state: dict):
             key = get_char()
         except:
             print("\033[?25h") # Show cursor
-            os.system("stty echo") # Re-enable echo
-            os.system("clear")
+            __bash__("stty echo") # Re-enable echo
+            __bash__("clear")
             exit(0)
     if not key: return
 
@@ -666,19 +776,20 @@ def omm_builder_gui_init(resources: dict):
         } for _, item in items.items() ]
 
     # Init builder state
+    terminal_width = int(__call__("tput cols"))
+    terminal_height = int(__call__("tput lines"))
     state = {
-        "width": int(subprocess.check_output("tput cols", shell=True)),
-        "height": int(subprocess.check_output("tput lines", shell=True)),
+        "width": terminal_width,
+        "height": terminal_height,
         "menu": OMM_BUILDER_GUI_MENU_GAMES,
         "action": OMM_BUILDER_GUI_ACTION_NONE,
         "input": "",
         "index": 0,
         "start": 0,
-        "lines": int(subprocess.check_output("tput lines", shell=True)) - 12,
+        "lines": terminal_height - 12,
         "game": 0,
         "speed": 2,
         "rapi": 0,
-        "dynos": False,
         **{ resource: [ False for _ in resources[resource] ] for resource in OMM_BUILDER_CUSTOM_RESOURCES },
     }
 
@@ -697,7 +808,7 @@ def omm_builder_gui_init(resources: dict):
     return state
 
 def omm_builder_gui_update(state: dict):
-    os.system("stty -echo") # Disable echo
+    __bash__("stty -echo") # Disable echo
     print("\033[?25l") # Hide cursor
     while state["menu"] != OMM_BUILDER_GUI_MENU_CLOSE and state["action"] == OMM_BUILDER_GUI_ACTION_NONE:
         omm_builder_gui_clear()
@@ -708,8 +819,8 @@ def omm_builder_gui_update(state: dict):
         omm_builder_gui_print_buffer()
         omm_builder_gui_process_input(state)
     print("\033[?25h") # Show cursor
-    os.system("stty echo") # Re-enable echo
-    os.system("clear")
+    __bash__("stty echo") # Re-enable echo
+    __bash__("clear")
     print("")
     return state
 
@@ -742,8 +853,8 @@ def omm_builder_init():
         print("| - If you're already authenticated, this step will be skipped.         |")
         print("| - If the authentication fails, the builder won't start.               |")
         print("+-----------------------------------------------------------------------+")
-        os.system("git config --global credential.helper store")
-        try: subprocess.check_output("git pull -q", shell=True)
+        __bash__("git config --global credential.helper store")
+        try: __call__("git pull -q")
         except:
             input("Press ENTER to quit.")
             exit(0)
@@ -765,31 +876,21 @@ def omm_builder_check_dependencies():
         raise_error("Python v3.9 or later is required.")
 
     # Check dependencies
-    for dep, cmd in [
-        ( "make",  "make -help" ),
-        ( "git",   "git help"   ),
-        ( "zip",   "zip -hh"    ),
-        ( "unzip", "unzip -hh"  ),
-        ( "7z",    "7z"         ),
-        ( "cc",    "cc --help"  ),
-        ( "gcc",   "gcc --help" ),
-        ( "g++",   "g++ --help" ),
-        ( "cpp",   "cpp --help" ),
-    ]:
+    for dependency in ["make", "git", "zip", "unzip", "7z", "cc", "gcc", "g++", "cpp"]:
         try:
-            print("Checking dependency: '" + dep + "'... ", end='')
-            subprocess.check_output(cmd, shell=True)
+            print("Checking dependency: '" + dependency + "'... ", end='')
+            __call__("command -v " + dependency)
             print(COL_GREEN + "OK" + FMT_RESET)
         except:
             raise_error("Missing dependency. To fix it:\n[Windows] Download and run the 'OMM Builder Setup Script'.\n[Linux] Run the command 'sudo apt install build-essential git python3 libglew-dev libsdl2-dev zip p7zip*'.")
 
 def omm_builder_check_for_updates():
     if not check_arg(OMM_BUILDER_ARG_INPUT): # Skip builder update if input arg
-        os.system(f"wget --no-check-certificate --no-cache --no-cookies {OMM_BUILDER_VERSION_URL} -O omm_builder.version -q || rm -f omm_builder.version")
+        wget(OMM_BUILDER_VERSION_URL, "omm_builder.version")
         if os.path.isfile("omm_builder.version"):
             filecmp.clear_cache()
             up_to_date = filecmp.cmp("omm_builder.py", "omm_builder.version", shallow=False)
-            os.remove("omm_builder.version")
+            remove_file("omm_builder.version")
             if not up_to_date:
                 print("Your OMM builder is not up-to-date.")
                 print("Do you want to download and install the latest version? [y/n] ", end='')
@@ -798,16 +899,14 @@ def omm_builder_check_for_updates():
                     answer = input().lower()
                 if answer == "y":
                     print("Updating OMM builder...")
-                    os.system("git config pull.rebase true")
-                    os.system("git checkout master -q")
-                    os.system("git pull -q")
-                    os.system("rm -rf custom")
+                    git_update("builder", None, False)
+                    remove_dir("custom")
                     print("Done.")
                     exit(0)
 
 def omm_builder_check_omm_commands():
 
-    # Create .patch file
+    # Create patch file
     if check_arg(OMM_BUILDER_ARG_PATCH):
         print("--- Creating OMM patch file...")
         create_omm_patch()
@@ -816,58 +915,72 @@ def omm_builder_check_omm_commands():
     
     # Delete all omm* directories
     if check_arg(OMM_BUILDER_ARG_CLEAR):
-        print("--- Clearing OMM patches...")
-        clear_omm_patches()
+        print("--- Clearing OMM sources...")
+        clear_omm_sources()
         print("Done.")
         exit(0)
 
 def omm_builder_check_omm_version():
-    global OMM_PATCH_VERSION
-    global OMM_PATCH_REVISION
-    global OMM_PATCH_DIRNAME
-    global OMM_PATCH_TRUENAME
+    global OMM_SOURCE_VERSION
+    global OMM_SOURCE_REVISION
+    global OMM_SOURCE_DIRNAME
+    global OMM_SOURCE_TRUENAME
     print("--- Checking OMM version...")
-    if not check_arg(OMM_BUILDER_ARG_LOCAL): os.system(f"wget --no-check-certificate --no-cache --no-cookies {OMM_VERSION_URL} -O omm.version -q || rm -f omm.version")
+    if not check_arg(OMM_BUILDER_ARG_LOCAL): wget(OMM_NIGHTLY_VERSION_URL, "omm.version")
     if os.path.isfile("omm.version"):
         version = get_omm_version("omm.version")
-        OMM_PATCH_VERSION = version["OMM_VERSION_NUMBER"]
-        OMM_PATCH_REVISION = version["OMM_VERSION_REVISION"]
-        if not OMM_PATCH_VERSION: raise_error("Cannot retrieve remote OMM version number.")
-        if not OMM_PATCH_REVISION: raise_error("Cannot retrieve remote OMM revision number.")
-        OMM_PATCH_DIRNAME = "omm." + OMM_PATCH_VERSION + "." + OMM_PATCH_REVISION
-        os.remove("omm.version")
+        OMM_SOURCE_VERSION = version["OMM_VERSION_NUMBER"]
+        OMM_SOURCE_REVISION = version["OMM_VERSION_REVISION"]
+        if not OMM_SOURCE_VERSION: raise_error("Cannot retrieve remote OMM version number.")
+        if not OMM_SOURCE_REVISION: raise_error("Cannot retrieve remote OMM revision number.")
+        OMM_SOURCE_DIRNAME = "omm." + OMM_SOURCE_VERSION + "." + OMM_SOURCE_REVISION
+        remove_file("omm.version")
     elif check_arg(OMM_BUILDER_ARG_FORCE):
         print("Forcing update of OMM...")
-        OMM_PATCH_VERSION = "latest"
-        OMM_PATCH_REVISION = "1"
-        OMM_PATCH_DIRNAME = "omm." + OMM_PATCH_VERSION + "." + OMM_PATCH_REVISION
+        OMM_SOURCE_VERSION = "latest"
+        OMM_SOURCE_REVISION = "1"
+        OMM_SOURCE_DIRNAME = "omm." + OMM_SOURCE_VERSION + "." + OMM_SOURCE_REVISION
     else:
         print("Unable to retrieve remote OMM version number.")
-        print("Using local OMM patch...")
-        OMM_PATCH_DIRNAME = get_omm_patch_dir()
-        if not OMM_PATCH_DIRNAME: raise_error("Cannot find any OMM patch.")
-        version = get_omm_version(OMM_PATCH_DIRNAME + "/omm.mk")
-        OMM_PATCH_VERSION = version["OMM_VERSION_NUMBER"]
-        OMM_PATCH_REVISION = version["OMM_VERSION_REVISION"]
-        if not OMM_PATCH_VERSION: raise_error("Cannot retrieve local OMM version number.")
-        if not OMM_PATCH_REVISION: raise_error("Cannot retrieve local OMM revision number.")
-    OMM_PATCH_TRUENAME = "omm." + OMM_PATCH_VERSION + "." + OMM_PATCH_REVISION
-    print("Version: " + OMM_PATCH_VERSION)
-    print("Revision: " + OMM_PATCH_REVISION)
-    print("Directory: " + OMM_PATCH_DIRNAME)
+        print("Using local OMM source...")
+        OMM_SOURCE_DIRNAME = get_omm_source_dir()
+        if not OMM_SOURCE_DIRNAME: raise_error("Cannot find any OMM source.")
+        version = get_omm_version(OMM_SOURCE_DIRNAME + "/omm.mk")
+        OMM_SOURCE_VERSION = version["OMM_VERSION_NUMBER"]
+        OMM_SOURCE_REVISION = version["OMM_VERSION_REVISION"]
+        if not OMM_SOURCE_VERSION: raise_error("Cannot retrieve local OMM version number.")
+        if not OMM_SOURCE_REVISION: raise_error("Cannot retrieve local OMM revision number.")
+    OMM_SOURCE_TRUENAME = "omm." + OMM_SOURCE_VERSION + "." + OMM_SOURCE_REVISION
+    print("Version: " + OMM_SOURCE_VERSION)
+    print("Revision: " + OMM_SOURCE_REVISION)
+    print("Directory: " + OMM_SOURCE_DIRNAME)
 
-def omm_builder_extract_zips():
+def omm_builder_extract_zips(path):
     print("--- Extracting zip archives...")
-    for dirpath, _, filenames in os.walk("custom"):
+    for dirpath, _, filenames in os.walk(path):
         for filename in filenames:
             fullname = dirpath + "/" + filename
             ext = fullname[fullname.rfind('.'):].lower()
             if os.path.isfile(fullname) and ext in [".7z", ".zip", ".gz", ".tar", ".rar"]:
-                dir = fullname[:fullname.rfind('.')]
+                dir = sanitize_name(fullname[:fullname.rfind('.')])
                 if not os.path.isdir(dir):
                     os.makedirs(dir, exist_ok=True)
                     print("Extracting " + fullname + "...")
-                    os.system("7z x \"" + fullname + "\" -o\"" + dir + "\" > /dev/null 2>&1")
+                    unzip_files(fullname, dir)
+
+def omm_builder_sanitize_names(path):
+    for dirpath, dirnames, filenames in os.walk(path):
+        for dirname in dirnames:
+            fullname = dirpath + "/" + dirname
+            sanitized = sanitize_name(fullname)
+            if fullname != sanitized:
+                move_dir(fullname, sanitized)
+                return omm_builder_sanitize_names(path)
+        for filename in filenames:
+            fullname = dirpath + "/" + filename
+            sanitized = sanitize_name(fullname)
+            if fullname != sanitized:
+                move_file(fullname, sanitized)
 
 def omm_builder_scan_custom():
     resources = {
@@ -877,6 +990,8 @@ def omm_builder_scan_custom():
         "models": {},
         "audios": {},
     }
+
+    # Add scanned resources
     for dirpath, dirnames, filenames in os.walk("custom"):
         for xname in filenames + dirnames:
             for resource, functions in OMM_BUILDER_CUSTOM_RESOURCES.items():
@@ -885,6 +1000,13 @@ def omm_builder_scan_custom():
                     name, path = functions["get"](path)
                     if name not in resources[resource]:
                         resources[resource][name] = path
+
+    # Add downloadable resources
+    for id, res in OMM_BUILDER_DOWNLOADS.items():
+        res_path = "custom/" + res["dest"]
+        if not os.path.exists(res_path):
+            resources[res["type"]][res["name"]] = id
+
     return resources
 
 def omm_builder_process_command(state: dict):
@@ -895,7 +1017,6 @@ def omm_builder_process_command(state: dict):
         state_game     = state["game"]
         state_speed    = state["speed"]
         state_rapi     = state["rapi"]
-        state_dynos    = state["dynos"]
         state_patches  = state["patches"]
         state_textures = state["textures"]
         state_sounds   = state["sounds"]
@@ -915,7 +1036,7 @@ def omm_builder_process_command(state: dict):
         game_audios    = OMM_BUILDER_DATA["audios"]
 
         # Make values
-        make_debug     = " DEBUG=1 OMM_DEBUG=1 OMM_DEV=1" if check_arg(OMM_BUILDER_ARG_DEBUG) else ""
+        make_debug     = " DEBUG=1 OMM_DEBUG=1" if check_arg(OMM_BUILDER_ARG_DEBUG) else ""
         make_speed     = OMM_BUILDER_DATA["speed"][state_speed]["jobs"]
         make_rapi      = OMM_BUILDER_DATA["rapi"][state_rapi]["flags"]
 
@@ -928,7 +1049,7 @@ def omm_builder_process_command(state: dict):
         # Clear build directory
         if state_action == OMM_BUILDER_GUI_ACTION_CLEAR:
             print("--- Clearing " + game + " build directory...")
-            os.system("rm -rf \"" + game_dir + "/build\"")
+            remove_dir(game_dir + "/build")
             print("Done.")
             exit(0)
 
@@ -937,18 +1058,14 @@ def omm_builder_process_command(state: dict):
             print("--- Resetting " + game + "...")
             if os.path.isdir(game_dir):
                 os.chdir(game_dir)
-                os.system("git config pull.rebase true")
-                os.system("git reset -q --hard")
-                os.system("git clean -q -fdx")
-                os.system("git pull  -q")
-                os.system("git reset -q --hard " + game_commit)
+                git_update(None, game_commit, True)
             print("Done.")
             exit(0)
 
         # Delete target directory
         if state_action == OMM_BUILDER_GUI_ACTION_DELETE:
             print("--- Deleting " + game + "...")
-            os.system("rm -rf \"" + game_dir + "\"")
+            remove_dir(game_dir)
             print("Done.")
             exit(0)
 
@@ -956,78 +1073,74 @@ def omm_builder_process_command(state: dict):
         if state_action == OMM_BUILDER_GUI_ACTION_BUILD:
             print("--- Building " + game + "...")
             global OMM_BUILDER_BASEROM
-            global OMM_PATCH_VERSION
-            global OMM_PATCH_REVISION
-            global OMM_PATCH_DIRNAME
-            global OMM_PATCH_TRUENAME
+            global OMM_SOURCE_VERSION
+            global OMM_SOURCE_REVISION
+            global OMM_SOURCE_DIRNAME
+            global OMM_SOURCE_TRUENAME
 
-            # Check OMM patch: Create it or update it to the latest version
-            print("--- Checking OMM patch (1/3)...")
-            local_patch_dir = get_omm_patch_dir()
-            if local_patch_dir is not None and os.path.isdir(local_patch_dir):
-                local_patch = get_omm_version(local_patch_dir + "/omm.mk")
-                local_patch_ver = local_patch["OMM_VERSION_NUMBER"]
-                local_patch_rev = local_patch["OMM_VERSION_REVISION"]
+            # Check OMM source: Create it or update it to the latest version
+            print("--- Checking OMM source (1/3)...")
+            local_omm_source_dir = get_omm_source_dir()
+            if local_omm_source_dir is not None and os.path.isdir(local_omm_source_dir):
+                local_omm_source = get_omm_version(local_omm_source_dir + "/omm.mk")
+                local_omm_source_ver = local_omm_source["OMM_VERSION_NUMBER"]
+                local_omm_source_rev = local_omm_source["OMM_VERSION_REVISION"]
             else:
-                local_patch_ver = ""
-                local_patch_rev = ""
-            up_to_date = not check_arg(OMM_BUILDER_ARG_FORCE) and (local_patch_ver == OMM_PATCH_VERSION) and (local_patch_rev == OMM_PATCH_REVISION)
-            if not up_to_date or not os.path.isdir(OMM_PATCH_DIRNAME):
+                local_omm_source_ver = ""
+                local_omm_source_rev = ""
+            up_to_date = not check_arg(OMM_BUILDER_ARG_FORCE) and (local_omm_source_ver == OMM_SOURCE_VERSION) and (local_omm_source_rev == OMM_SOURCE_REVISION)
+            if not up_to_date or not os.path.isdir(OMM_SOURCE_DIRNAME):
 
                 # Delete all omm.* directories
-                print("Removing old OMM patches...")
-                clear_omm_patches()
+                print("Removing old OMM sources...")
+                clear_omm_sources()
 
                 # Clone the OMM repository
-                OMM_PATCH_DIRNAME = OMM_PATCH_TRUENAME
-                print("Creating '" + OMM_PATCH_DIRNAME + "' from the latest version...")
-                os.system("git clone --single-branch " + OMM_REPOSITORY_URL + " " + OMM_PATCH_DIRNAME)
-                if not os.path.isdir(OMM_PATCH_DIRNAME):
+                OMM_SOURCE_DIRNAME = OMM_SOURCE_TRUENAME
+                print("Creating '" + OMM_SOURCE_DIRNAME + "' from the latest version...")
+                git_clone(OMM_REPOSITORY_URL, "nightly", OMM_SOURCE_DIRNAME)
+                if not os.path.isdir(OMM_SOURCE_DIRNAME):
                     raise_error("Cannot clone the git repository: " + OMM_REPOSITORY_URL)
 
-            # Check OMM patch: Delete the .git, .github and .vscode directories and keep only the files that contain "omm/", "omm_" or "omm."
-            print("--- Checking OMM patch (2/3)...")
-            os.system("rm -rf \"" + OMM_PATCH_DIRNAME + "/.git\"")
-            os.system("rm -rf \"" + OMM_PATCH_DIRNAME + "/.github\"")
-            os.system("rm -rf \"" + OMM_PATCH_DIRNAME + "/.vscode\"")
+            # Check OMM source: Delete the .git, .github and .vscode directories and keep only the files that contain "omm/", "omm_" or "omm."
+            print("--- Checking OMM source (2/3)...")
+            remove_dir(OMM_SOURCE_DIRNAME + "/.git")
+            remove_dir(OMM_SOURCE_DIRNAME + "/.github")
+            remove_dir(OMM_SOURCE_DIRNAME + "/.vscode")
             is_not_omm_file = lambda root, filepath : not any([ pattern in filepath[len(root):] for pattern in ["omm/", "omm_", "omm."] ])
-            remove_files(OMM_PATCH_DIRNAME, is_not_omm_file)
+            delete_files(OMM_SOURCE_DIRNAME, is_not_omm_file)
 
             # Clone the game repository
             fresh_clone = False
             if not os.path.isdir(game_dir):
                 print("--- Cloning " + game + " repository...")
                 os.makedirs(game_dir)
-                os.system("git clone --single-branch " + game_repo + " " + game_dir)
+                git_clone(game_repo, None, game_dir)
                 if not os.path.isdir(game_dir):
                     raise_error("Cannot clone the git repository: " + game_repo)
                 os.chdir(game_dir)
-                os.system("git reset -q --hard " + game_commit)
+                git_reset(game_commit)
                 fresh_clone = True
             else:
                 os.chdir(game_dir)
 
-            # Check OMM patch: if a omm.*.patched file exists but is not the latest version, reset the directory
-            print("--- Checking OMM patch (3/3)...")
-            if not fresh_clone and (not up_to_date or not is_patched(OMM_PATCH_TRUENAME) or check_arg(OMM_BUILDER_ARG_RESET)):
+            # Check OMM source: if a omm.*.patched file exists but is not the latest version, reset the directory
+            print("--- Checking OMM source (3/3)...")
+            if not fresh_clone and (not up_to_date or not is_patched(OMM_SOURCE_TRUENAME) or check_arg(OMM_BUILDER_ARG_RESET)):
                 print("--- Resetting " + game + "...")
-                os.system("git config pull.rebase true")
-                os.system("git reset -q --hard")
-                os.system("git clean -q -fdx")
-                os.system("git pull  -q")
-                os.system("git reset -q --hard " + game_commit)
+                git_update(None, game_commit, True)
 
             # Copy the dependency
             dependency = OMM_BUILDER_DATA["game"][state_game]["dep"]
             if dependency and not is_patched(dependency):
                 print("--- Copying dependency contents...")
-                os.system("cp -rf \"../../" + dependency + "/.\" .")
+                copy_dir("../../" + dependency + "/.", ".")
                 set_patched(dependency)
 
             # Delete shitty files
             print("--- Eliminating bad files...")
             is_bad_file = lambda _, filepath : ".png.png" in filepath
-            remove_files(".", is_bad_file)
+            delete_files(".", is_bad_file)
 
             # Fix typos
             print("--- Fixing typos...")
@@ -1036,7 +1149,7 @@ def omm_builder_process_command(state: dict):
                     "$(SOUND_BIN_DIR)/sound_data.ctl $(SOUND_BIN_DIR)/sound_data.tbl $(SOUND_BIN_DIR)/sequences.bin $(SOUND_BIN_DIR)/bank_sets",
                     "$(SOUND_BIN_DIR)/sound_data.ctl.inc.c $(SOUND_BIN_DIR)/sound_data.tbl.inc.c $(SOUND_BIN_DIR)/sequences.bin.inc.c $(SOUND_BIN_DIR)/bank_sets.inc.c"
                 )
-                os.remove("sound/sound_data.s")
+                remove_file("sound/sound_data.s")
                 with open("sound/sound_data.c", 'w') as f:
                     f.write('unsigned char gSoundDataADSR[] = {\n')
                     f.write('#include "sound/sound_data.ctl.inc.c"\n')
@@ -1056,15 +1169,24 @@ def omm_builder_process_command(state: dict):
                     "$(GODDARD_O_FILES) -lstdc++ $(LDFLAGS)"
                 )
 
-            # Download and apply the DynOS patch
-            if state_dynos:
-                print("--- Applying DynOS patch...")
-                if not is_patched("dynos.patch"):
-                    os.system(f"wget --no-check-certificate --no-cache --no-cookies {DYNOS_PATCH_URL} -O dynos.patch -q || rm -f dynos.patch")
-                    if os.path.isfile("dynos.patch"):
-                        apply_patch("dynos.patch")
-                        set_patched("dynos.patch")
-                        os.remove("dynos.patch")
+            # Download missing content
+            downloaded = False
+            for resource_type in OMM_BUILDER_CUSTOM_RESOURCES.keys():
+                for i, resource in enumerate(OMM_BUILDER_DATA[resource_type]):
+                    if state[resource_type][i]:
+                        res = OMM_BUILDER_DOWNLOADS.get(resource["path"])
+                        if res:
+                            res_path = "../../custom/" + res["dest"]
+                            if not os.path.exists(res_path):
+                                if not downloaded:
+                                    print("--- Downloading resources...")
+                                    downloaded = True
+                                print("Downloading '" + res["name"] + "'...")
+                                res["func"](res["url"], res_path, res["args"])
+                                resource["path"] = "custom/" + res["path"]
+            if downloaded:
+                omm_builder_extract_zips("../../custom")
+                omm_builder_sanitize_names("../../custom")
 
             # Apply the selected patches
             if any(state_patches):
@@ -1077,13 +1199,13 @@ def omm_builder_process_command(state: dict):
                         patch_path = "../../" + patch["path"]
                         if not is_patched(patch_file) and os.path.isfile(patch_path):
                             print("Applying " + patch_name + "...")
-                            apply_patch(patch_path)
+                            git_apply(patch_path)
                             set_patched(patch_file)
 
             # Copy OMM contents, apply the Makefile patch and run the patcher
-            if not is_patched(OMM_PATCH_TRUENAME):
-                print("--- Applying OMM patch...")
-                os.system("cp -rf \"../../" + OMM_PATCH_DIRNAME + "/.\" .")
+            if not is_patched(OMM_SOURCE_TRUENAME):
+                print("--- Patching OMM...")
+                copy_dir("../../" + OMM_SOURCE_DIRNAME + "/.", ".")
 
                 # Patch Makefile
                 if not os.path.isfile("Makefile"):
@@ -1102,14 +1224,13 @@ def omm_builder_process_command(state: dict):
                     file.close()
 
                 # Run patcher
-                omm_patcher_args = "-p " + game_path + (" dynos" if state_dynos else "")
-                print("python3 omm_patcher.py " + omm_patcher_args)
-                os.system("python3 omm_patcher.py " + omm_patcher_args)
-                set_patched(OMM_PATCH_TRUENAME)
+                print("python3 omm_patcher.py -p")
+                __bash__("python3 omm_patcher.py -p")
+                set_patched(OMM_SOURCE_TRUENAME)
 
             # Copy the baserom and build the game
             print("--- Building game...")
-            os.system("cp -f \"../../" + OMM_BUILDER_BASEROM + "\" baserom.us.z64")
+            copy_file("../../" + OMM_BUILDER_BASEROM, "baserom.us.z64")
 
             # Make
             make_cmd = "make" + make_speed + " OMM_BUILDER=1" + " VERSION=us" + make_rapi + make_debug
@@ -1122,9 +1243,9 @@ def omm_builder_process_command(state: dict):
             # Let's-a-go
             print(make_cmd)
             make_tries = 5
-            make_logs = f"../../{game_path}.logs.txt"
+            make_logs = "../../" + game_path + ".logs.txt"
             for make_try in range(make_tries):
-                os.system(make_cmd + " 2>&1 | tee " + make_logs)
+                __bash__(f"{make_cmd} 2>&1 | tee {PATH(make_logs)}")
 
                 # If the executable is built, everything went right
                 if get_exe(".") is not None:
@@ -1133,7 +1254,7 @@ def omm_builder_process_command(state: dict):
                 # It's becoming self-aware...
                 print("\nCompilation failed. Trying to understand the cause...")
                 if not os.path.isfile(make_logs):
-                    raise_error(f"Cannot read logs: Missing file '{game_path}.logs.txt'.")
+                    raise_error("Cannot read logs: Missing file '" + game_path + ".logs.txt'.")
 
                 # Jk, it's just reading logs
                 retry = False
@@ -1164,10 +1285,9 @@ def omm_builder_process_command(state: dict):
                     if state_textures[i]:
                         pack_name = pack["name"]
                         pack_path = pack["path"]
-                        pack_dest = pack_name.replace(' ', '_').lower() + ".zip"
+                        pack_dest = sanitize_name(pack_name).lower()
                         print("Installing " + pack_name + "...")
-                        os.system("( cd \"../../" + pack_path + "\" && zip -qr \"" + pack_dest + "\" * )")
-                        os.system("mv -f \"../../" + pack_path + "/" + pack_dest + "\" \"build/us_pc/res/" + pack_dest + "\"")
+                        zip_files("../../" + pack_path, "build/us_pc/res/" + pack_dest)
 
             # Install sound packs
             if any(state_sounds):
@@ -1176,10 +1296,9 @@ def omm_builder_process_command(state: dict):
                     if state_sounds[i]:
                         pack_name = pack["name"]
                         pack_path = pack["path"]
-                        pack_dest = pack_name.replace(' ', '_').lower() + ".zip"
+                        pack_dest = sanitize_name(pack_name).lower()
                         print("Installing " + pack_name + "...")
-                        os.system("( cd \"../../" + pack_path + "\" && zip -qr \"" + pack_dest + "\" * )")
-                        os.system("mv -f \"../../" + pack_path + "/" + pack_dest + "\" \"build/us_pc/res/" + pack_dest + "\"")
+                        zip_files("../../" + pack_path, "build/us_pc/res/" + pack_dest)
 
             # Install model packs
             if any(state_models):
@@ -1189,8 +1308,9 @@ def omm_builder_process_command(state: dict):
                     if state_models[i]:
                         pack_name = pack["name"]
                         pack_path = pack["path"]
+                        pack_dest = sanitize_name(pack_name)
                         print("Installing " + pack_name + "...")
-                        os.system("cp -rf \"../../" + pack_path + "\" \"build/us_pc/dynos/packs/" + pack_name + "\"")
+                        copy_dir("../../" + pack_path, "build/us_pc/dynos/packs/" + pack_dest)
 
             # Install audio packs
             if any(state_audios):
@@ -1201,12 +1321,12 @@ def omm_builder_process_command(state: dict):
                         pack_name = pack["name"]
                         pack_path = pack["path"]
                         print("Installing " + pack_name + "...")
-                        os.system("cp -rf \"../../" + pack_path + "/.\" \"build/us_pc/dynos/audio/\"")
+                        copy_dir("../../" + pack_path + "/.", "build/us_pc/dynos/audio/")
 
             # Fix permissions
-            os.system("chmod 755 -f -R ./build/us_pc/res")
-            os.system("chmod 755 -f -R ./build/us_pc/dynos")
-            os.system("chmod 755 -f " + exe)
+            __bash__(f"chmod 755 -f -R ./build/us_pc/res")
+            __bash__(f"chmod 755 -f -R ./build/us_pc/dynos")
+            __bash__(f"chmod 755 -f {exe}")
 
             # Run the game
             if not check_arg(OMM_BUILDER_ARG_BUILD):
@@ -1224,7 +1344,8 @@ if __name__ == "__main__":
     omm_builder_check_for_updates()
     omm_builder_check_omm_commands()
     omm_builder_check_omm_version()
-    omm_builder_extract_zips()
+    omm_builder_extract_zips("custom")
+    omm_builder_sanitize_names("custom")
     resources = omm_builder_scan_custom()
     state = omm_builder_gui_init(resources)
     state = omm_builder_gui_update(state)

@@ -8,6 +8,8 @@ moonshine/
 moonshine/*
 custom/
 custom/*
+builds/
+builds/*
 *.patch
 *.z64
 *.version
@@ -15,7 +17,4 @@ custom/*
 *.zip
 *.rar
 *.wav
-!coop/*
-!patch/omm.patch
-!patch/omm.patch.bin
-mingw64_path
+omm_make_build.sh
