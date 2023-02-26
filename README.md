@@ -1,6 +1,8 @@
 # Odyssey Mario's Moveset
 **Mod exclusively for the *Super Mario 64 PC Port*, developed by PeachyPeach.**
 
+**Check out the official [website](https://www.omm.lol)!**
+
 -----
 
 ## Build the game with *OMM Builder*
@@ -275,6 +277,7 @@ To install it and make it work, follow these steps:
 
 ## *Odyssey Mario's Moveset* content
 
+- [Releases](https://www.omm.lol/downloads)
 - [Patch file](https://raw.githubusercontent.com/PeachyPeachSM64/sm64ex-omm/patch/omm.patch) (Right click -> `Save As...`)
 - [In-depth guide](https://docs.google.com/document/d/1IlhCxYGulxrnbvqbSuBMC1JgtBIEwoCcK3l-urVUADk/edit) (by **Cancel the Eat**)
 - [Sparkly Stars guide](https://www.youtube.com/watch?v=xWHKPV-cbqI&list=PLFZ-DGZKGuUo3KuXfGoaP55RYiDXgxE8N) (by **Cancel the Eat**)
