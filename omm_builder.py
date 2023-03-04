@@ -260,7 +260,7 @@ def wget(url: str, dest: str, quiet: bool = True):
     __bash__(f"wget --no-check-certificate --no-cache --no-cookies {'-q' if quiet else ''} {url} -O {PATH(dest)} || rm -f {PATH(dest)}")
 
 def git_clone(url: str, branch: str, dest: str):
-    __bash__(f"git clone --single-branch {url} {('-b ' + branch) if branch else ''} {PATH(dest)}")
+    __bash__(f"git clone --single-branch --depth 1 {url} {('-b ' + branch) if branch else ''} {PATH(dest)}")
 
 def git_apply(path: str):
     __bash__(f"git apply --reject --whitespace=nowarn {PATH(path)}")
