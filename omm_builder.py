@@ -159,13 +159,13 @@ OMM_BUILDER_DATA = {
         { "name": "Audio Packs",   "list": "audios",   "prev": OMM_BUILDER_GUI_MENU_BUILD    },
     ],
     "game": [
-        { "name": "Super Mario 64 ex-nightly",       "path": "smex", "repo": "https://github.com/sm64pc/sm64ex.git -b nightly",           "commit": "",                                         "dep": "",          "audio": False, "type": "menu", "val": OMM_BUILDER_GUI_MENU_COMMANDS, "set": "game" },
-        { "name": "Super Mario 64 ex-alo",           "path": "xalo", "repo": "https://github.com/AloXado320/sm64ex-alo.git -b master",    "commit": "b9283d080d8f82befe3917a916843cbfb1399411", "dep": "",          "audio": False, "type": "menu", "val": OMM_BUILDER_GUI_MENU_COMMANDS, "set": "game" },
-        { "name": "Super Mario 64 Moonshine",        "path": "smms", "repo": "https://github.com/sm64pc/sm64ex.git -b nightly",           "commit": "",                                         "dep": "moonshine", "audio": False, "type": "menu", "val": OMM_BUILDER_GUI_MENU_COMMANDS, "set": "game" },
-        { "name": "Super Mario 74",                  "path": "sm74", "repo": "https://github.com/PeachyPeachSM64/sm64ex-omm.git -b sm74", "commit": "",                                         "dep": "",          "audio": False, "type": "menu", "val": OMM_BUILDER_GUI_MENU_COMMANDS, "set": "game" },
-        { "name": "Super Mario Star Road",           "path": "smsr", "repo": "https://github.com/PeachyPeachSM64/sm64ex-omm.git -b smsr", "commit": "",                                         "dep": "",          "audio": False, "type": "menu", "val": OMM_BUILDER_GUI_MENU_COMMANDS, "set": "game" },
-        { "name": "Super Mario 64: The Green Stars", "path": "smgs", "repo": "https://github.com/PeachyPeachSM64/sm64ex-omm.git -b smgs", "commit": "",                                         "dep": "",          "audio": False, "type": "menu", "val": OMM_BUILDER_GUI_MENU_COMMANDS, "set": "game" },
-        { "name": "Render96",                        "path": "r96x", "repo": "https://github.com/Render96/Render96ex.git -b tester",      "commit": "",                                         "dep": "",          "audio": True,  "type": "menu", "val": OMM_BUILDER_GUI_MENU_COMMANDS, "set": "game" },
+        { "name": "Super Mario 64 ex-nightly",       "path": "smex", "repo": "https://github.com/sm64pc/sm64ex.git -b nightly",           "dep": "",          "audio": False, "type": "menu", "val": OMM_BUILDER_GUI_MENU_COMMANDS, "set": "game" },
+        { "name": "Super Mario 64 ex-alo",           "path": "xalo", "repo": "https://github.com/PeachyPeachSM64/sm64ex-omm.git -b xalo", "dep": "",          "audio": False, "type": "menu", "val": OMM_BUILDER_GUI_MENU_COMMANDS, "set": "game" },
+        { "name": "Super Mario 64 Moonshine",        "path": "smms", "repo": "https://github.com/sm64pc/sm64ex.git -b nightly",           "dep": "moonshine", "audio": False, "type": "menu", "val": OMM_BUILDER_GUI_MENU_COMMANDS, "set": "game" },
+        { "name": "Super Mario 74",                  "path": "sm74", "repo": "https://github.com/PeachyPeachSM64/sm64ex-omm.git -b sm74", "dep": "",          "audio": False, "type": "menu", "val": OMM_BUILDER_GUI_MENU_COMMANDS, "set": "game" },
+        { "name": "Super Mario Star Road",           "path": "smsr", "repo": "https://github.com/PeachyPeachSM64/sm64ex-omm.git -b smsr", "dep": "",          "audio": False, "type": "menu", "val": OMM_BUILDER_GUI_MENU_COMMANDS, "set": "game" },
+        { "name": "Super Mario 64: The Green Stars", "path": "smgs", "repo": "https://github.com/PeachyPeachSM64/sm64ex-omm.git -b smgs", "dep": "",          "audio": False, "type": "menu", "val": OMM_BUILDER_GUI_MENU_COMMANDS, "set": "game" },
+        { "name": "Render96",                        "path": "r96x", "repo": "https://github.com/Render96/Render96ex.git -b tester",      "dep": "",          "audio": True,  "type": "menu", "val": OMM_BUILDER_GUI_MENU_COMMANDS, "set": "game" },
     ],
     "commands": [
         { "name": "Build",  "type": "menu",   "val": OMM_BUILDER_GUI_MENU_BUILD,    "checks": "dep;rom" },
@@ -265,20 +265,19 @@ def git_clone(url: str, branch: str, dest: str):
 def git_apply(path: str):
     __bash__(f"git apply --reject --whitespace=nowarn {PATH(path)}")
 
-def git_reset(commit: str):
-    __bash__(f"git reset -q --hard {commit}")
+def git_reset():
+    __bash__(f"git reset -q --hard")
 
 def git_diff(dest: str):
     __bash__(f"git add .")
     __bash__(f"git diff --diff-algorithm=minimal --unified=2 -p --staged --binary > {PATH(dest)}")
 
-def git_update(branch: str, commit: str, clean: bool):
+def git_update(branch: str, clean: bool):
     __bash__(f"git config pull.rebase true")
     if branch: __bash__(f"git checkout {branch} -q")
     __bash__(f"git reset -q --hard")
     if clean: __bash__(f"git clean -q -fdx")
     __bash__(f"git pull -q")
-    if commit: __bash__(f"git reset -q --hard {commit}")
 
 def zip_files(path: str, dest: str):
     import shutil
@@ -908,7 +907,7 @@ def omm_builder_check_for_updates():
                     answer = input().lower()
                 if answer == "y":
                     print("Updating OMM builder...")
-                    git_update("builder", None, False)
+                    git_update("builder", False)
                     print("Done.")
                     exit(0)
 
@@ -1036,7 +1035,6 @@ def omm_builder_process_command(state: dict):
         game_path      = OMM_BUILDER_DATA["game"][state_game]["path"]
         game_dir       = "repos/" + game_path
         game_repo      = OMM_BUILDER_DATA["game"][state_game]["repo"]
-        game_commit    = OMM_BUILDER_DATA["game"][state_game]["commit"]
         game_patches   = OMM_BUILDER_DATA["patches"]
         game_textures  = OMM_BUILDER_DATA["textures"]
         game_sounds    = OMM_BUILDER_DATA["sounds"]
@@ -1066,7 +1064,7 @@ def omm_builder_process_command(state: dict):
             print("--- Resetting " + game + "...")
             if os.path.isdir(game_dir):
                 os.chdir(game_dir)
-                git_update(None, game_commit, True)
+                git_update(None, True)
             print("Done.")
             exit(0)
 
@@ -1127,7 +1125,7 @@ def omm_builder_process_command(state: dict):
                 if not os.path.isdir(game_dir):
                     raise_error("Cannot clone the git repository: " + game_repo)
                 os.chdir(game_dir)
-                git_reset(game_commit)
+                git_reset()
                 fresh_clone = True
             else:
                 os.chdir(game_dir)
@@ -1136,7 +1134,7 @@ def omm_builder_process_command(state: dict):
             print("--- Checking OMM source (3/3)...")
             if not fresh_clone and (not up_to_date or not is_patched(OMM_SOURCE_TRUENAME) or check_arg(OMM_BUILDER_ARG_RESET)):
                 print("--- Resetting " + game + "...")
-                git_update(None, game_commit, True)
+                git_update(None, True)
 
             # Copy the dependency
             dependency = OMM_BUILDER_DATA["game"][state_game]["dep"]
