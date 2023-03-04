@@ -17,4 +17,4 @@ builds/*
 *.zip
 *.rar
 *.wav
-omm_make_build.sh
+!custom/put_patches_textures_sounds_models_audio_packs_here

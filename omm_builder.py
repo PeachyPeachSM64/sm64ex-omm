@@ -141,7 +141,7 @@ OMM_BUILDER_GUI_KEY_BACK                = "xX0"
 OMM_BUILDER_GUI_KEY_DIGIT               = "123456789"
 
 OMM_BUILDER_BASEROM                     = None
-OMM_BUILDER_VERSION                     = "2.1.1"
+OMM_BUILDER_VERSION                     = "2.1.2"
 OMM_SOURCE_VERSION                      = ""
 OMM_SOURCE_REVISION                     = ""
 OMM_SOURCE_DIRNAME                      = ""
@@ -224,7 +224,7 @@ OMM_BUILDER_INFO = {
         { "info": "Game-changing modifications. Not all patches are compatible, so expect errors with some of them."                  },
         { "info": "Replace the game's original textures by custom ones."                                                              },
         { "info": "Replace the game's original sounds by custom ones."                                                                },
-        { "info": "Replace the game's original models by custom ones. DynOS must be patched or built-in for Model Packs to work."     },
+        { "info": "Replace the game's original models by custom ones."                                                                },
         { "info": "Replace the game's original audio (musics, jingles, voice clips) by custom ones."                                  },
         { "info": "Compile the game."                                                                                                 },
     ],
@@ -391,6 +391,15 @@ OMM_BUILDER_DOWNLOADS = {
         "dest": "DynOS.patch",
         "path": "DynOS.patch",
         "url" : "https://raw.githubusercontent.com/PeachyPeachSM64/sm64ex-omm-resources/master/dynos.patch",
+        "func": download_file,
+        "args": {},
+    },
+    "@time_trials_patch": {
+        "name": "Time Trials",
+        "type": "patches",
+        "dest": "time_trials.patch",
+        "path": "time_trials.patch",
+        "url" : "https://raw.githubusercontent.com/PeachyPeachSM64/sm64ex-omm-resources/master/time_trials.patch",
         "func": download_file,
         "args": {},
     },
