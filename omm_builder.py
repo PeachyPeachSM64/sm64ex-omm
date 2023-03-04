@@ -909,7 +909,6 @@ def omm_builder_check_for_updates():
                 if answer == "y":
                     print("Updating OMM builder...")
                     git_update("builder", None, False)
-                    remove_dir("custom")
                     print("Done.")
                     exit(0)
 
