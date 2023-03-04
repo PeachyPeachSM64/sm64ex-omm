@@ -32,7 +32,7 @@
 
   - Open a terminal and run the following command to install the required packages:<br>`sudo apt install build-essential git python3 libglew-dev libsdl2-dev zip p7zip*`
 
-  - Install the builder by cloning the *master* branch with this command:<br>`git clone https://github.com/PeachyPeachSM64/sm64ex-omm.git -b builder`
+  - Install the builder by cloning the *master* branch with this command:<br>`git clone https://github.com/PeachyPeachSM64/sm64ex-omm.git -b builder --single-branch`
 
   - Once done, open the directory `sm64ex-omm` and place your copy of the **Super Mario 64 US ROM** inside it, next to the Python script `omm_builder.py`, and rename it `baserom.us.z64`.
 
