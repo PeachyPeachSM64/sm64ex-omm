@@ -24,7 +24,8 @@
 
   - Download the [OMM Builder Setup Script](https://github.com/PeachyPeachSM64/sm64ex-omm-resources/raw/master/omm_builder_setup.zip).
 
-  - Extract the `.zip` archive and execute `omm_builder_setup.bat`. It will install everything needed for the builder to work.<br>*Note:* Running this script as administrator will enable the options `Open MinGW64 here` and `Open OMM Builder here` in the Explorer context menu (right click).
+  - Extract the `.zip` archive and execute `omm_builder_setup.bat`. It will install everything needed for the builder to work.<br>***Note:*** *Running this script as administrator will enable the options `Open MinGW64 here` and `Open OMM Builder here` in the Explorer context menu (right click).*<br>
+  ![omm_builder_02.png](omm_builder_02.png)
 
   - Once done, open the folder `sm64ex-omm` and place your copy of the **Super Mario 64 US ROM** inside it, next to the Python script `omm_builder.py`, and rename it `baserom.us.z64`.
 
@@ -44,7 +45,7 @@
 
 Use <kbd>E</kbd>, <kbd>S</kbd>, <kbd>D</kbd>, <kbd>F</kbd> to move, <kbd>C</kbd> to go to the next view and <kbd>X</kbd> to come back.<br>Additionally, you can use digits from <kbd>1</kbd> to <kbd>9</kbd> to select instantly the desired option and <kbd>0</kbd> to go back to the previous view.
 
-![OMM Builder](omm_builder.png)
+![omm_builder_01.png](omm_builder_01.png)
 
 The main views are the following:
 ```
