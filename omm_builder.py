@@ -1248,7 +1248,7 @@ def omm_builder_process_command(state: dict):
 
             # Let's-a-go
             print(make_cmd)
-            make_tries = 5
+            make_tries = 10
             make_logs = "../../" + game_path + ".logs.txt"
             for make_try in range(make_tries):
                 __bash__(f"{make_cmd} 2>&1 | tee {PATH(make_logs)}")
@@ -1268,10 +1268,11 @@ def omm_builder_process_command(state: dict):
                     data = f.readlines()
                     for line in data:
 
-                        # Check texture error
-                        if line[line.find("fatal error"):line.find("No such file or directory")].find("rgba16.inc.c") != -1:
-                            print("Result: Some assets were not generated in time.")
-                            print("Running make again... Remaining tries: " + str(make_tries - 1 - make_try) + "\n")
+                        # Target dependency miss
+                        if (line[line.find("fatal error"):line.find("No such file or directory")].find("rgba16.inc.c") != -1 or
+                            line[line.find("ld.exe"):line.find("No such file or directory")].find("-laudiofile") != -1):
+                            print("Some dependencies were missing when building the current target.")
+                            print("Running 'make' again... Remaining tries: " + str(make_tries - 1 - make_try) + "\n")
                             retry = True
                             break
 

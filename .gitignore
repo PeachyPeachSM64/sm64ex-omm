@@ -18,3 +18,4 @@ builds/*
 *.rar
 *.wav
 !custom/put_patches_textures_sounds_models_audio_packs_here
+!moonshine/put_moonshine_content_here
