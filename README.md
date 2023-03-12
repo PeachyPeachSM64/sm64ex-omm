@@ -24,7 +24,7 @@
 
   - Download the [OMM Builder Setup Script](https://github.com/PeachyPeachSM64/sm64ex-omm-resources/raw/master/omm_builder_setup.zip).
 
-  - Extract the `.zip` archive and execute `omm_builder_setup.bat`. It will install everything needed for the builder to work.
+  - Extract the `.zip` archive and execute `omm_builder_setup.bat`. It will install everything needed for the builder to work.<br>*Note:* Running this script as administrator will enable the options `Open MinGW64 here` and `Open OMM Builder here` in the Explorer context menu (right click).
 
   - Once done, open the folder `sm64ex-omm` and place your copy of the **Super Mario 64 US ROM** inside it, next to the Python script `omm_builder.py`, and rename it `baserom.us.z64`.
 
@@ -40,9 +40,7 @@
 
 ### Building the game:
 
-*OMM Builder* is a terminal-styled GUI. Start it with the command: `python3 omm_builder.py`, or launch the start-up script corresponding to your OS:
-- **Windows**: `omm_builder.bat`
-- **Linux**: `omm_builder.sh`
+*OMM Builder* is a terminal-styled GUI. Start it with the command `python3 omm_builder.py`, or launch the start-up script `omm_builder.bat` (Windows only).
 
 Use <kbd>E</kbd>, <kbd>S</kbd>, <kbd>D</kbd>, <kbd>F</kbd> to move, <kbd>C</kbd> to go to the next view and <kbd>X</kbd> to come back.<br>Additionally, you can use digits from <kbd>1</kbd> to <kbd>9</kbd> to select instantly the desired option and <kbd>0</kbd> to go back to the previous view.
 
@@ -78,20 +76,11 @@ Games that can be built with *Odyssey Mario's Moveset*:
 6. - ***Super Mario 64: The Green Stars***
 7. - ***Render96***
 
-Some shortcuts (replace `X` by the game's number):
-|||
-|:-|:-|
-| Run a compiled game | `python3 omm_builder.py -i X2` |
-| Reset a game's directory | `python3 omm_builder.py -i X4` |
-| Build a game with DynOS | `python3 omm_builder.py -i X139` |
-| Build a game with DirectX 11 | `python3 omm_builder.py -i X129` |
-| Build a game with DirectX 11 and DynOS | `python3 omm_builder.py -i X1239` |
-
 ---
 
 ### Requirements
 
-- To build ***Super Mario 64 Moonshine***, you must extract the mod archive (`MOONSHINE_FINALUPDATE.rar`) into a directory named `moonshine`.
+- To build ***Super Mario 64 Moonshine***, extract the mod archive content (`MOONSHINE_FINALUPDATE.rar`) into the `moonshine` directory.
 
 ### Custom resources
 
@@ -101,6 +90,7 @@ Some shortcuts (replace `X` by the game's number):
 
 - Some resources can be downloaded automatically by the program if they are selected when building the game:
   - DynOS Patch
+  - Time Trials Patch
   - OMM-HD Texture pack
   - Render96-HD Texture pack
   - Render96 Model pack
@@ -126,6 +116,16 @@ You probably built the game with a renderer not supported by your computer.<br>D
 
 Once built, the game executable is located in the `build/us_pc` directory of the game you choose.<br>If you want to copy or move it, make sure to copy/move the entire `build/us_pc` directory, not only the executable file.
 
+### Why is the Texture pack I installed not visible in-game?
+
+- Make sure the Texture pack is in the `res` directory and is a valid `.zip` archive.
+- If there is a `gfx.raw` file in the `res` directory, delete it, or change the in-game option `Texture Caching` from `Permanent` to `At Start-up`.
+
+### Why is the Model pack I installed not visible in-game?
+
+- Make sure the Model pack is in the `res/packs` or `dynos/packs` directory and is a valid pack (directory of `.bin` files).
+- In-game, open the `Model Packs` option menu and enable your model pack.
+
 ### Where is the save file located? How do I open/edit it?
 
 - **Windows**: `%appdata%\sm64ex\omm_save_file.txt`
@@ -142,6 +142,7 @@ The save file is a plain text file, so any text editor can open it. It is divide
   - For Mario, the colors are in the following order: *Cap*, *Hair*, *Skin*, *Gloves*, *Overalls*, *Shoes*, *Cappy Eyes*.
   - For Peach, the colors are in the following order: *Skin*, *Hair*, *Dress (light tone)*, *Dress (dark tone)*, *Gloves*, *Earrings*, *Shoes*, *Tiara Eyes*.
   - The palette name cannot have spaces, replace them by underscores.
+- `[stats]`: Several in-game stats, such as number of objects collected, number of enemies defeated, distance travelled, etc...
 - `[settings]`: The saved options. It includes controls, shortcuts and extras.
 
 ### What is the options menu?
@@ -203,10 +204,10 @@ A PC port exclusivity, the options menu allows the player to configure their gam
   - `Show FPS`: If enabled, show the actual framerate in the bottom-left corner of the screen.
   - `Fullscreen`: Enable fullscreen mode.
   - `Vertical Sync`: Synchronize the render rate with the monitor's refresh rate. Enable it if you're experiencing tearing.
-  - `Preload Textures`: Preload and cache all textures when starting the game to avoid in-game freezes due to texture loading.
-    - `Never`: Don't preload textures.
-    - `From RAM`: Load PNGs into RAM before sending them to the GPU.
-    - `From Disk`: Create a back-up of the texture cache so the next time the game is launched, the data is directly uploaded to the GPU.
+  - `Texture Caching`: Preload and cache all textures when starting the game to avoid in-game freezes due to texture loading.
+    - `Disabled`: Never preload textures.
+    - `At Start-up`: Load all textures present in the `res` directory every time the game starts.
+    - `Permanent`: Load all textures once and cache them permanently.
   - `Texture Filtering`: Set to nearest neighbor for blocky effects, or linear for smooth but blurry effects.
   - `Draw Distance`: Control the rendering distance of objects. Reduce it if you're experiencing slowdowns.
   - `HUD`: Show or hide the HUD.
