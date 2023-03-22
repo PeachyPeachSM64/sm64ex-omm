@@ -31,7 +31,7 @@
 
 - **Linux**:
 
-  - Open a terminal and run the following command to install the required packages:<br>**Debian/Ubuntu:**<br>`sudo apt install build-essential git python3 libglew-dev libsdl2-dev zip p7zip*`<br>**Fedora:**<br>`sudo dnf install make gcc python3 glew-devel SDL2-devel`<br>**Arch Linux:**<br>`sudo pacman -S base-devel git python sdl2 glew`
+  - Open a terminal and run the following command to install the required packages:<br>**Debian/Ubuntu:**<br>`sudo apt install build-essential git python3 libglew-dev libsdl2-dev zip p7zip*`<br>**Fedora:**<br>`sudo dnf install make gcc python3 glew-devel SDL2-devel zip unzip p7zip wget`<br>**Arch Linux:**<br>`sudo pacman -S base-devel git python sdl2 glew zip unzip wget p7zip`
 
   - Install the builder by cloning the *builder* branch with this command:<br>`git clone --single-branch --depth 1 https://github.com/PeachyPeachSM64/sm64ex-omm.git -b builder sm64ex-omm`
 
