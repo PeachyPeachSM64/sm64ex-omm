@@ -141,7 +141,7 @@ OMM_BUILDER_GUI_KEY_BACK                = "xX0"
 OMM_BUILDER_GUI_KEY_DIGIT               = "123456789"
 
 OMM_BUILDER_BASEROM                     = None
-OMM_BUILDER_VERSION                     = "2.1.2"
+OMM_BUILDER_VERSION                     = "2.1.3"
 OMM_SOURCE_VERSION                      = ""
 OMM_SOURCE_REVISION                     = ""
 OMM_SOURCE_DIRNAME                      = ""
@@ -1194,6 +1194,11 @@ def omm_builder_process_command(state: dict):
                 omm_builder_extract_zips("../../custom")
                 omm_builder_sanitize_names("../../custom")
 
+            # Copy OMM contents
+            if not is_patched(OMM_SOURCE_TRUENAME):
+                print("--- Applying OMM...")
+                copy_dir("../../" + OMM_SOURCE_DIRNAME + "/.", ".")
+
             # Apply the selected patches
             if any(state_patches):
                 print("--- Applying patches...")
@@ -1208,10 +1213,9 @@ def omm_builder_process_command(state: dict):
                             git_apply(patch_path)
                             set_patched(patch_file)
 
-            # Copy OMM contents, apply the Makefile patch and run the patcher
+            # Apply the Makefile patch and run the patcher
             if not is_patched(OMM_SOURCE_TRUENAME):
                 print("--- Patching OMM...")
-                copy_dir("../../" + OMM_SOURCE_DIRNAME + "/.", ".")
 
                 # Patch Makefile
                 if not os.path.isfile("Makefile"):
