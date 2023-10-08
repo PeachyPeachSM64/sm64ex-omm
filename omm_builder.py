@@ -258,7 +258,7 @@ OMM_BUILDER_DOWNLOADS = {
 # Specs
 #
 
-OMM_BUILDER_VERSION = "2.2.0"
+OMM_BUILDER_VERSION = "2.2.1"
 OMM_BUILDER_AUTHOR  = "PeachyPeach"
 OMM_BUILDER_DATE    = "2022-2023"
 OMM_SOURCE_DIR      = "omm"
@@ -317,7 +317,8 @@ def git_reset():
 def git_clean():
     run_cmd("git", "clean", "-fdx")
 
-def git_pull():
+def git_pull(repo: str):
+    run_cmd("git", "config", "remote.origin.url", repo.split()[0])
     run_cmd("git", "config", "pull.rebase", "true")
     run_cmd("git", "pull")
 
@@ -886,7 +887,7 @@ def omm_builder_check_for_updates():
             if answer == "y":
                 info("Updating OMM builder...")
                 git_reset()
-                git_pull()
+                git_pull(OMM_REPOSITORIES["omm"])
                 done("Done.")
                 exit(0)
 
@@ -1034,7 +1035,7 @@ def omm_builder_process_command(state: dict, version: str, should_update: bool):
                 os.chdir(game_dir)
                 git_reset()
                 git_clean()
-                git_pull()
+                git_pull(game_repo)
             done("Done.")
             exit(0)
 
@@ -1089,7 +1090,7 @@ def omm_builder_process_command(state: dict, version: str, should_update: bool):
                 info("--- Resetting `" + game + "`...")
                 git_reset()
                 git_clean()
-                git_pull()
+                git_pull(game_repo)
 
             # Copy the dependency
             dependency = OMM_BUILDER_DATA["game"][state_game]["dep"]
