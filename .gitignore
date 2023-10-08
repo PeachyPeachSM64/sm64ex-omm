@@ -1,7 +1,7 @@
 .git/
 .github/
 .vscode/
-omm.*/
+omm*/
 repos/
 repos/*
 moonshine/
@@ -15,7 +15,9 @@ builds/*
 *.version
 *.txt
 *.zip
+*.7z
 *.rar
+*.tar
+*.gz
 *.wav
 !custom/put_patches_textures_sounds_models_audio_packs_here
-!moonshine/put_moonshine_content_here
