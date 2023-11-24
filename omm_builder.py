@@ -68,7 +68,7 @@ OMM_SOURCE_REMOTE_VERSION  = "https://raw.githubusercontent.com/PeachyPeachSM64/
 # Builder args
 #
 
-OMM_BUILDER_ARG_HELP  = { "arg": "-h", "info": "Display the help."                                 }
+OMM_BUILDER_ARG_HELP  = { "arg": "-h", "info": "Display this help."                                }
 OMM_BUILDER_ARG_BUILD = { "arg": "-b", "info": "Only build the game, don't run it."                }
 OMM_BUILDER_ARG_RESET = { "arg": "-r", "info": "Force a reset before building the game."           }
 OMM_BUILDER_ARG_LOCAL = { "arg": "-l", "info": "Use local OMM source, don't check remote version." }
@@ -258,7 +258,7 @@ OMM_BUILDER_DOWNLOADS = {
 # Specs
 #
 
-OMM_BUILDER_VERSION = "2.2.1"
+OMM_BUILDER_VERSION = "2.2.2"
 OMM_BUILDER_AUTHOR  = "PeachyPeach"
 OMM_BUILDER_DATE    = "2022-2023"
 OMM_SOURCE_DIR      = "omm"
@@ -1117,7 +1117,7 @@ def omm_builder_process_command(state: dict, version: str, should_update: bool):
                                     info("--- Downloading resources...")
                                     downloaded = True
                                 info("Downloading `" + res["name"] + "`...")
-                                if ".git" in res["url"]:
+                                if ".git -b" in res["url"]:
                                     git_clone(res["url"], res_path)
                                     for name in os.listdir(res_path):
                                         path = res_path + "/" + name
