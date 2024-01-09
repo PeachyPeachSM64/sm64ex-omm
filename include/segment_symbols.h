@@ -1,4 +1,0 @@
-#ifndef SEGMENT_SYMBOLS_H
-#define SEGMENT_SYMBOLS_H
-
-#endif // SEGMENT_SYMBOLS_H
