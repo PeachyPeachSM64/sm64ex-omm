@@ -258,9 +258,9 @@ OMM_BUILDER_DOWNLOADS = {
 # Specs
 #
 
-OMM_BUILDER_VERSION = "2.2.2"
+OMM_BUILDER_VERSION = "2.2.3"
 OMM_BUILDER_AUTHOR  = "PeachyPeach"
-OMM_BUILDER_DATE    = "2022-2023"
+OMM_BUILDER_DATE    = "2022-2024"
 OMM_SOURCE_DIR      = "omm"
 OMM_SOURCE_DIRS     = [ "assets", "data", "omm" ]
 OMM_CUSTOM_EXTS     = [ ".7z", ".zip", ".gz", ".tar", ".rar" ]
@@ -1167,6 +1167,13 @@ def omm_builder_process_command(state: dict, version: str, should_update: bool):
                     if where == -1:
                         error("Malformed Makefile.")
                     data = data[:where] + what + "\n" + data[where:]
+                    file = open("Makefile", "w", newline="\n", encoding="utf-8", errors="ignore")
+                    file.write(data)
+                    file.close()
+
+                # Fix Linux building issue
+                if data.find("-lstdc++") == -1:
+                    data = data.replace("$(LDFLAGS)", "$(LDFLAGS) -lstdc++")
                     file = open("Makefile", "w", newline="\n", encoding="utf-8", errors="ignore")
                     file.write(data)
                     file.close()
