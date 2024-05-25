@@ -1,0 +1,76 @@
+# Version 3.1.0 (03/11/2020)
+
+## Changes and fixes:
+- Removed turning while backflipping.
+- Mario enters the roll state out of a dive or a long jump by holding **(Z)**.
+- Mario keeps most of his momentum after throwing Cappy on ground if the joystick is held.
+- Non-Stop mode no longer gives Mario infinite lives if Health System is set to Classic.
+- The player is no longer redirected to the Game Over screen if he dies when having 0 lives if Health System is set to 3-Health or 6-Health.
+- Mario can now properly jump when standing on a moving platform.
+- Fixed Dire Dire Docks Manta Ray's water rings hitbox.
+
+## Cappy:
+- Reworked Cappy wall collisions.
+- Cappy is now properly frozen during Time Stop.
+- Cappy's hitbox and model are larger than Mario's cap when thrown.
+- Cappy throws are slightly faster than before to match Odyssey's ones.
+- Cappy can no longer be thrown again if he's already out, but Mario can force him to return prematurely by pressing **(X)** again.
+- Up-throw, Down-throw and Homing throws have been added to Cappy's moveset:
+  - Trigger an Up-throw by holding **D-Pad Up** and pressing **(X)**.
+  - Trigger a Down-throw by holding **D-Pad Down** and pressing **(X)**, or by pressing **(X)** after landing from a ground pound.
+  - Trigger a spin throw by holding **D-Pad Left** or right and pressing **(X)**, or by pressing **(X)** while spinning.
+  - Trigger a Homing throw by pressing a D-Pad direction while Cappy's out:
+    - Cappy will target the nearest interactable object, then will return to Mario.
+    - If no target is found, Cappy will move in the direction of the button pressed, then will return to Mario.
+- Cappy has now his own sub-menu:
+  - `Cappy's behavior` can be set to `Disabled`, `No Capture` or `Capture`.
+  - `Cappy Throw Button` is **[X]** key or **(X)** button by default.
+  - `Cappy Up Button` is **[Num8]** key or **D-Pad Up** button by default.
+  - `Cappy Down Button` is **[Num2]** key or **D-Pad Down** button by default.
+  - `Cappy Left Button` is **[Num4]** key or **D-Pad Left** button by default.
+  - `Cappy Right Button` is **[Num6]** key or **D-Pad Right** button by default.
+  - `Unlimited Cappy Jumps` allows the player to do as many consecutive Cappy jumps as he wants.
+  - `Cappy Stays Forever` is back, and force Cappy to never return to Mario, unless the player presses **(X)**.
+
+## True Non-Stop mode:
+- Non-Stop mode has been redesigned to make all 7 stars available in every course.
+- When entering a painting, Mario is directly warped to the course, skipping entirely the act selection screen.
+- The in-course pause menu has been changed to show which stars have been collected and which ones are not.
+- Some courses have been altered to make all 7 stars spawn in one go:
+  - Bob-omb Battlefield:
+    - Bob-omb King always starts at the top of the mountain, ready for a fight.
+    - Koopa the Quick also spawns, but cannot start a race until Bob-omb King is defeated.
+  - Whomp Fortress:
+    - Whomp King always starts at the top of his fortress, ready for a fight.
+    - The Tower appears once the Whomp King star is collected.
+  - Jolly Roger Bay:
+    - Only one Eel spawns, and it's always the *Can the Eel Come Out to Play?* star one.
+    - The ship always starts sunken.
+    - After collecting the *Plunder in the Sunken Ship* star, a warp pipe appears at the bottom of the sunken ship.
+    - The sunken ship then emerges, and a warp pipe appears, leading to its inside.
+    - The whirlpool and the *Through the Jet Stream* star appear once the ship is fully emerged.
+  - Cool, Cool Mountain:
+    - The racing penguin is always here, waiting for a race against Mario.
+    - The Snowman's body always spawns separated from its head, looking for Mario to escort him.
+  - Big Boo's Haunt:
+    - All 3 versions of the Big Boo can be fought. The first one only appears after defeating all 5 *Ghost Hunt* Boos.
+    - The Boos inside the manor are always *Ghost Hunt* Boos, and trigger a dialog when defeated.
+  - Lethal Lava Land:
+    - The green shell box always spawns.
+    - A one-way warp pipe has been added inside the Volcano to allow Mario to return to the main area.
+  - Shifting Sand Land:
+    - The two versions of Klepto (the star one and the hat-stealer one) are here.
+    - A one-way warp pipe has been added inside the Pyramid to allow Mario to return to the main area.
+  - Dire Dire Docks:
+    - The Manta Ray always spawns, even if Bowser's sub is here.
+    - Red coins poles always spawn, even if Bowser's sub is here.
+    - A one-way warp pipe has been added inside the *Collect the Caps* star cage to allow Mario to escape the cage.
+  - Wet Dry World:
+    - A one-way warp pipe has been added at the top the underwater city to allow Mario to return to the main area.
+  - Tall Tall Mountain:
+    - The mountaintop star always spawns.
+    - Mountaintop Ukiki and his cage always spawn as well.
+  - Tiny-Huge Island:
+    - Koopa the Quick always wait for a race in the Huge version of the island.
+    - A one-way warp pipe has been added inside Wiggler's room to allow Mario to return to the main area.<br>This pipe only appears after defeating Wiggler.
+- Non-Stop mode is completely disabled if the game is compiled with the Time Trials patch.

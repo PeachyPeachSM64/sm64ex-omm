@@ -1,0 +1,277 @@
+# Version 6.0.0 (17/10/2021)
+
+## Bug fixes:
+- Fixed a bug where blue coins dropped by Boos acted like yellow coins.
+- Fixed a bug where Mario couldn't leave the JRB ship through the warp pipe if Moveset was set to Classic.
+- Fixed a bug where Mario could die when capturing an object near an out of bounds area.
+- Fixed a bug where Mario couldn't capture objects while climbing a ledge, holding a pole, or hanging from a ceiling.
+- Fixed a bug where Mario couldn't always capture a Whomp.
+- Fixed a bug where Mario could perform underwater Odyssey moves while being Metal.
+- Fixed a bug where the Vanish cap wasn't working properly with Vanish cap walls.
+- Fixed a bug where restarting the level didn't restart the freeze timer.
+
+## Peach:
+- Peach now has some unique moves, inspired by her moveset from *Super Princess Peach*.<br>Except for Vibes, her new moves can be used only when the option `Moveset` is set to `Odyssey`.
+- **Float**:
+  - Replaces the mid-air spin.
+  - Hold **(A)** during a fall to hover for a short time.
+- **Glide**:
+  - Press and hold **(A)** after a float to open Perry and start gliding.
+  - Peach can glide when caught in vertical wind to go even higher!
+- **Perry**:
+  - Punches and Kicks are replaced by sword-like slashes and circular attacks, increasing Peach's attack range.
+  - When running, Peach can execute a double slash without losing speed by simply pressing **(B)**.
+  - The increased range also acts as a grab, if possible, and occurs before the damage.
+  - When Peach's health is full, every attack launches a shockwave.
+- **Vibes**:
+  - There are four of them: *Joy*, *Rage*, *Gloom* and *Calm*.<br>Each Vibe gives Peach additional moves and effects.
+  - Vibes consume Vibe points when active and deactivate at 0.<br>Vibe points are refilled over time when no Vibe is active, but Peach can fill the Vibe gauge faster by attacking enemies with Perry or by standing inside a recovery heart.
+  - When a Vibe is active, Perry's attacks always launch a shockwave, with an extra effect for each type of Vibe.
+  - Like Cappy directional throws, hold a D-pad button, then press **(L)** to activate a Vibe.
+    - Hold **(D-up)** for *Joy*,
+    - Hold **(D-right)** for *Rage*,
+    - Hold **(D-left)** for *Gloom*,
+    - Hold **(D-down)** for *Calm*.
+  - However, there are some restrictions:
+    - While a Vibe is active, Peach cannot grab or use caps. Also, activating a Vibe cancels the current cap power-up.
+	- Captures still occur, but they deactivate Vibes, and Vibes cannot be used while possessing an enemy.
+	- Vibes cannot stack. The active Vibe must be deactivated first to be able to use another one.
+	- Vibes cannot be activated during an intangible or invulnerable state, such as taking damage or being knockbacked.
+	- Vibes cannot be used underwater, and deactivate if Peach touches water, except *Calm*.
+  - *Joy*:<br>Peach spins endlessly, creating a tornado around her.<br>In that state, she can only move, fly by holding **(A)** or attack by pressing **(B)**.<br>The tornado can repel enemies, attract nearby coins and lifts Peach upwards. As a result, she never makes direct contact with the floor, making her invulnerable to lava and quicksand.
+    - Perry attacks are replaced by gusts. Like the tornado, they can attract coins, but damage enemies instead of simply repelling them.
+	- Her happiness is such that the background music becomes faster and her voice gets higher.
+  - *Rage*:<br>Peach becomes furious, making her stronger.<br>She is surrounded by a burning aura that damages enemies on contact, her ground pounds emit a fire shockwave on landing, can destroy some solid objects and defeat most of bosses in a single hit, but she's also slower and her jumps are lower.
+	- Perry attacks are also stronger and launch larger, but slower fiery shockwaves.
+	- Because of her menacing stance, the background music is slower and her voice is deeper.
+  - *Gloom*:<br>Peach is so sad she can't stop crying...<br>She moves faster, jumps higher and her tears can extinguish most of the flames.<br>She can also run on slopes and on water.
+    - Perry attacks produce blue shockwaves. They move faster and go through enemies, but are smaller than regular ones.
+	- Peach's sadness slows down the music and her voice.
+  - *Calm*:<br>Peach regenerates herself with positive thoughts.<br>She regains health and O2 over time, and becomes immune to the effects of frozen water.<br>*Calm* cannot be used if Peach's health and O2 are already at max.
+    - Perry attacks release green shockwaves that heal Peach if they damage an enemy.
+	- Peach's positivity makes the music and her voice slightly pitched up.
+
+## Sparkly Stars:
+- Crystal Stars have been redesigned.<br>They are now called Sparkly Stars, and come with two different versions, the Pink Gold Stars and the (new) Crystal Stars.
+- **Pink Gold Stars**:
+  - Correspond to the *Normal* difficulty.
+  - Collecting them all is the condition to unlock Peach.
+  - To unlock this mode, the player needs 120 Power Stars and defeat Bowser 3.
+  - Each Star is similar to the old *Crystal Stars Easy mode*, with some changes:
+    - Lethal Lava Land: The lava floor stops before the top, where the 5th Power star is.
+	- Shifting Sand Land: The Star is now located above the top of the pyramid, and needs a crazy box to be reached.
+	- Dire Dire Docks: The Star is now located above the Bowser door in the second area.
+	- Tiny-Huge Island: The Star is now in Tiny Island, and needs a stack of 10 mini-goombas.
+	- Castle Inside/Castle Upstairs: Star shards are easier to locate and collect.
+	- Bowser 4: No more life-up and infinite Flaming Bob-omb, but the difficulty of this fight has been lowered down.
+- **Crystal Stars**:
+  - Correspond to the *Hard* difficulty.
+  - Collecting them all unlocks the `Crystal Stars Reward` option.
+  - To unlock this mode, the player must have completed the Sparkly Stars *Normal* difficulty, i.e. collected all 30 Pink Gold Stars and unlocked Peach.
+  - The overall difficulty is above the old *Crystal Stars Normal mode*:
+    - Whomp Fortress: The Star is now located under the fortress, and the player has only 1 minute and 50 seconds to spawn and collect it.
+	- Jolly Roger Bay: The field of view is greatly reduced.
+	- Cool, Cool Mountain: The Star is now located high above the mountaintop, and needs a spindrift to be reached.
+	- Big Boo's Haunt: The player has only 2 minutes and 15 seconds to spawn and collect the Star.
+	- Hazy Maze Cave: The player must extinguish all red flames in under 3 minutes.
+	- Lethal Lava Land: The Star shards are harder to collect, and the lava rises faster.
+	- Shifting Sand Land: The Star is revealed only after collecting all coins inside the pyramid, and the player starts with only 15 seconds.
+	- Dire Dire Docks: The Star is now located in bounds, high above the back of the docks.
+	- Snowman's Land: The Star is now located high above the head of the big snowman, and needs a spindrift to be reached.
+	- Wet-Dry World: The player needs to bring a Chuckya in a specific place to spawn the Star.
+	- Tall, Tall Mountain: The player needs to do a really long jump to reach the Star.
+	- Tiny-Huge Island: A stack of 10 huge goombas is required to make the Star spawn.
+	- Tick Tock Clock: No timer, no boxes, but Super Mario Maker 2 style.
+	- Rainbow Ride: No **(A)**/**(B)**/**(Z)** press, but all 9 1-up mushrooms are required to make the Star spawn.
+	- Bowser in the Dark World: In addition to the coins requirement, the player needs to stack all 7 goombas and has only 1 minute and 45 seconds to spawn and collect the Star.
+	- Bowser in the Fire Sea: 6 secrets must be collected instead of 1-up mushrooms.
+	- Bowser in the Sky: No **(A)**/**(B)**/**(Z)** press, all red coins, but no yellow coin, no blue coin, no capture and no 1-up mushroom.
+	- Tower of the Wing Cap: Available time reduced to 35 seconds.
+	- Vanish Cap under the Moat: Available time reduced to 40 seconds.
+	- Cavern of the Metal Cap: Available time reduced to 30 seconds.
+	- Secret Aquarium: Cappy/Tiara cannot be used.
+	- Castle Inside/Castle Upstairs: Toads are hidden and harder to reach.
+	- Castle Basement: That rabbit is suspicious.
+	- Castle Courtyard: Totally Odyssey.
+	- Bowser 4: Good luck.
+- Collecting all 30 Stars in a difficulty allows the player to use caps, cannons, Vibes and cheats in that difficulty.
+- Icons are added to the HUD when the player needs to collect a specific amount of items:
+  - Remaining boxes in TTC,
+  - Remaining 1-up mushrooms in BITFS and RR,
+  - Remaining flames in HMC.
+- The collected Sparkly Stars can be seen in the pause menu and on the file select screen, after clicking on a Star icon.
+- Each difficulty has now its proper timer, which starts after breaking the Sparkly Star block for the first time and ends after collecting the Bowser 4 Sparkly Star.
+- This timer is displayed in the pause menu and on the file select screen after selecting a Star mode.
+- On the Sparkly Stars score screen, hold **(B)** for 3 seconds to reset the selected difficulty timer and Stars, without clearing the *completed* flag.
+
+## Odyssey Moveset:
+- Mario becomes invulnerable for a short time after being burn (lava boost excluded) and after capturing or leaving a capture.
+- When burned airborne (not lava boost), Mario now regains control after some time.
+- Mario's hitbox is shorten when rolling/air-rolling.
+- Mario can now perform a Cappy bounce directly after a lava boost, if Cappy was thrown (Mario cannot throw Cappy during a lava boost).
+- 1-up mushrooms now fill completely the O2 gauge.
+- The object grab has been improved:
+  - The grab radius is extended to a small area in front of Mario, making grabs easier to perform.
+  - Grabs can now be performed during the two punches of a punch sequence, not only during a few frames of the first punch.
+
+## Captures and Objects:
+- Captures movement is more similar to Mario's movement:
+  - Captures progressively accelerate and decelerate instead of reaching instantly max or min speed.
+  - Same handling system as Mario (low speed = tight turn, high speed = large turn).
+  - Captures jumps higher if **(A)** is held (**(A)** press = small jump, **(A)** held = high jump).
+- Some buffs and nerfs:
+  - Goomba:
+    - Increased movement speed.
+  - Koopa (shelled/unshelled):
+    - Increased movement speed.
+  - Koopa shell:
+    - Reduced base speed, you must hold **(B)** to reach max speed.
+  - Bob-omb:
+    - Increased movement speed.
+	- Explosions affect destructible surfaces, like Thwomps and Whomps.
+  - Bob-omb Buddy:
+    - Capturable underwater.
+  - Chain chomp:
+    - Increased movement speed.
+  - Bullet bill:
+    - Increased movement speed.
+    - Explodes after a short time (10 seconds, 5 seconds if **(B)** is held).
+  - Whomp:
+    - Increased movement speed.
+    - Properly immune to fire when body slamming.
+    - Collect its remaining coins when captured.
+  - Hoot:
+    - Increased movement speed.
+    - Can jump up to 6 times before landing (no more infinite jumps).
+  - Baby penguin:
+    - Increased movement speed (belly slide speed stays unchanged).
+  - Spindrift:
+    - Increased movement speed and jump height.
+  - Mr. Blizzard:
+    - Increased movement speed.
+  - Boo:
+    - Can jump up to 6 times before landing (no more infinite jumps).
+    - No longer immune to lava and quicksands.
+  - Scuttlebug:
+    - Increased movement speed.
+  - Crazy box:
+    - Increased movement speed.
+    - No longer immune to lava, quicksands and strong winds.
+    - Hold **(A)** for jumps instead of hops, hold **(A)** + **(B)** for big jumps (the Crazy box breaks after 3 big jumps).
+  - Mr. I:
+    - Increased movement speed.
+    - No longer immune to lava and quicksands.
+- Non-Courtyard Boos always drop blue coins.
+- The blue coins switch respawns until there is no blue coin left.
+- Cappy explains how to beat OMM Bowser during the Bowser 1 fight after some time.
+- Yoshi's gift (100 lives) has been replaced by something more surprising!
+
+## Engine:
+- Extended bounds is now part of OMM:
+  - Horizontal bounds are 4x bigger.
+  - Vertical bounds remain unchanged.
+  - Surface pools are now allocated dynamically, allowing for an infinite amount of surfaces!
+- Recoded the surface load/collision engine. This one is more robust than the vanilla one, and fixes most of custom levels collision issues.
+- Collision loading distance has been removed, removing at the same time collision oddities like the Bullet Bill launcher in Whomp Fortress.
+- OMM Camera:
+  - First person mode allows a full 360 degrees turn, and extends the pitch limit to 89 degrees (almost vertical).
+  - For levels with multiple rooms (Big Boo's Haunt, Hazy Maze Cave), the rendered room is the one where the camera is pointing at, not only Mario's room.
+  - Bowser fights have now a proper OMM camera mode.
+- Save files:
+  - OMM has now its proper save file and file format.
+  - This format is similar to `TEXT_SAVES`, but it stores all save data of every version of the game in one single file, as well as settings related to OMM and Sparkly Stars save data.
+  - It also includes a cheat to instantly complete a save file and unlock Peach: On the file select screen, move the cursor to a save file button, then press the following buttons in that order:<br>**(C-up)**, **(C-up)**, **(C-down)**, **(C-down)**, **(C-left)**, **(C-right)**, **(C-left)**, **(C-right)**, **(Z)**, **(R)**, **(A)**.
+  
+## HUD and Menus:
+- The HUD has been reworked. Icons are smaller, and progressively become transparent when Mario is moving.
+- The O2 gauge is no longer a number, but an actual gauge like the one in Odyssey.
+- The star select screen got a revamp, inspired by the Sunshine one. You can select the level with **(Up)** and **(Down)** and the star with **(Left)** and **(Right)**.
+- Pause menus are better looking.
+- Options menu: `Odyssey Mario's Moveset` is now looking like this:
+  - `Character`: `Mario`, `Peach` (You need to change or restart the level to play as the selected character)
+  - `Moveset`: `Classic`, `Odyssey - 3-Health`, `Odyssey - 6-Health`
+  - `Cap`: `Classic`, `Cappy - No Capture`, `Cappy - Capture`
+  - `Stars`: `Classic`, `Non-Stop`
+  - `Power-ups`: `Classic`, `Improved`
+  - `Camera`: `Classic`, `8-Directions`, `16-Directions`
+  - `Sparkly Stars`: `Disabled`, `Normal Mode`, `Hard Mode`
+  - `Buttons`: Various buttons binds.
+  - `Cheats`: Same cheats as previous versions, plus a new one, `Endless Vibe Gauge`, that make Peach never run out of Vibe points.
+  - `Extras`: A bunch of graphical options that can be enabled/disabled at will.
+    - `Cappy Eyes on Mario's Cap`: Display Cappy eyes on Mario's cap. If disabled, turn Tiara into Peach's regular crown.
+	- `Colored Stars`: Replace vanilla stars by glowing colored stars.
+	- `3D Coins`: Replace 2D coins by custom 3D coins.
+	- `Vanishing HUD`: Make the HUD transparent when Mario is moving.
+	- `Reveal Secrets`: Show the secrets.
+	- `Invisible Mode`: Make Mario/Peach, Cappy/Tiara and their effects invisible, except for their shadows.
+	- `Crystal Stars Reward`: Only available after collecting all 30 Crystal Stars.
+  - `Shortcuts`<br>A new feature that allows the player to bind options to keyboard keys.<br>Pressing a shortcut changes the value of an option without the need of opening the options menu.
+  
+## Super Mario 64 Moonshine
+- Goombones and Bees are interactable.
+- Goombones can be captured and act as Goombas.
+
+## Super Mario Star Road
+- Hard mode is compatible with the Odyssey moveset.
+- All levels are compatible with Non-Stop mode.
+- Custom behaviors are interactable.
+- Ground shy guys can be captured and act as Goombas.
+
+## Super Mario 74
+- Added a `Swap Version` button in options menu.
+- The `Warp to Level` sub-menu can also be used to swap versions.
+- The OMM savefile keeps track of both versions for each file.
+
+## Miscellaneous changes:
+- The game is always built with the flags `TEXTURE_FIX`, `EXT_OPTIONS_MENU`, `NODRAWINGDISTANCE` and `BETTERCAMERA`.
+- The following models are now DynOS-replaceable (for star models, the `*` character must be replaced by a number):
+  - Colored stars (opaque): `omm_geo_star_*_opaque`
+  - Colored stars (transparent): `omm_geo_star_*_transparent`
+  - Yellow 3D coin: `omm_geo_coin_yellow` and `omm_geo_coin_yellow_no_shadow`
+  - Red 3D coin: `omm_geo_coin_red` and `omm_geo_coin_red_no_shadow`
+  - Blue 3D coin: `omm_geo_coin_blue` and `omm_geo_coin_blue_no_shadow`
+  - Red flame: `omm_geo_fire_smoke_red`
+  - Blue flame: `omm_geo_fire_smoke_blue`
+  - Metal Mario sparkle: `omm_geo_metal_sparkle`
+  - Vanish Mario mist: `omm_geo_vanish_mist`
+  - Break particle: `omm_geo_break_particle`
+  - Snowball: `omm_geo_snowball`
+  - Mr. I beam: `omm_geo_mr_i_beam`
+  - Captured Bob-omb explosion: `omm_geo_explosion`
+  - Captured Whomp shockwave: `omm_geo_shockwave_whomp`
+  - Captured Spindrift shockwave: `omm_geo_shockwave_spindrift`
+  - Rising lava: `omm_geo_rising_lava`
+  - OMM Bowser fire shockwave: `omm_geo_shockwave_fire`
+  - OMM Bowser mine: `omm_geo_bowser_mine`
+  - OMM Bowser flame: `omm_geo_bowser_flame`
+  - OMM Bowser fireball: `omm_geo_bowser_fireball`
+  - OMM Bowser fireball trail: `omm_geo_bowser_fireball_flame`
+  - Flaming Bob-omb: `omm_geo_flaming_bobomb`
+  - Flaming Bob-omb aura: `omm_geo_flaming_bobomb_aura`
+  - Flaming Bob-omb explosion: `omm_geo_flaming_bobomb_explosion`
+  - Sparkly star (opaque): `omm_geo_sparkly_star_*_opaque`
+  - Sparkly star (transparent): `omm_geo_sparkly_star_*_transparent`
+  - Sparkly star sparkle: `omm_geo_sparkly_star_*_sparkle`
+  - Sparkly star block: `omm_geo_sparkly_star_*_block`
+  - Sparkly star signpost: `omm_geo_sparkly_star_*_hint`
+  - Peach: `omm_geo_peach`
+  - Peach's crown: `omm_geo_peach_crown`
+  - Pink Gold Peach's crown: `omm_geo_peach_crown_metal`
+  - Perry: `omm_geo_perry`
+  - Perry trail: `omm_geo_perry_trail`
+  - Perry shockwave: `omm_geo_perry_shockwave`
+  - Vibe aura (pink): `omm_geo_peach_vibe_aura`
+  - Vibe sparkle (pink): `omm_geo_peach_vibe_sparkle`
+  - Joy tornado: `omm_geo_peach_vibe_joy_tornado`
+  - Joy gust: `omm_geo_peach_vibe_joy_gust`
+  - Rage aura: `omm_geo_peach_vibe_rage_aura`
+  - Rage shockwave: `omm_geo_peach_vibe_rage_shockwave`
+  - Gloom aura: `omm_geo_peach_vibe_gloom_aura`
+  - Gloom tears: `omm_geo_peach_vibe_gloom_tear`
+  - Gloom droplets: `omm_geo_peach_vibe_gloom_tear_small`
+  - Calm aura: `omm_geo_peach_vibe_calm_aura`
+  - Calm sparkle: `omm_geo_peach_vibe_calm_sparkle`
+  - Character select button (Mario): `omm_geo_menu_button_mario`
+  - Character select button (Peach): `omm_geo_menu_button_peach`
+  - Character select button (Luigi): `omm_geo_menu_button_luigi`
+  - Character select button (Wario): `omm_geo_menu_button_wario`
