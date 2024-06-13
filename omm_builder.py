@@ -258,7 +258,7 @@ OMM_BUILDER_DOWNLOADS = {
 # Specs
 #
 
-OMM_BUILDER_VERSION = "2.2.3"
+OMM_BUILDER_VERSION = "2.2.4"
 OMM_BUILDER_AUTHOR  = "PeachyPeach"
 OMM_BUILDER_DATE    = "2022-2024"
 OMM_SOURCE_DIR      = "omm"
@@ -514,7 +514,7 @@ def is_patched(name: str) -> bool:
     return os.path.isfile("enhancements/" + name + ".patched")
 
 def set_patched(name: str):
-    os.makedirs("enhancements", exist_ok=True)
+    os.makedirs("enhancements", mode=0o777, exist_ok=True)
     with open("enhancements/" + name + ".patched", "w") as f: f.write("")
 
 def delete_files(root: str, condition):
@@ -876,44 +876,48 @@ def omm_builder_check_dependencies():
             error("Missing dependency. To fix it:\n[Windows] Download and run the `OMM Builder Setup Script`.\n[Linux] Run the command `sudo apt install build-essential git python3 libglew-dev libsdl2-dev zip p7zip*`.")
 
 def omm_builder_check_for_updates():
-    if not check_arg(OMM_BUILDER_ARG_INPUT): # Skip builder update if input arg
-        omm_builder_version = get_version_number(download_file(OMM_BUILDER_REMOTE_VERSION).decode(), "OMM_BUILDER_VERSION")
-        if omm_builder_version is not None and OMM_BUILDER_VERSION != omm_builder_version:
-            warning("Your OMM builder is not up-to-date.\nLocal version: ", OMM_BUILDER_VERSION, " - Remote version: ", omm_builder_version)
-            info("Do you want to download and install the latest version? [y/n] ", end="")
-            answer = ""
-            while not answer in ["y", "n"]:
-                answer = input().lower()
-            if answer == "y":
-                info("Updating OMM builder...")
-                git_reset()
-                git_pull(OMM_REPOSITORIES["omm"])
-                done("Done.")
-                exit(0)
+    return
+    # if not check_arg(OMM_BUILDER_ARG_INPUT): # Skip builder update if input arg
+    #     omm_builder_version = get_version_number(download_file(OMM_BUILDER_REMOTE_VERSION).decode(), "OMM_BUILDER_VERSION")
+    #     if omm_builder_version is not None and OMM_BUILDER_VERSION != omm_builder_version:
+    #         warning("Your OMM builder is not up-to-date.\nLocal version: ", OMM_BUILDER_VERSION, " - Remote version: ", omm_builder_version)
+    #         info("Do you want to download and install the latest version? [y/n] ", end="")
+    #         answer = ""
+    #         while not answer in ["y", "n"]:
+    #             answer = input().lower()
+    #         if answer == "y":
+    #             info("Updating OMM builder...")
+    #             git_reset()
+    #             git_pull(OMM_REPOSITORIES["omm"])
+    #             done("Done.")
+    #             exit(0)
 
 def omm_builder_get_omm_version() -> tuple[str, bool]:
-    info("--- Checking OMM version...")
-    remote = get_omm_version_tag(download_file(OMM_SOURCE_REMOTE_VERSION).decode()) if not check_arg(OMM_BUILDER_ARG_LOCAL) else None
-    local = get_omm_version_tag(open("omm/omm.mk").read()) if os.path.isfile("omm/omm.mk") else None
-    
-    # No source available
-    if remote is None and local is None:
-        error("Cannot retrieve OMM version.")
+    # I don't know why it doesn't work anymore
+    # Hardcode it for now, let's hope v8 will fix this
+    return ("omm.7.5.1.5", True)
+    # info("--- Checking OMM version...")
+    # remote = get_omm_version_tag(download_file(OMM_SOURCE_REMOTE_VERSION).decode()) if not check_arg(OMM_BUILDER_ARG_LOCAL) else None
+    # local = get_omm_version_tag(open("omm/omm.mk").read()) if os.path.isfile("omm/omm.mk") else None
 
-    # No remote, use local
-    if remote is None:
-        return local, False
+    # # No source available
+    # if remote is None and local is None:
+    #     error("Cannot retrieve OMM version.")
 
-    # No local, use remote and update
-    if local is None:
-        return remote, True
+    # # No remote, use local
+    # if remote is None:
+    #     return local, False
 
-    # If remote and local don't match, use remote and update
-    if remote != local:
-        return remote, True
+    # # No local, use remote and update
+    # if local is None:
+    #     return remote, True
 
-    # If both versions match, don't update
-    return remote, False
+    # # If remote and local don't match, use remote and update
+    # if remote != local:
+    #     return remote, True
+
+    # # If both versions match, don't update
+    # return remote, False
 
 def omm_builder_extract_zips(path):
     info("--- Extracting zip archives...")
@@ -1077,7 +1081,7 @@ def omm_builder_process_command(state: dict, version: str, should_update: bool):
             fresh_clone = False
             if not os.path.isdir(game_dir):
                 info("--- Cloning `" + game + "` repository...")
-                os.makedirs(game_dir)
+                os.makedirs(game_dir, mode=0o777)
                 git_clone(game_repo, game_dir)
                 if not os.path.isdir(game_dir):
                     error("Cannot clone the git repository: " + game_repo)
@@ -1195,6 +1199,23 @@ def omm_builder_process_command(state: dict, version: str, should_update: bool):
                 if "OMM_" in arg and ("=0" in arg or "=1" in arg):
                     make_args.append(arg)
 
+            # Create dirs and fix permissions
+            os.makedirs("build/us_pc", 0o777, exist_ok=True)
+            os.makedirs("build/us_pc/res", 0o777, exist_ok=True)
+            os.makedirs("build/us_pc/res/packs", 0o777, exist_ok=True)
+            os.makedirs("build/us_pc/res/texts", 0o777, exist_ok=True)
+            os.makedirs("build/us_pc/dynos", 0o777, exist_ok=True)
+            os.makedirs("build/us_pc/dynos/packs", 0o777, exist_ok=True)
+            os.makedirs("build/us_pc/dynos/audio", 0o777, exist_ok=True)
+            os.chmod("extract_assets.py", 0o755)
+            os.chmod("build/us_pc", 0o777)
+            os.chmod("build/us_pc/res", 0o777)
+            os.chmod("build/us_pc/res/packs", 0o777)
+            os.chmod("build/us_pc/res/texts", 0o777)
+            os.chmod("build/us_pc/dynos", 0o777)
+            os.chmod("build/us_pc/dynos/packs", 0o777)
+            os.chmod("build/us_pc/dynos/audio", 0o777)
+
             # Let's-a-go
             info("make", *make_args)
             make_tries = 10
@@ -1279,12 +1300,8 @@ def omm_builder_process_command(state: dict, version: str, should_update: bool):
                         info("Installing `" + pack_name + "`...")
                         copy_dir("../../" + pack_path + "/.", "build/us_pc/dynos/audio/")
 
-            # Fix permissions
-            run_cmd("chmod", "644", "-f", "-R", "build/us_pc/res")
-            run_cmd("chmod", "644", "-f", "-R", "build/us_pc/dynos")
-            run_cmd("chmod", "755", "-f", exe)
-
             # Run the game
+            os.chmod(exe, 0o755)
             done("Game `" + game + "` built successfully!")
             if not check_arg(OMM_BUILDER_ARG_BUILD):
                 info("--- Starting `" + game + "`...")
