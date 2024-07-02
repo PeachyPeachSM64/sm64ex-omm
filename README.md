@@ -32,7 +32,7 @@
 - Open a terminal and run the following commands to install the required packages:
 ```
 sudo apt-get update -y
-sudo apt install build-essential git python3 libglew-dev libsdl2-dev libz-dev zip p7zip*
+sudo apt install build-essential git python3 libglew-dev libsdl2-dev libz-dev libaudiofile-dev zip p7zip*
 ```
 
 - Install the builder by cloning the *builder* branch with this command:
@@ -47,7 +47,7 @@ git clone --single-branch --depth 1 https://github.com/PeachyPeachSM64/sm64ex-om
 - Open a terminal and run the following commands to install the required packages:
 ```
 sudo apt-get update -y
-sudo apt install -y build-essential bsdmainutils git python3 libglew-dev libsdl2-dev libz-dev zip p7zip*
+sudo apt install -y build-essential bsdmainutils git python3 libglew-dev libsdl2-dev libz-dev libaudiofile-dev zip p7zip*
 ```
 
 - Install the builder by cloning the *builder* branch with this command:
@@ -61,7 +61,7 @@ git clone --single-branch --depth 1 https://github.com/PeachyPeachSM64/sm64ex-om
 
 - Open a terminal and run the following commands to install the required packages:
 ```
-sudo dnf install --assumeyes util-linux git-all make gcc gcc-c++ python3 glew-devel SDL2-devel zlib-devel zip unzip p7zip p7zip-plugins wget
+sudo dnf install --assumeyes util-linux git-all make gcc gcc-c++ python3 glew-devel SDL2-devel zlib-devel zip unzip p7zip p7zip-plugins wget audiofile-devel
 ```
 
 - Install the builder by cloning the *builder* branch with this command:
@@ -76,7 +76,7 @@ git clone --single-branch --depth 1 https://github.com/PeachyPeachSM64/sm64ex-om
 - Open a terminal and run the following commands to install the required packages:
 ```
 sudo pacman -Syu --noconfirm
-sudo pacman -S --noconfirm base-devel git python sdl2 glew zip unzip wget p7zip
+sudo pacman -S --noconfirm base-devel git python sdl2 glew zip unzip wget p7zip audiofile
 ```
 
 - Install the builder by cloning the *builder* branch with this command:
