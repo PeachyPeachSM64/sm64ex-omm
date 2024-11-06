@@ -160,6 +160,7 @@ To use a texture pack, download it by clicking `Code` -> `Download ZIP`, then pu
 
 ### Other resources
 
+- [OMM changelog](changelog/README.md)
 - [OMM patch file](https://raw.githubusercontent.com/PeachyPeachSM64/sm64ex-omm/refs/heads/patch/omm.patch) (Right click -> `Save As...`)
 - [sm64pcBuilder2](https://sm64pc.info/sm64pcbuilder2) by **gunvalk**, **Filipianosol**, **GammaTendonNine**
 - [Super Mario 64 Moonshine archive](https://www.mediafire.com/file/khy40tbd1rcve2p/MOONSHINE_FINALUPDATE.rar/file) by **TurnFlashed**, **s4ys**, **Fito**
