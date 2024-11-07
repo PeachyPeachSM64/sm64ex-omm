@@ -140,9 +140,8 @@ To build the game manually, download one of the following scripts, depending on 
 ### Model packs
 
 To use a model pack, download it, then put the downloaded `.zip` file into the `res/packs` directory of the game.
-> If the downloaded file is not in ZIP format, convert it using a tool like 7Zip.
 
-- [Render96 Model pack](https://github.com/Render96/ModelPack/releases/tag/3.2) by **Render96 Team**
+- [Render96 Model pack](https://github.com/PeachyPeachSM64/sm64ex-omm-resources/raw/refs/heads/packs/Render96_DynOs_v3.2.zip) by **Render96 Team**
 - [Render96 characters with color support](https://github.com/PeachyPeachSM64/sm64ex-omm-resources/tree/packs) by **Render96 Team**
 
 ### Texture packs
