@@ -111,7 +111,7 @@ Each game has its own precompiled executable, check the [Releases](https://githu
 |Super Mario 64: The Green Stars|[Download](https://github.com/PeachyPeachSM64/sm64ex-omm/releases/download/games/omm_smgs_gl.zip)|[Download](https://github.com/PeachyPeachSM64/sm64ex-omm/releases/download/games/omm_smgs_dx.zip)|
 |Render96|[Download](https://github.com/PeachyPeachSM64/sm64ex-omm/releases/download/games/omm_r96x_gl.zip)|[Download](https://github.com/PeachyPeachSM64/sm64ex-omm/releases/download/games/omm_r96x_dx.zip)|
 
-To play, extract the downloaded zip, place your ROM next to the executable and start the game.
+To play, extract the downloaded zip, rename your ROM file to `baserom.us.z64`, place it next to the executable and start the game.
 
 > Warning: Mouse related features do not work on DirectX builds!
 
