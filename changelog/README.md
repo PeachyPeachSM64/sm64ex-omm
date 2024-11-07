@@ -2,6 +2,7 @@
 
 ## Version 8
 
+- [Version 8.0.1](changelog_801.md)
 - [Version 8.0.0](changelog_800.md)
 
 ## Version 7

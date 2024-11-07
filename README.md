@@ -97,9 +97,9 @@ Access the Options Menu and change settings according to your way to play!<br>Al
 ## How to play
 
 First, you need a valid **Super Mario 64 US** ROM file.<br>
-Then, you can either choose to build the game manually or download a precompiled, ready-to-play build (Windows only).
+Then, you can either choose to build the game manually or download a precompiled, ready-to-play build (Windows/Wine only).
 
-- ### Download the game (Windows only)
+- ### Download the game (Windows/Wine only)
 
 Each game has its own precompiled executable, check the [Releases](https://github.com/PeachyPeachSM64/sm64ex-omm/releases) or select it in the table below:
 ||OpenGL 2.1 (recommended) |DirectX 11|
