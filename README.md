@@ -163,3 +163,33 @@ To use a texture pack, download it by clicking `Code` -> `Download ZIP`, then pu
 - [OMM patch file](https://raw.githubusercontent.com/PeachyPeachSM64/sm64ex-omm/refs/heads/patch/omm.patch) (Right click -> `Save As...`)
 - [sm64pcBuilder2](https://sm64pc.info/sm64pcbuilder2) by **gunvalk**, **Filipianosol**, **GammaTendonNine**
 - [Super Mario 64 Moonshine archive](https://www.mediafire.com/file/khy40tbd1rcve2p/MOONSHINE_FINALUPDATE.rar/file) by **TurnFlashed**, **s4ys**, **Fito**
+
+### LiveSplit Autosplit
+
+LiveSplit Autosplit scripts are available [here](https://github.com/PeachyPeachSM64/sm64ex-omm/raw/refs/heads/scripts/omm_ls_autosplit.zip) for each of the playable games.<br>
+Extract the downloaded archive to retrieve six scripts, each corresponding to a specific game:
+- `omm.smex.asl` -> **Super Mario 64**
+- `omm.smms.asl` -> **Super Mario 64 Moonshine**
+- `omm.sm74.asl` -> **Super Mario 74 + Extreme Edition**
+- `omm.smsr.asl` -> **Super Mario Star Road**
+- `omm.smgs.asl` -> **Super Mario 64: The Green Stars**
+- `omm.r96x.asl` -> **Render96**
+
+To add a script to LiveSplit, right-click, select `Edit Layout...`, click on `(+)`, then `Control`, `Scriptable Auto Splitter`, double click on it, `Browse...` and finally select a `.asl` file previously extracted. Repeat for each file if needed.
+
+*What is the script able to do:*
+- Starts when the player selects a file,
+- Splits each time a certain amount of stars is collected,
+- Stops when the Grand Star is grabbed,
+- Resets when the game returns to the main menu.
+
+*How to make it work:*
+- Start LiveSplit, load your splits, save them as a file named `splits.lss` and place it next to the game executable.
+- Then, start the game, the auto-splits will be generated from the provided `splits.lss` file.
+
+*Splits formatting:*
+- For star splits, you must indicate the amount of stars needed in brackets:
+  - Use square brackets to split upon star collection: `[20]`.
+  - Use parentheses to delay the split until the level exit: `(20)`.
+- If a split has `Bowser` in its name but no star amount, it is interpreted as a Bowser key split or a Grand Star split and the split is triggered on key/star collection.
+- If the final split has no star amount, it is interpreted as a Grand Star split (i.e. after defeating the last Bowser) and immediately stops the timer.
