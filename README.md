@@ -112,11 +112,13 @@ Each game has its own precompiled executable, check the [Releases](https://githu
 |Render96|[Download](https://github.com/PeachyPeachSM64/sm64ex-omm/releases/download/games/omm_r96x_gl.zip)|[Download](https://github.com/PeachyPeachSM64/sm64ex-omm/releases/download/games/omm_r96x_dx.zip)|
 |Render96 + Levels|[Download](https://github.com/PeachyPeachSM64/sm64ex-omm/releases/download/games/omm_r96x_levels_gl.zip)|[Download](https://github.com/PeachyPeachSM64/sm64ex-omm/releases/download/games/omm_r96x_levels_dx.zip)|
 
+> [!NOTE]
 > The `Render96 + Levels` pack contains the full Render96 HD experience (models, textures and levels), but is also significantly heavier (around 2GB).
 
 To play, extract the downloaded zip, rename your ROM file to `baserom.us.z64`, place it next to the executable and start the game.
 
-> Warning: Mouse related features do not work on DirectX builds!
+> [!WARNING]
+> Mouse related features do not work on DirectX builds!
 
 - ### Build the game manually
 
@@ -140,47 +142,69 @@ To build the game manually, download one of the following scripts, depending on 
 
 ## Resources
 
-### Model packs
+<details>
+<summary><h3>Model packs</h3></summary>
 
 To use a model pack, download it, then put the downloaded `.zip` file into the `res/packs` directory of the game.<br>Enable it in-game by opening the options menu and selecting `Model Packs`.
 
 - [Render96 Model pack](https://github.com/PeachyPeachSM64/sm64ex-omm-resources/raw/refs/heads/packs/Render96_DynOs_v3.2.zip) by **Render96 Team**
 - [Render96 characters with color support](https://github.com/PeachyPeachSM64/sm64ex-omm-resources/tree/packs) by **Render96 Team**
 
-### Texture packs
+</details>
+
+<details>
+<summary><h3>Texture packs</h3></summary>
 
 To use a texture pack, download it by clicking `Code` -> `Download ZIP`, then put the downloaded `.zip` file into the `res` directory of the game.
+
+<!-- > [!NOTE] -->
+> <img src="img/note.png" height="24"/><br>
+> If the texture pack doesn't load when starting the game, make sure to delete the `gfx.*.raw` files from the `res` directory or set the `Display -> Texture Caching` option to `At Startup`.
 
 - [OMM HD Texture pack](https://github.com/PeachyPeachSM64/sm64ex-omm-resources/tree/omm-hd)
 - [Render96 Texture pack](https://github.com/pokeheadroom/RENDER96-HD-TEXTURE-PACK) by **Render96 Team**
 - [Super Mario 74 HD Texture pack](https://github.com/aspieweeb759/Super-Mario-74-HD-Texture-Pack) by **sarah_taylor**
 - [Super Mario Star Road HD Texture pack](https://github.com/aspieweeb759/Star-Road-HD) by **sarah_taylor**
 
-### Render96 levels
+</details>
+
+<details>
+<summary><h3>Render96 levels</h3></summary>
+
+To use Render96 levels, either download a `Render96 + Levels` precompiled game or [build the game manually](#build-the-game-manually).
 
 - [Render96 levels](https://github.com/PeachyPeachSM64/sm64ex-omm-resources/tree/levels) by **Render96 Team**
 
-### Other resources
+</details>
 
-- [OMM changelog](changelog/README.md)
-- [OMM patch file](https://raw.githubusercontent.com/PeachyPeachSM64/sm64ex-omm/refs/heads/patch/omm.patch) (Right click -> `Save As...`)
-- [sm64pcBuilder2](https://sm64pc.info/sm64pcbuilder2) by **gunvalk**, **Filipianosol**, **GammaTendonNine**
-- [Super Mario 64 Moonshine archive](https://www.mediafire.com/file/khy40tbd1rcve2p/MOONSHINE_FINALUPDATE.rar/file) by **TurnFlashed**, **s4ys**, **Fito**
+<details>
+<summary><h3>Character Select</h3></summary>
 
-### LiveSplit Autosplit
+Original idea by [Squishy](https://github.com/Squishy6094), for **sm64coopdx**: [Character Select](https://github.com/Squishy6094/character-select-coop)<br>
+Character Select mods are available on the [sm64coopdx modsite](https://mods.sm64coopdx.com/mods/categories/character-select.14/).
 
-LiveSplit Autosplit scripts are available [here](https://github.com/PeachyPeachSM64/sm64ex-omm/raw/refs/heads/scripts/omm_ls_autosplit.zip) for each of the playable games.<br>
-Extract the downloaded archive to retrieve six scripts, each corresponding to a specific game:
-- `omm.smex.asl` -> **Super Mario 64**
-- `omm.smms.asl` -> **Super Mario 64 Moonshine**
-- `omm.sm74.asl` -> **Super Mario 74 + Extreme Edition**
-- `omm.smsr.asl` -> **Super Mario Star Road**
-- `omm.smgs.asl` -> **Super Mario 64: The Green Stars**
-- `omm.r96x.asl` -> **Render96**
+Now partially supported by *Odyssey Mario's Moveset*, each individual character of Character Select mods is turned into a playable model pack, featuring the character's model, caps, palette preset, animations and voice clips!
 
-To add a script to LiveSplit, right-click, select `Edit Layout...`, click on `(+)`, then `Control`, `Scriptable Auto Splitter`, double click on it, `Browse...` and finally select a `.asl` file previously extracted. Repeat for each file if needed.
+To use a Character Select mod, download it, then put the downloaded `.zip` file into the `res/packs` directory of the game.<br>Enable it in-game by opening the options menu and selecting `Model Packs`.
 
-*What is the script able to do:*
+<!-- > [!IMPORTANT] -->
+> <img src="img/important.png" height="24"/><br>
+> **Not all packs are compatible**. *Odyssey Mario's Moveset* doesn't interpret Lua, the language used for Character Select mods, but uses a parser that heavily relies on the [Character Select Template](https://github.com/Squishy6094/character-select-coop/raw/main/char-select-template.zip) format.
+
+<!-- > [!WARNING] -->
+> <img src="img/warning.png" height="24"/><br>
+> Some models may crash the game, due to inconsistencies between **sm64coopdx** rendering engine and *Odyssey Mario's Moveset*'s, notably regarding two-cycle and multitexturing.
+
+</details>
+
+<details>
+<summary><h3>LiveSplit Autosplit</h3></summary>
+
+The LiveSplit Autosplit script for *Odyssey Mario's Moveset* is available [here](https://github.com/PeachyPeachSM64/sm64ex-omm/raw/refs/heads/scripts/omm.asl).<br>
+
+To add it to LiveSplit, right-click, select `Edit Layout...`, click on `(+)`, then `Control`, `Scriptable Auto Splitter`, double click on it, `Browse...` and finally select the file previously downloaded.
+
+*What the script is able to do:*
 - Starts when the player selects a file,
 - Splits each time a certain amount of stars is collected,
 - Stops when the Grand Star is grabbed,
@@ -196,3 +220,15 @@ To add a script to LiveSplit, right-click, select `Edit Layout...`, click on `(+
   - Use parentheses to delay the split until the level exit: `(20)`.
 - If a split has `Bowser` in its name but no star amount, it is interpreted as a Bowser key split or a Grand Star split and the split is triggered on key/star collection.
 - If the final split has no star amount, it is interpreted as a Grand Star split (i.e. after defeating the last Bowser) and immediately stops the timer.
+
+</details>
+
+<details>
+<summary><h3>Other resources</h3></summary>
+
+- [OMM changelog](changelog/README.md)
+- [OMM patch file](https://raw.githubusercontent.com/PeachyPeachSM64/sm64ex-omm/refs/heads/patch/omm.patch) (Right click -> `Save As...`)
+- [sm64pcBuilder2](https://sm64pc.info/sm64pcbuilder2) by **gunvalk**, **Filipianosol**, **GammaTendonNine**
+- [Super Mario 64 Moonshine archive](https://www.mediafire.com/file/khy40tbd1rcve2p/MOONSHINE_FINALUPDATE.rar/file) by **TurnFlashed**, **s4ys**, **Fito**
+
+</details>

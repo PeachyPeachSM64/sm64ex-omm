@@ -70,6 +70,11 @@
 - `Warp to Level`: Instantly warp to any level, area and act available.
 - `Warp to Castle`: Instantly warp to the exit of any level available.
 - `Model Packs`: Enable or disable custom models.
+- `Character Select`: Extra settings for Character Select model packs.
+  - `Palette Preset`: Enable or disable the palette preset.
+  - `Animations`: Enable or disable the custom animations.
+  - `Voice Clips`: Enable or disable the character voice clips.
+  - `Voice Volume Factor %`: Control the volume of the character voice clips.
 - `Time Trials`
   - `Time Trials`: Enable Time Trials.
   - `Show Star Ghosts (Blue)`: Ghosts for individual Stars.
@@ -81,26 +86,32 @@
   - `Current Language`: Set the current language.
 - `Camera`
   - `Free Camera`/`Puppycam 2`: A modern game camera designed to be more comfortable.
-  - `Mouse Look`/`Camera Mouse Control`: Allow the player to move the camera with their mouse.
-  - `Invert 1st Person Camera`
+  - `Mouse Control`: Allow the player to move the camera with their mouse.
+  - `Invert 1st Person`
     - `Disabled`: Don't invert the camera rotation.
     - `X Axis`: Invert the camera rotation on X axis (horizontal).
     - `Y Axis`: Invert the camera rotation on Y axis (vertical).
     - `Enabled`: Invert the camera rotation.
-  - `Invert 3rd Person Camera`
+  - `Invert 3rd Person`
     - `Disabled`: Don't invert the camera rotation.
     - `X Axis`: Invert the camera rotation on X axis (horizontal).
     - `Y Axis`: Invert the camera rotation on Y axis (vertical).
     - `Enabled`: Invert the camera rotation.
-  - `Camera X Sensitivity`: Control the horizontal movement speed of the camera.
-  - `Camera Y Sensitivity`: Control the vertical movement speed of the camera.
-  - `Camera Deceleration`: Control the movement deceleration of the camera.
+  - `X Sensitivity`: Control the horizontal movement speed of the camera.
+  - `Y Sensitivity`: Control the vertical movement speed of the camera.
+  - `Centre Aggression`: Control the speed at which the camera recenters behind Mario.
+  - `Control Scheme`: *Puppycam 2* only
+    - `Double Tap`: Tap the C-stick left/right direction twice to rapidly rotate the camera.
+    - `Single Press`: Tap the C-stick left/right direction once to rapidly rotate the camera.
+    - `Classic`: Move the camera pitch/yaw by fixed amounts.
   - `Snapshot Mode`: Take control of the camera in a paused game state.<br>
     **Left stick**: Move horizontally.<br>
     **Right stick/Mouse**: Rotate pitch and yaw.<br>
-    **D-pad**: Rotate roll.<br>
+    <kbd>**D-Left**</kbd>/<kbd>**D-Right**</kbd>: Rotate roll.<br>
+    <kbd>**D-Up**</kbd>: Reset roll.<br>
     <kbd>**A**</kbd>: Move up.<br>
     <kbd>**B**</kbd>: Move down.<br>
+    <kbd>**D-Down**</kbd>: Toggle help.<br>
     <kbd>**Z**</kbd>/<kbd>**Start**</kbd>: Exit the snapshot mode.
 - `Controls`
   - Binds: Allow the player to bind up to three keys/buttons for each N64 button.
@@ -133,6 +144,12 @@
   - `SFX Volume`: The volume of sound effects.
   - `ENV Volume`: The volume of environment sounds (birds chirping, water flowing, etc...).
 - `Cheats`: A list of built-in modifications that gives Mario super-human powers, such as Moon-jumping, Infinite health, the ability to BLJ anywhere and much more.
+- `Data Management`
+  - `Reset Mario Palettes`: Restore the original values of Mario's custom palettes.
+  - `Reset Peach Palettes`: Restore the original values of Peach's custom palettes.
+  - `Erase Sparkly Stars Data`: Delete all progression and content related to Sparkly Stars.
+  - `Erase Global Stats`: Reset to 0 all global stats. Local stats are not affected.
+  - `Erase Secrets Found`: Forget all secrets found.
 - `Swap Version`: ***Super Mario 74*** only, allow to swap between Normal and Extreme edition.
 - `Return to Main Menu`: Return to the main menu.
 - `Change Game`: Close the current game and launch the selected one.
