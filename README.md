@@ -187,6 +187,10 @@ Now partially supported by *Odyssey Mario's Moveset*, each individual character 
 
 To use a Character Select mod, download it, then put the downloaded `.zip` file into the `res/packs` directory of the game.<br>Enable it in-game by opening the options menu and selecting `Model Packs`.
 
+<!-- > [!NOTE] -->
+> <img src="img/note.png" height="24"/><br>
+> **All CS characters work only on Mario**. If you want to use a CS character with Peach, Luigi or Wario, enable the `Mario Mode` in the `Odyssey Mario's Moveset -> Extras` sub-menu.
+
 <!-- > [!IMPORTANT] -->
 > <img src="img/important.png" height="24"/><br>
 > **Not all packs are compatible**. *Odyssey Mario's Moveset* doesn't interpret Lua, the language used for Character Select mods, but uses a parser that heavily relies on the [Character Select Template](https://github.com/Squishy6094/character-select-coop/raw/main/char-select-template.zip) format.
