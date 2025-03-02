@@ -132,11 +132,12 @@
     - `Permanent`: Load all textures once and cache them permanently.
   - `Texture Filtering`: Set to nearest neighbor for blocky effects, or linear for smooth but blurry effects.
   - `Model Pack Caching`: Preload and cache all model packs when starting the game, to avoid in-game freezes due to model loading.
-  - `HUD`
+  - `HUD Mode`
     - `Always`: Always display the HUD.
     - `Vanishing`: Elements of the HUD disappear after some time, to display only relevant information.
     - `Pro`: Show only essential elements, like the health meter.
     - `None`: Don't display any of the HUD elements.
+  - `HUD Size`: Control the base size of the HUD elements.
   - `Reset Window`: Reset the window size.
 - `Sound`
   - `Master Volume`: The general volume setting.
