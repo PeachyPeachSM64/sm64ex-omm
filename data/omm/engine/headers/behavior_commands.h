@@ -1,0 +1,86 @@
+#ifndef BEHAVIOR_COMMANDS_H
+#define BEHAVIOR_COMMANDS_H
+
+// Bit shifts
+#define _B000(a)            (_SHIFTL(a, 24,  8))
+#define _BB00(a, b)         (_SHIFTL(a, 24,  8) | _SHIFTL(b, 16,  8))
+#define _BBBB(a, b, c, d)   (_SHIFTL(a, 24,  8) | _SHIFTL(b, 16,  8) | _SHIFTL(c, 8,  8) | _SHIFTL(d, 0, 8))
+#define _BBHH(a, b, c)      (_SHIFTL(a, 24,  8) | _SHIFTL(b, 16,  8) | _SHIFTL(c, 0, 16))
+#define _B0HH(a, b)         (_SHIFTL(a, 24,  8) | _SHIFTL(b,  0, 16))
+#define _HH00(a)            (_SHIFTL(a, 16, 16))
+#define _HHHH(a, b)         (_SHIFTL(a, 16, 16) | _SHIFTL(b,  0, 16))
+#define _WWWW(a)            ((uintptr_t) (u32) (a))
+#define _UPTR(a)            ((uintptr_t)       (a))
+
+// Field index
+#if defined(OBJECT_FIELDS_INDEX_DIRECTLY)
+#define _FIELD(field) field
+#else
+#define _OFFSETOF(x) ((uintptr_t) &(((struct Object *) NULL)->x))
+#if IS_64_BIT
+#define _FIELD(field) ((_OFFSETOF(field) - (_OFFSETOF(field) < _OFFSETOF(ptrData) ? _OFFSETOF(rawData) : _OFFSETOF(ptrData))) / (_OFFSETOF(field) < _OFFSETOF(ptrData) ? sizeof(u32) : sizeof(uintptr_t)))
+#else
+#define _FIELD(field) ((_OFFSETOF(field) - _OFFSETOF(rawData)) / sizeof(u32))
+#endif
+#endif
+
+// Commands
+#define BHV_BEGIN(objList)                                                      _BB00(0x00, objList)
+#define BHV_DELAY(num)                                                          _B0HH(0x01, num)
+#define BHV_CALL(addr)                                                          _B000(0x02), _UPTR(addr)
+#define BHV_RETURN()                                                            _B000(0x03)
+#define BHV_GOTO(addr)                                                          _B000(0x04), _UPTR(addr)
+#define BHV_BEGIN_REPEAT(count)                                                 _B0HH(0x05, count)
+#define BHV_END_REPEAT()                                                        _B000(0x06)
+#define BHV_END_REPEAT_CONTINUE()                                               _B000(0x07)
+#define BHV_BEGIN_LOOP()                                                        _B000(0x08)
+#define BHV_END_LOOP()                                                          _B000(0x09)
+#define BHV_BREAK()                                                             _B000(0x0A)
+#define BHV_BREAK_UNUSED()                                                      _B000(0x0B)
+#define BHV_CALL_NATIVE(func)                                                   _B000(0x0C), _UPTR(func)
+#define BHV_ADD_FLOAT(field, value)                                             _BBHH(0x0D, _FIELD(field), value)
+#define BHV_SET_FLOAT(field, value)                                             _BBHH(0x0E, _FIELD(field), value)
+#define BHV_ADD_INT(field, value)                                               _BBHH(0x0F, _FIELD(field), value)
+#define BHV_SET_INT(field, value)                                               _BBHH(0x10, _FIELD(field), value)
+#define BHV_OR_INT(field, value)                                                _BBHH(0x11, _FIELD(field), value)
+#define BHV_BIT_CLEAR(field, value)                                             _BBHH(0x12, _FIELD(field), value)
+#define BHV_SET_INT_RAND_RSHIFT(field, min, rshift)                             _BBHH(0x13, _FIELD(field), min), _HH00(rshift)
+#define BHV_SET_RANDOM_FLOAT(field, min, range)                                 _BBHH(0x14, _FIELD(field), min), _HH00(range)
+#define BHV_SET_RANDOM_INT(field, min, range)                                   _BBHH(0x15, _FIELD(field), min), _HH00(range)
+#define BHV_ADD_RANDOM_FLOAT(field, min, range)                                 _BBHH(0x16, _FIELD(field), min), _HH00(range)
+#define BHV_ADD_INT_RAND_RSHIFT(field, min, rshift)                             _BBHH(0x17, _FIELD(field), min), _HH00(rshift)
+#define BHV_CMD_NOP_1(field)                                                    _BB00(0x18, _FIELD(field))
+#define BHV_CMD_NOP_2(field)                                                    _BB00(0x19, _FIELD(field))
+#define BHV_CMD_NOP_3(field)                                                    _BB00(0x1A, _FIELD(field))
+#define BHV_SET_MODEL(modelID)                                                  _B0HH(0x1B, modelID)
+#define BHV_SPAWN_CHILD(modelID, behavior)                                      _B000(0x1C), _WWWW(modelID), _UPTR(behavior)
+#define BHV_DEACTIVATE()                                                        _B000(0x1D)
+#define BHV_DROP_TO_FLOOR()                                                     _B000(0x1E)
+#define BHV_SUM_FLOAT(fieldDst, fieldSrc1, fieldSrc2)                           _BBBB(0x1F, fieldDst, fieldSrc1, fieldSrc2)
+#define BHV_SUM_INT(fieldDst, fieldSrc1, fieldSrc2)                             _BBBB(0x20, fieldDst, fieldSrc1, fieldSrc2)
+#define BHV_BILLBOARD()                                                         _B000(0x21)
+#define BHV_CYLBOARD()                                                          _B000(0x38)
+#define BHV_HIDE()                                                              _B000(0x22)
+#define BHV_SET_HITBOX(radius, height)                                          _B000(0x23), _HHHH(radius, height)
+#define BHV_CMD_NOP_4(field, value)                                             _BBHH(0x24, _FIELD(field), value)
+#define BHV_DELAY_VAR(field)                                                    _BB00(0x25, _FIELD(field))
+#define BHV_BEGIN_REPEAT_UNUSED(count)                                          _BB00(0x26, count)
+#define BHV_LOAD_ANIMATIONS(field, anims)                                       _BB00(0x27, _FIELD(field)), _UPTR(anims)
+#define BHV_ANIMATE(animIndex)                                                  _BB00(0x28, animIndex)
+#define BHV_SPAWN_CHILD_WITH_PARAM(bhvParam, modelID, behavior)                 _B0HH(0x29, bhvParam), _WWWW(modelID), _UPTR(behavior)
+#define BHV_LOAD_COLLISION_DATA(collisionData)                                  _B000(0x2A), _UPTR(collisionData)
+#define BHV_SET_HITBOX_WITH_OFFSET(radius, height, downOffset)                  _B000(0x2B), _HHHH(radius, height), _HH00(downOffset)
+#define BHV_SPAWN_OBJ(modelID, behavior)                                        _B000(0x2C), _WWWW(modelID), _UPTR(behavior)
+#define BHV_SET_HOME()                                                          _B000(0x2D)
+#define BHV_SET_HURTBOX(radius, height)                                         _B000(0x2E), _HHHH(radius, height)
+#define BHV_SET_INTERACT_TYPE(type)                                             _B000(0x2F), _WWWW(type)
+#define BHV_SET_OBJ_PHYSICS(radius, grav, bounce, drag, frict, buoy, _6, _7)    _B000(0x30), _HHHH(radius, grav), _HHHH(bounce, drag), _HHHH(frict, buoy), _HHHH(_6, _7)
+#define BHV_SET_INTERACT_SUBTYPE(subtype)                                       _B000(0x31), _WWWW(subtype)
+#define BHV_SCALE(_0, percent)                                                  _BBHH(0x32, _0, percent)
+#define BHV_PARENT_BIT_CLEAR(field, flags)                                      _BB00(0x33, _FIELD(field)), _WWWW(flags)
+#define BHV_ANIMATE_TEXTURE(field, rate)                                        _BBHH(0x34, _FIELD(field), rate)
+#define BHV_DISABLE_RENDERING()                                                 _B000(0x35)
+#define BHV_SET_INT_UNUSED(field, value)                                        _BB00(0x36, _FIELD(field)), _HHHH(0, value)
+#define BHV_SPAWN_WATER_DROPLET(params)                                         _B000(0x37), _UPTR(params)
+
+#endif

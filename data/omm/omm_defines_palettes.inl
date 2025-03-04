@@ -1,0 +1,15 @@
+OMM_PALETTE_      (PEACH_TIARA,             "peach/omm_texture_peach_tiara")
+OMM_PALETTE_LEVEL_(LEVELS_JRB,              "levels/jrb")
+OMM_PALETTE_LEVEL_(LEVELS_BITS,             "levels/bits")
+OMM_PALETTE_LEVEL_(LEVELS_SA,               "levels/sa")
+OMM_PALETTE_LEVEL_(LEVELS_CASTLE,           "levels/castle_inside")
+OMM_PALETTE_LEVEL_(TEXTURES_WATER,          "textures/water")
+OMM_PALETTE_LEVEL_(TEXTURES_SKY,            "textures/sky")
+OMM_PALETTE_LEVEL_(TEXTURES_INSIDE,         "textures/inside")
+OMM_PALETTE_LEVEL_(TEXTURES_SKYBOX,         "textures/skybox")
+OMM_PALETTE_LEVEL_(SEGMENT2_WATER,          "textures/segment2/segment2.11C58")
+OMM_PALETTE_LEVEL_(SEGMENT2_WATER_JRB,      "textures/segment2/segment2.12458")
+OMM_PALETTE_LEVEL_(SEGMENT2_WATER_UNKNOWN,  "textures/segment2/segment2.12C58")
+#if OMM_GAME_IS_SMSR
+OMM_PALETTE_      (YOSHI_WHITE,             "yoshi_")
+#endif
